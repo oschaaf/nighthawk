@@ -18,7 +18,13 @@ First, follow steps 1 and 2 over at [Quick start Bazel build for developers](htt
 
 ```bash
 # test it
-bazel test -c fastbuild //test:nighthawk_test
+bazel test -c dbg //test:nighthawk_test
+```
+
+## Extra dependencies
+
+```bash
+apt install zlib1g-dev
 ```
 
 ### Build it
