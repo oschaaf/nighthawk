@@ -151,8 +151,8 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
      {
       "priority": "DEFAULT",
       "track_remaining": false,
-      "max_connections": 1,
-      "max_pending_requests": 1,
+      "max_connections": 10,
+      "max_pending_requests": 999999,
       "max_retries": 0
      }
     ]
@@ -160,7 +160,8 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
    "tls_context": {
     "common_tls_context": {
      "tls_params" : {
-        "cipher_suites": ["ECDHE-ECDSA-AES128-SHA"]
+        "cipher_suites": "[-ALL:ECDHE-RSA-AES256-GCM-SHA384]",
+        "tls_maximum_protocol_version":"TLSv1_2"
       },
      "tls_certificates": [],
      "tls_certificate_sds_secret_configs": [],
@@ -182,7 +183,7 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
    "connect_timeout": "5s"
   })CFG";
 
-  MessageUtil::loadFromJson(cluster_json, cluster_config);
+  MessageUtil::loadFromJsonEx(cluster_json, cluster_config, Envoy::ProtoUnknownFieldsMode::Strict);
   std::cerr << "cluster config: "
             << MessageUtil::getJsonStringFromMessage(cluster_config, true, true) << std::endl;
 
