@@ -140,6 +140,52 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
     socket_factory = std::make_unique<Envoy::Network::RawBufferSocketFactory>();
   };
 
+  static std::string cluster_json = R"CFG({
+   "name": "",
+   "alt_stat_name": "",
+   "lb_policy": "ROUND_ROBIN",
+   "hosts": [],
+   "health_checks": [],
+   "circuit_breakers": {
+    "thresholds": [
+     {
+      "priority": "DEFAULT",
+      "track_remaining": false,
+      "max_connections": 1,
+      "max_pending_requests": 1,
+      "max_retries": 0
+     }
+    ]
+   },
+   "tls_context": {
+    "common_tls_context": {
+     "tls_params" : {
+        "cipher_suites": ["ECDHE-ECDSA-AES128-SHA"]
+      },
+     "tls_certificates": [],
+     "tls_certificate_sds_secret_configs": [],
+     "alpn_protocols": [
+      "http/1.1",
+      "http/2",
+     ]
+    },
+    "sni": "",
+    "allow_renegotiation": false
+   },
+   "extension_protocol_options": {},
+   "typed_extension_protocol_options": {},
+   "dns_lookup_family": "AUTO",
+   "dns_resolvers": [],
+   "protocol_selection": "USE_CONFIGURED_PROTOCOL",
+   "close_connections_on_host_health_failure": false,
+   "drain_connections_on_host_removal": false,
+   "connect_timeout": "5s"
+  })CFG";
+
+  MessageUtil::loadFromJson(cluster_json, cluster_config);
+  std::cerr << "cluster config: "
+            << MessageUtil::getJsonStringFromMessage(cluster_config, true, true) << std::endl;
+
   cluster_ = std::make_unique<Envoy::Upstream::ClusterInfoImpl>(
       cluster_config, bind_config, runtime, std::move(socket_factory),
       store_.createScope("client."), false /*added_via_api*/);
@@ -153,8 +199,19 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
       envoy::api::v2::endpoint::Endpoint::HealthCheckConfig::default_instance(), 0,
       envoy::api::v2::core::HealthStatus::HEALTHY)};
 
+  /*
+
+  bind config: {
+   "socket_options": []
+  }
+
+    std::cerr << "bind config: " << MessageUtil::getJsonStringFromMessage(bind_config, true,
+  true)
+              << std::endl;
+  */
   Envoy::Network::ConnectionSocket::OptionsSharedPtr options =
       std::make_shared<Envoy::Network::ConnectionSocket::Options>();
+
   if (use_h2_) {
     pool_ = std::make_unique<H2Pool>(dispatcher_, host, Envoy::Upstream::ResourcePriority::Default,
                                      options);
