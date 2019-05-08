@@ -112,9 +112,11 @@ public:
     uri->resolve(*dispatcher_, GetParam() == Envoy::Network::Address::IpVersion::v4
                                    ? Envoy::Network::DnsLookupFamily::V4Only
                                    : Envoy::Network::DnsLookupFamily::V6Only);
+    envoy::api::v2::Cluster cluster_config;
     client_ = std::make_unique<Client::BenchmarkClientHttpImpl>(
         api_, *dispatcher_, store_, std::make_unique<StreamingStatistic>(),
-        std::make_unique<StreamingStatistic>(), std::move(uri), use_h2, prefetch_connections);
+        std::make_unique<StreamingStatistic>(), std::move(uri), use_h2, prefetch_connections,
+        cluster_config);
   }
 
   uint64_t nonZeroValuedCounterCount() {
@@ -348,9 +350,10 @@ TEST_P(BenchmarkClientHttpTest, EnableLatencyMeasurement) {
 TEST_P(BenchmarkClientHttpTest, StatusTrackingInOnComplete) {
   auto uri = std::make_unique<UriImpl>("http://foo/");
   auto store = std::make_unique<Envoy::Stats::IsolatedStoreImpl>();
+  envoy::api::v2::Cluster cluster_config;
   client_ = std::make_unique<Client::BenchmarkClientHttpImpl>(
       api_, *dispatcher_, *store, std::make_unique<StreamingStatistic>(),
-      std::make_unique<StreamingStatistic>(), std::move(uri), false, false);
+      std::make_unique<StreamingStatistic>(), std::move(uri), false, false, cluster_config);
   Envoy::Http::HeaderMapImpl header;
 
   auto& status = header.insertStatus();

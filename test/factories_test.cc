@@ -31,12 +31,15 @@ public:
 
 TEST_F(FactoriesTest, CreateBenchmarkClient) {
   BenchmarkClientFactoryImpl factory(options_);
+  envoy::api::v2::Cluster cluster_config;
+
   EXPECT_CALL(options_, timeout()).Times(1);
   EXPECT_CALL(options_, connections()).Times(1);
   EXPECT_CALL(options_, h2()).Times(1);
   EXPECT_CALL(options_, prefetchConnections()).Times(1);
   EXPECT_CALL(options_, requestMethod()).Times(1);
   EXPECT_CALL(options_, requestBodySize()).Times(1);
+  EXPECT_CALL(options_, clusterConfig()).Times(1).WillOnce(ReturnRef(cluster_config));
   EXPECT_CALL(options_, toCommandLineOptions())
       .Times(1)
       .WillOnce(Return(ByMove(std::make_unique<nighthawk::client::CommandLineOptions>())));

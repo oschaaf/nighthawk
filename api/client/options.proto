@@ -4,6 +4,7 @@ package nighthawk.client;
 
 import "google/protobuf/duration.proto";
 import "validate/validate.proto";
+import "envoy/api/v2/cds.proto";
 import "envoy/api/v2/core/base.proto";
 
 message RequestOptions {
@@ -41,6 +42,8 @@ message CommandLineOptions {
     // See :option:`--request_options` for details.
     RequestOptions request_options = 12;
   }
+  // See :option:`--cluster_config` for details.
+  envoy.api.v2.Cluster cluster_config = 13;
   // See :option:`--uri` for details.
-  string uri = 13;
+  string uri = 14;
 }

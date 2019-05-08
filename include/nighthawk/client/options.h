@@ -7,6 +7,7 @@
 #include "envoy/common/pure.h"
 
 #include "api/client/options.pb.h"
+#include "envoy/api/v2/cds.pb.h"
 
 namespace Nighthawk {
 namespace Client {
@@ -35,7 +36,7 @@ public:
   virtual std::string requestMethod() const PURE;
   virtual std::vector<std::string> requestHeaders() const PURE;
   virtual uint32_t requestBodySize() const PURE;
-
+  virtual const envoy::api::v2::Cluster& clusterConfig() const PURE;
   /**
    * Converts an Options instance to an equivalent CommandLineOptions instance in terms of option
    * values.

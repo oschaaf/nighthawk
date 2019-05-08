@@ -25,7 +25,7 @@ BenchmarkClientPtr BenchmarkClientFactoryImpl::create(Envoy::Api::Api& api,
   StatisticFactoryImpl statistic_factory(options_);
   auto benchmark_client = std::make_unique<BenchmarkClientHttpImpl>(
       api, dispatcher, store, statistic_factory.create(), statistic_factory.create(),
-      std::move(uri), options_.h2(), options_.prefetchConnections());
+      std::move(uri), options_.h2(), options_.prefetchConnections(), options_.clusterConfig());
 
   benchmark_client->setRequestMethod(options_.requestMethod());
 

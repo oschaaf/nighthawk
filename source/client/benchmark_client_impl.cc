@@ -28,18 +28,17 @@ using namespace std::chrono_literals;
 namespace Nighthawk {
 namespace Client {
 
-BenchmarkClientHttpImpl::BenchmarkClientHttpImpl(Envoy::Api::Api& api,
-                                                 Envoy::Event::Dispatcher& dispatcher,
-                                                 Envoy::Stats::Store& store,
-                                                 StatisticPtr&& connect_statistic,
-                                                 StatisticPtr&& response_statistic, UriPtr&& uri,
-                                                 bool use_h2, bool prefetch_connections)
+BenchmarkClientHttpImpl::BenchmarkClientHttpImpl(
+    Envoy::Api::Api& api, Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Store& store,
+    StatisticPtr&& connect_statistic, StatisticPtr&& response_statistic, UriPtr&& uri, bool use_h2,
+    bool prefetch_connections, const envoy::api::v2::Cluster& cluster_config)
     : api_(api), dispatcher_(dispatcher), store_(store),
       scope_(store_.createScope("client.benchmark.")),
       connect_statistic_(std::move(connect_statistic)),
       response_statistic_(std::move(response_statistic)), use_h2_(use_h2),
       prefetch_connections_(prefetch_connections), uri_(std::move(uri)),
-      benchmark_client_stats_({ALL_BENCHMARK_CLIENT_STATS(POOL_COUNTER(*scope_))}) {
+      benchmark_client_stats_({ALL_BENCHMARK_CLIENT_STATS(POOL_COUNTER(*scope_))}),
+      cluster_config_(cluster_config) {
   connect_statistic_->setId("benchmark_http_client.queue_to_connect");
   response_statistic_->setId("benchmark_http_client.request_to_response");
 
@@ -83,7 +82,8 @@ void BenchmarkClientHttpImpl::prefetchPoolConnections() { pool_->prefetchConnect
 
 void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
   ASSERT(uri_->address() != nullptr);
-  envoy::api::v2::Cluster cluster_config;
+  // We use the passed in cluster configuration as a base, and override with specific options.
+  envoy::api::v2::Cluster cluster_config = cluster_config_;
   envoy::api::v2::core::BindConfig bind_config;
 
   cluster_config.mutable_connect_timeout()->set_seconds(timeout_.count());
@@ -140,53 +140,6 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
     socket_factory = std::make_unique<Envoy::Network::RawBufferSocketFactory>();
   };
 
-  static std::string cluster_json = R"CFG({
-   "name": "",
-   "alt_stat_name": "",
-   "lb_policy": "ROUND_ROBIN",
-   "hosts": [],
-   "health_checks": [],
-   "circuit_breakers": {
-    "thresholds": [
-     {
-      "priority": "DEFAULT",
-      "track_remaining": false,
-      "max_connections": 10,
-      "max_pending_requests": 999999,
-      "max_retries": 0
-     }
-    ]
-   },
-   "tls_context": {
-    "common_tls_context": {
-     "tls_params" : {
-        "cipher_suites": "[-ALL:ECDHE-RSA-AES256-GCM-SHA384]",
-        "tls_maximum_protocol_version":"TLSv1_2"
-      },
-     "tls_certificates": [],
-     "tls_certificate_sds_secret_configs": [],
-     "alpn_protocols": [
-      "http/1.1",
-      "http/2",
-     ]
-    },
-    "sni": "",
-    "allow_renegotiation": false
-   },
-   "extension_protocol_options": {},
-   "typed_extension_protocol_options": {},
-   "dns_lookup_family": "AUTO",
-   "dns_resolvers": [],
-   "protocol_selection": "USE_CONFIGURED_PROTOCOL",
-   "close_connections_on_host_health_failure": false,
-   "drain_connections_on_host_removal": false,
-   "connect_timeout": "5s"
-  })CFG";
-
-  MessageUtil::loadFromJsonEx(cluster_json, cluster_config, Envoy::ProtoUnknownFieldsMode::Strict);
-  std::cerr << "cluster config: "
-            << MessageUtil::getJsonStringFromMessage(cluster_config, true, true) << std::endl;
-
   cluster_ = std::make_unique<Envoy::Upstream::ClusterInfoImpl>(
       cluster_config, bind_config, runtime, std::move(socket_factory),
       store_.createScope("client."), false /*added_via_api*/);
@@ -200,16 +153,6 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
       envoy::api::v2::endpoint::Endpoint::HealthCheckConfig::default_instance(), 0,
       envoy::api::v2::core::HealthStatus::HEALTHY)};
 
-  /*
-
-  bind config: {
-   "socket_options": []
-  }
-
-    std::cerr << "bind config: " << MessageUtil::getJsonStringFromMessage(bind_config, true,
-  true)
-              << std::endl;
-  */
   Envoy::Network::ConnectionSocket::OptionsSharedPtr options =
       std::make_shared<Envoy::Network::ConnectionSocket::Options>();
 

@@ -17,6 +17,7 @@ api_proto_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "@envoy_api//envoy/api/v2:cds_export",
         "@envoy_api//envoy/api/v2/core:base_export",
     ],
 )

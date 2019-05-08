@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "common/protobuf/utility.h"
 #include "common/uri_impl.h"
 #include "common/utility.h"
 
@@ -97,6 +98,10 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       "to the number specified here. (default: 0, no data).",
       false, 0, "uint32_t", cmd);
 
+  TCLAP::ValueArg<std::string> cluster_config("", "cluster-config",
+                                              "Cluster configuration settings in yaml or json.",
+                                              false, "", "string", cmd);
+
   TCLAP::UnlabeledValueArg<std::string> uri("uri",
                                             "uri to benchmark. http:// and https:// are supported, "
                                             "but in case of https no certificates are validated.",
@@ -134,6 +139,10 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   request_method_ = request_method.getValue();
   request_headers_ = request_headers.getValue();
   request_body_size_ = request_body_size.getValue();
+  if (!cluster_config.getValue().empty()) {
+    Envoy::MessageUtil::loadFromJsonEx(cluster_config.getValue(), cluster_config_,
+                                       Envoy::ProtoUnknownFieldsMode::Strict);
+  }
 
   // We cap on negative values. TCLAP accepts negative values which we will get here as very
   // large values. We just cap values to 2^63.
@@ -210,7 +219,7 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
     }
   }
   request_options->set_request_body_size(requestBodySize());
-
+  *(command_line_options->mutable_cluster_config()) = clusterConfig();
   return command_line_options;
 }
 
