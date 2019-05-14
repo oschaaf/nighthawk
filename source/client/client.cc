@@ -28,6 +28,7 @@
 #include "client/options_impl.h"
 
 #include "api/client/output.pb.h"
+#include "api/client/service.pb.h"
 #include "ares.h"
 
 using namespace std::chrono_literals;
@@ -203,11 +204,12 @@ public:
     bool ok = true;
     Envoy::Runtime::RandomGeneratorImpl generator;
     Envoy::Runtime::ScopedLoaderSingleton loader(
-        Envoy::Runtime::LoaderPtr{new Envoy::Runtime::LoaderImpl(generator, store(), tls())});
+        Envoy::Runtime::LoaderPtr{new Envoy::Runtime::LoaderImpl({}, generator, store(), tls())});
 
     for (auto& w : workers_) {
       w->start();
     }
+    // nighthawk::client::
     for (auto& w : workers_) {
       w->waitForCompletion();
       ok = ok && w->success();
