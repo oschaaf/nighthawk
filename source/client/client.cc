@@ -26,10 +26,13 @@
 #include "client/client_worker_impl.h"
 #include "client/factories_impl.h"
 #include "client/options_impl.h"
+#include "client/service_impl.h"
 
 #include "api/client/output.pb.h"
 #include "api/client/service.pb.h"
 #include "ares.h"
+
+#include <grpc++/grpc++.h>
 
 using namespace std::chrono_literals;
 
@@ -269,6 +272,16 @@ bool Main::runWorkers(ProcessContext& context, OutputFormatter& formatter) const
 }
 
 bool Main::run() {
+
+  std::string server_address("0.0.0.0:50051");
+  ServiceImpl service;
+  grpc::ServerBuilder builder;
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+  std::cout << "Server listening on " << server_address << std::endl;
+  server->Wait();
+
   Envoy::Thread::MutexBasicLockable log_lock;
   auto logging_context = std::make_unique<Envoy::Logger::Context>(
       spdlog::level::from_str(options_->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
