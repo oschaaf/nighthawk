@@ -8,6 +8,8 @@ licenses(["notice"])  # Apache 2
 
 envoy_package()
 
+load("@build_stack_rules_proto//cpp:cpp_grpc_library.bzl", "cpp_grpc_library")
+
 api_proto_library(
     name = "base",
     srcs = [
@@ -22,10 +24,23 @@ api_proto_library(
     ],
 )
 
-#proto_lang_toolchain(
-#    name = "cc_toolchain",
-#    command_line = "--cpp_out=$(PLUGIN_out)",
-#    plugin = "grpc",
-#    runtime = ":protobuf",
-#    visibility = ["//visibility:public"],
+#api_proto_library(
+#    name = "service_proto",
+#    srcs = [
+#        "service.proto",
+#    ],
+#    deps = [
+#        ":base",
+#    ],
+#)
+
+#cpp_grpc_library(
+#    name = "cpp_service_proto",
+#    has_services = True,
+#    include_imports = False,
+#    transitive = True,
+#    deps = [
+#        ":base",
+#        ":service_proto",
+#    ],
 #)

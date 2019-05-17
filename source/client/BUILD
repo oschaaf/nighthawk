@@ -17,6 +17,7 @@ envoy_cc_library(
         "factories_impl.cc",
         "options_impl.cc",
         "output_formatter_impl.cc",
+        "service.grpc.pb.cc",
         "stream_decoder.cc",
     ],
     hdrs = [
@@ -26,12 +27,14 @@ envoy_cc_library(
         "factories_impl.h",
         "options_impl.h",
         "output_formatter_impl.h",
+        "service.grpc.pb.h",
         "stream_decoder.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
         "//api/client:base_cc",
+        #"//api/client:cpp_service_proto",
         "//include/nighthawk/client:client_includes",
         "//include/nighthawk/common:base_includes",
         "//source/common:nighthawk_common_lib",
