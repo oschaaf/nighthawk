@@ -6,6 +6,43 @@ import "api/client/options.proto";
 import "api/client/output.proto";
 
 service NighthawkService {
-  rpc QueueRun(CommandLineOptions) returns (Output) {
+  /*
+  Accepts a new configuration, and returns a string containing a benchmark session-id.
+  The session will be queued up and run after any other session running/queued up earlier.
+  */
+  rpc QueueSession(CommandLineOptions) returns (string /*session_id*/) {
+  }
+
+  /*
+  Accepts a configuration, and applies it to the running session.
+  Returns a string containing a session-id.
+
+  An explicit flag will be passed in CommandLineOptions to indicate if re-using the existing
+  connection-pool is intended. Nighthawk will verify that the requested changes support that, and
+  return an error if that is not possible. (E.g. changing the QPS will be implemented by swapping
+  the LinearRateLimiter, but requesting preference of new ssl cipers will imply creating a new
+  connection pool). How to verify the diff in changes in a generic and easy way remains to be
+  figured out.
+  */
+  rpc ReconfigureSession(string /*session_id*/, CommandLineOptions) {
+  }
+
+  /*
+  Relatively fast call which can be used to poll if a session initiated via QueueSession
+  has completed.
+  */
+  rpc IsSessionFinished(string /*session_id*/) returns (bool) {
+  }
+
+  /*
+  Blocking call that gets the results of a session initiated via QueueSession.
+  */
+  rpc PopSessionResult(string /*session_id*/) returns (Output) {
+  }
+
+  /*
+  Requests the service to shut itself down.
+  */
+  rpc Shutdown(CommandLineOptions) {
   }
 }
