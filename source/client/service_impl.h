@@ -4,10 +4,9 @@ namespace Nighthawk {
 namespace Client {
 
 class ServiceImpl final : public nighthawk::client::NighthawkService::Service {
-
-  ::grpc::Status QueueRun(::grpc::ServerContext* context,
-                          const ::nighthawk::client::CommandLineOptions* request,
-                          ::nighthawk::client::Output* response) override;
+  ::grpc::Status QueueSession(::grpc::ServerContext* context,
+                              const ::nighthawk::client::QueueSessionRequest* request,
+                              ::nighthawk::client::QueueSessionResponse* response) override;
 };
 
 } // namespace Client

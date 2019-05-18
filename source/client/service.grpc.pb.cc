@@ -20,7 +20,11 @@ namespace nighthawk {
 namespace client {
 
 static const char* NighthawkService_method_names[] = {
-    "/nighthawk.client.NighthawkService/QueueRun",
+    "/nighthawk.client.NighthawkService/QueueSession",
+    "/nighthawk.client.NighthawkService/ReconfigureSession",
+    "/nighthawk.client.NighthawkService/IsSessionFinished",
+    "/nighthawk.client.NighthawkService/PopSessionResult",
+    "/nighthawk.client.NighthawkService/Shutdown",
 };
 
 std::unique_ptr<NighthawkService::Stub>
@@ -32,63 +36,309 @@ NighthawkService::NewStub(const std::shared_ptr<::grpc::ChannelInterface>& chann
 }
 
 NighthawkService::Stub::Stub(const std::shared_ptr<::grpc::ChannelInterface>& channel)
-    : channel_(channel), rpcmethod_QueueRun_(NighthawkService_method_names[0],
-                                             ::grpc::internal::RpcMethod::NORMAL_RPC, channel) {}
+    : channel_(channel), rpcmethod_QueueSession_(NighthawkService_method_names[0],
+                                                 ::grpc::internal::RpcMethod::NORMAL_RPC, channel),
+      rpcmethod_ReconfigureSession_(NighthawkService_method_names[1],
+                                    ::grpc::internal::RpcMethod::NORMAL_RPC, channel),
+      rpcmethod_IsSessionFinished_(NighthawkService_method_names[2],
+                                   ::grpc::internal::RpcMethod::NORMAL_RPC, channel),
+      rpcmethod_PopSessionResult_(NighthawkService_method_names[3],
+                                  ::grpc::internal::RpcMethod::NORMAL_RPC, channel),
+      rpcmethod_Shutdown_(NighthawkService_method_names[4], ::grpc::internal::RpcMethod::NORMAL_RPC,
+                          channel) {}
 
 ::grpc::Status
-NighthawkService::Stub::QueueRun(::grpc::ClientContext* context,
-                                 const ::nighthawk::client::CommandLineOptions& request,
-                                 ::nighthawk::client::Output* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_QueueRun_, context, request,
+NighthawkService::Stub::QueueSession(::grpc::ClientContext* context,
+                                     const ::nighthawk::client::QueueSessionRequest& request,
+                                     ::nighthawk::client::QueueSessionResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_QueueSession_, context,
+                                             request, response);
+}
+
+void NighthawkService::Stub::experimental_async::QueueSession(
+    ::grpc::ClientContext* context, const ::nighthawk::client::QueueSessionRequest* request,
+    ::nighthawk::client::QueueSessionResponse* response, std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_QueueSession_,
+                                             context, request, response, std::move(f));
+}
+
+void NighthawkService::Stub::experimental_async::QueueSession(
+    ::grpc::ClientContext* context, const ::grpc::ByteBuffer* request,
+    ::nighthawk::client::QueueSessionResponse* response, std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_QueueSession_,
+                                             context, request, response, std::move(f));
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::QueueSessionResponse>*
+NighthawkService::Stub::AsyncQueueSessionRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::QueueSessionRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::QueueSessionResponse>::Create(channel_.get(), cq,
+                                                         rpcmethod_QueueSession_, context, request,
+                                                         true);
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::QueueSessionResponse>*
+NighthawkService::Stub::PrepareAsyncQueueSessionRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::QueueSessionRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::QueueSessionResponse>::Create(channel_.get(), cq,
+                                                         rpcmethod_QueueSession_, context, request,
+                                                         false);
+}
+
+::grpc::Status NighthawkService::Stub::ReconfigureSession(
+    ::grpc::ClientContext* context, const ::nighthawk::client::ReconfigureSessionRequest& request,
+    ::nighthawk::client::ReconfigureSessionResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ReconfigureSession_, context,
+                                             request, response);
+}
+
+void NighthawkService::Stub::experimental_async::ReconfigureSession(
+    ::grpc::ClientContext* context, const ::nighthawk::client::ReconfigureSessionRequest* request,
+    ::nighthawk::client::ReconfigureSessionResponse* response,
+    std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
+                                             stub_->rpcmethod_ReconfigureSession_, context, request,
+                                             response, std::move(f));
+}
+
+void NighthawkService::Stub::experimental_async::ReconfigureSession(
+    ::grpc::ClientContext* context, const ::grpc::ByteBuffer* request,
+    ::nighthawk::client::ReconfigureSessionResponse* response,
+    std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
+                                             stub_->rpcmethod_ReconfigureSession_, context, request,
+                                             response, std::move(f));
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::ReconfigureSessionResponse>*
+NighthawkService::Stub::AsyncReconfigureSessionRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::ReconfigureSessionRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::ReconfigureSessionResponse>::Create(channel_.get(), cq,
+                                                               rpcmethod_ReconfigureSession_,
+                                                               context, request, true);
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::ReconfigureSessionResponse>*
+NighthawkService::Stub::PrepareAsyncReconfigureSessionRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::ReconfigureSessionRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::ReconfigureSessionResponse>::Create(channel_.get(), cq,
+                                                               rpcmethod_ReconfigureSession_,
+                                                               context, request, false);
+}
+
+::grpc::Status NighthawkService::Stub::IsSessionFinished(
+    ::grpc::ClientContext* context, const ::nighthawk::client::IsSessionFinishedRequest& request,
+    ::nighthawk::client::IsSessionFinishedResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_IsSessionFinished_, context,
+                                             request, response);
+}
+
+void NighthawkService::Stub::experimental_async::IsSessionFinished(
+    ::grpc::ClientContext* context, const ::nighthawk::client::IsSessionFinishedRequest* request,
+    ::nighthawk::client::IsSessionFinishedResponse* response,
+    std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
+                                             stub_->rpcmethod_IsSessionFinished_, context, request,
+                                             response, std::move(f));
+}
+
+void NighthawkService::Stub::experimental_async::IsSessionFinished(
+    ::grpc::ClientContext* context, const ::grpc::ByteBuffer* request,
+    ::nighthawk::client::IsSessionFinishedResponse* response,
+    std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
+                                             stub_->rpcmethod_IsSessionFinished_, context, request,
+                                             response, std::move(f));
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::IsSessionFinishedResponse>*
+NighthawkService::Stub::AsyncIsSessionFinishedRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::IsSessionFinishedRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::IsSessionFinishedResponse>::Create(channel_.get(), cq,
+                                                              rpcmethod_IsSessionFinished_, context,
+                                                              request, true);
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::IsSessionFinishedResponse>*
+NighthawkService::Stub::PrepareAsyncIsSessionFinishedRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::IsSessionFinishedRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::IsSessionFinishedResponse>::Create(channel_.get(), cq,
+                                                              rpcmethod_IsSessionFinished_, context,
+                                                              request, false);
+}
+
+::grpc::Status
+NighthawkService::Stub::PopSessionResult(::grpc::ClientContext* context,
+                                         const ::nighthawk::client::PopSessionRequest& request,
+                                         ::nighthawk::client::PopSessionResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_PopSessionResult_, context,
+                                             request, response);
+}
+
+void NighthawkService::Stub::experimental_async::PopSessionResult(
+    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionRequest* request,
+    ::nighthawk::client::PopSessionResponse* response, std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
+                                             stub_->rpcmethod_PopSessionResult_, context, request,
+                                             response, std::move(f));
+}
+
+void NighthawkService::Stub::experimental_async::PopSessionResult(
+    ::grpc::ClientContext* context, const ::grpc::ByteBuffer* request,
+    ::nighthawk::client::PopSessionResponse* response, std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
+                                             stub_->rpcmethod_PopSessionResult_, context, request,
+                                             response, std::move(f));
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>*
+NighthawkService::Stub::AsyncPopSessionResultRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::PopSessionResponse>::Create(channel_.get(), cq,
+                                                       rpcmethod_PopSessionResult_, context,
+                                                       request, true);
+}
+
+::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>*
+NighthawkService::Stub::PrepareAsyncPopSessionResultRaw(
+    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionRequest& request,
+    ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::PopSessionResponse>::Create(channel_.get(), cq,
+                                                       rpcmethod_PopSessionResult_, context,
+                                                       request, false);
+}
+
+::grpc::Status NighthawkService::Stub::Shutdown(::grpc::ClientContext* context,
+                                                const ::nighthawk::client::ShutdownRequest& request,
+                                                ::nighthawk::client::ShutdownResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_Shutdown_, context, request,
                                              response);
 }
 
-void NighthawkService::Stub::experimental_async::QueueRun(
-    ::grpc::ClientContext* context, const ::nighthawk::client::CommandLineOptions* request,
-    ::nighthawk::client::Output* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_QueueRun_,
+void NighthawkService::Stub::experimental_async::Shutdown(
+    ::grpc::ClientContext* context, const ::nighthawk::client::ShutdownRequest* request,
+    ::nighthawk::client::ShutdownResponse* response, std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Shutdown_,
                                              context, request, response, std::move(f));
 }
 
-void NighthawkService::Stub::experimental_async::QueueRun(::grpc::ClientContext* context,
-                                                          const ::grpc::ByteBuffer* request,
-                                                          ::nighthawk::client::Output* response,
-                                                          std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_QueueRun_,
+void NighthawkService::Stub::experimental_async::Shutdown(
+    ::grpc::ClientContext* context, const ::grpc::ByteBuffer* request,
+    ::nighthawk::client::ShutdownResponse* response, std::function<void(::grpc::Status)> f) {
+  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_Shutdown_,
                                              context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader<::nighthawk::client::Output>*
-NighthawkService::Stub::AsyncQueueRunRaw(::grpc::ClientContext* context,
-                                         const ::nighthawk::client::CommandLineOptions& request,
+::grpc::ClientAsyncResponseReader<::nighthawk::client::ShutdownResponse>*
+NighthawkService::Stub::AsyncShutdownRaw(::grpc::ClientContext* context,
+                                         const ::nighthawk::client::ShutdownRequest& request,
                                          ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory<::nighthawk::client::Output>::Create(
-      channel_.get(), cq, rpcmethod_QueueRun_, context, request, true);
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::ShutdownResponse>::Create(channel_.get(), cq, rpcmethod_Shutdown_,
+                                                     context, request, true);
 }
 
-::grpc::ClientAsyncResponseReader<::nighthawk::client::Output>*
-NighthawkService::Stub::PrepareAsyncQueueRunRaw(
-    ::grpc::ClientContext* context, const ::nighthawk::client::CommandLineOptions& request,
-    ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderFactory<::nighthawk::client::Output>::Create(
-      channel_.get(), cq, rpcmethod_QueueRun_, context, request, false);
+::grpc::ClientAsyncResponseReader<::nighthawk::client::ShutdownResponse>*
+NighthawkService::Stub::PrepareAsyncShutdownRaw(::grpc::ClientContext* context,
+                                                const ::nighthawk::client::ShutdownRequest& request,
+                                                ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory<
+      ::nighthawk::client::ShutdownResponse>::Create(channel_.get(), cq, rpcmethod_Shutdown_,
+                                                     context, request, false);
 }
 
 NighthawkService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       NighthawkService_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler<NighthawkService::Service,
-                                             ::nighthawk::client::CommandLineOptions,
-                                             ::nighthawk::client::Output>(
-          std::mem_fn(&NighthawkService::Service::QueueRun), this)));
+                                             ::nighthawk::client::QueueSessionRequest,
+                                             ::nighthawk::client::QueueSessionResponse>(
+          std::mem_fn(&NighthawkService::Service::QueueSession), this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      NighthawkService_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler<NighthawkService::Service,
+                                             ::nighthawk::client::ReconfigureSessionRequest,
+                                             ::nighthawk::client::ReconfigureSessionResponse>(
+          std::mem_fn(&NighthawkService::Service::ReconfigureSession), this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      NighthawkService_method_names[2], ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler<NighthawkService::Service,
+                                             ::nighthawk::client::IsSessionFinishedRequest,
+                                             ::nighthawk::client::IsSessionFinishedResponse>(
+          std::mem_fn(&NighthawkService::Service::IsSessionFinished), this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      NighthawkService_method_names[3], ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler<NighthawkService::Service,
+                                             ::nighthawk::client::PopSessionRequest,
+                                             ::nighthawk::client::PopSessionResponse>(
+          std::mem_fn(&NighthawkService::Service::PopSessionResult), this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      NighthawkService_method_names[4], ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler<NighthawkService::Service,
+                                             ::nighthawk::client::ShutdownRequest,
+                                             ::nighthawk::client::ShutdownResponse>(
+          std::mem_fn(&NighthawkService::Service::Shutdown), this)));
 }
 
 NighthawkService::Service::~Service() {}
 
 ::grpc::Status
-NighthawkService::Service::QueueRun(::grpc::ServerContext* context,
-                                    const ::nighthawk::client::CommandLineOptions* request,
-                                    ::nighthawk::client::Output* response) {
+NighthawkService::Service::QueueSession(::grpc::ServerContext* context,
+                                        const ::nighthawk::client::QueueSessionRequest* request,
+                                        ::nighthawk::client::QueueSessionResponse* response) {
+  (void)context;
+  (void)request;
+  (void)response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status NighthawkService::Service::ReconfigureSession(
+    ::grpc::ServerContext* context, const ::nighthawk::client::ReconfigureSessionRequest* request,
+    ::nighthawk::client::ReconfigureSessionResponse* response) {
+  (void)context;
+  (void)request;
+  (void)response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status NighthawkService::Service::IsSessionFinished(
+    ::grpc::ServerContext* context, const ::nighthawk::client::IsSessionFinishedRequest* request,
+    ::nighthawk::client::IsSessionFinishedResponse* response) {
+  (void)context;
+  (void)request;
+  (void)response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status
+NighthawkService::Service::PopSessionResult(::grpc::ServerContext* context,
+                                            const ::nighthawk::client::PopSessionRequest* request,
+                                            ::nighthawk::client::PopSessionResponse* response) {
+  (void)context;
+  (void)request;
+  (void)response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status
+NighthawkService::Service::Shutdown(::grpc::ServerContext* context,
+                                    const ::nighthawk::client::ShutdownRequest* request,
+                                    ::nighthawk::client::ShutdownResponse* response) {
   (void)context;
   (void)request;
   (void)response;
