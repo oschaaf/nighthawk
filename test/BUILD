@@ -1,11 +1,11 @@
-licenses(["notice"])  # Apache 2
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_mock",
     "envoy_cc_test",
     "envoy_package",
 )
+
+licenses(["notice"])  # Apache 2
 
 envoy_package()
 
@@ -24,20 +24,21 @@ envoy_cc_mock(
 envoy_cc_test(
     name = "nighthawk_test",
     srcs = [
-        "benchmark_http_client_test.cc",
-        "client_test.cc",
-        "client_worker_test.cc",
-        "factories_test.cc",
-        "frequency_test.cc",
-        "options_test.cc",
-        "output_formatter_test.cc",
-        "platform_util_test.cc",
-        "rate_limiter_test.cc",
-        "sequencer_test.cc",
-        "statistic_test.cc",
-        "stream_decoder_test.cc",
-        "utility_test.cc",
-        "worker_test.cc",
+        #"benchmark_http_client_test.cc",
+        #"client_test.cc",
+        #"client_worker_test.cc",
+        #"factories_test.cc",
+        #"frequency_test.cc",
+        #"options_test.cc",
+        #"output_formatter_test.cc",
+        #"platform_util_test.cc",
+        #"rate_limiter_test.cc",
+        #"sequencer_test.cc",
+        "service_test.cc",
+        #"statistic_test.cc",
+        #"stream_decoder_test.cc",
+        #"utility_test.cc",
+        #"worker_test.cc",
     ],
     data = [
         "test_data/benchmark_http_client_test_envoy.yaml",
