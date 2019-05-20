@@ -21,10 +21,6 @@ class ServiceImpl final : public nighthawk::client::NighthawkService::Service {
   ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
                                   const ::nighthawk::client::PopSessionResultRequest* request,
                                   ::nighthawk::client::PopSessionResultResponse* response) override;
-
-  ::grpc::Status Shutdown(::grpc::ServerContext* context,
-                          const ::nighthawk::client::ShutdownRequest* request,
-                          ::nighthawk::client::ShutdownResponse* response) override;
 };
 
 } // namespace Client

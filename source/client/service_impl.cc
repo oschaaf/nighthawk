@@ -1,5 +1,7 @@
 #include "client/service_impl.h"
 
+#include <grpc++/grpc++.h>
+
 namespace Nighthawk {
 namespace Client {
 
@@ -27,12 +29,6 @@ ServiceImpl::IsSessionFinished(::grpc::ServerContext* context,
 ServiceImpl::PopSessionResult(::grpc::ServerContext* context,
                               const ::nighthawk::client::PopSessionResultRequest* request,
                               ::nighthawk::client::PopSessionResultResponse* response) {
-  return grpc::Status::OK;
-}
-
-::grpc::Status ServiceImpl::Shutdown(::grpc::ServerContext* context,
-                                     const ::nighthawk::client::ShutdownRequest* request,
-                                     ::nighthawk::client::ShutdownResponse* response) {
   return grpc::Status::OK;
 }
 
