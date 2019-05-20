@@ -4,7 +4,9 @@ package nighthawk.client;
 
 import "api/client/options.proto";
 import "api/client/output.proto";
-
+/*
+option cc_generic_services = true;
+*/
 message Session {
   string id = 1;
 }
@@ -39,11 +41,11 @@ message IsSessionFinishedRequest {
   Session session = 1;
 }
 
-message PopSessionRequest {
+message PopSessionResultRequest {
   Session session = 1;
 }
 
-message PopSessionResponse {
+message PopSessionResultResponse {
   Output output = 1;
 }
 
@@ -85,7 +87,7 @@ service NighthawkService {
   /*
   Blocking call that gets the results of a session initiated via QueueSession.
   */
-  rpc PopSessionResult(PopSessionRequest) returns (PopSessionResponse) {
+  rpc PopSessionResult(PopSessionResultRequest) returns (PopSessionResultResponse) {
   }
 
   /*

@@ -179,17 +179,17 @@ NighthawkService::Stub::PrepareAsyncIsSessionFinishedRaw(
                                                               request, false);
 }
 
-::grpc::Status
-NighthawkService::Stub::PopSessionResult(::grpc::ClientContext* context,
-                                         const ::nighthawk::client::PopSessionRequest& request,
-                                         ::nighthawk::client::PopSessionResponse* response) {
+::grpc::Status NighthawkService::Stub::PopSessionResult(
+    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionResultRequest& request,
+    ::nighthawk::client::PopSessionResultResponse* response) {
   return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_PopSessionResult_, context,
                                              request, response);
 }
 
 void NighthawkService::Stub::experimental_async::PopSessionResult(
-    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionRequest* request,
-    ::nighthawk::client::PopSessionResponse* response, std::function<void(::grpc::Status)> f) {
+    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionResultRequest* request,
+    ::nighthawk::client::PopSessionResultResponse* response,
+    std::function<void(::grpc::Status)> f) {
   return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
                                              stub_->rpcmethod_PopSessionResult_, context, request,
                                              response, std::move(f));
@@ -197,30 +197,31 @@ void NighthawkService::Stub::experimental_async::PopSessionResult(
 
 void NighthawkService::Stub::experimental_async::PopSessionResult(
     ::grpc::ClientContext* context, const ::grpc::ByteBuffer* request,
-    ::nighthawk::client::PopSessionResponse* response, std::function<void(::grpc::Status)> f) {
+    ::nighthawk::client::PopSessionResultResponse* response,
+    std::function<void(::grpc::Status)> f) {
   return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(),
                                              stub_->rpcmethod_PopSessionResult_, context, request,
                                              response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>*
+::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>*
 NighthawkService::Stub::AsyncPopSessionResultRaw(
-    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionRequest& request,
+    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionResultRequest& request,
     ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory<
-      ::nighthawk::client::PopSessionResponse>::Create(channel_.get(), cq,
-                                                       rpcmethod_PopSessionResult_, context,
-                                                       request, true);
+      ::nighthawk::client::PopSessionResultResponse>::Create(channel_.get(), cq,
+                                                             rpcmethod_PopSessionResult_, context,
+                                                             request, true);
 }
 
-::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>*
+::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>*
 NighthawkService::Stub::PrepareAsyncPopSessionResultRaw(
-    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionRequest& request,
+    ::grpc::ClientContext* context, const ::nighthawk::client::PopSessionResultRequest& request,
     ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory<
-      ::nighthawk::client::PopSessionResponse>::Create(channel_.get(), cq,
-                                                       rpcmethod_PopSessionResult_, context,
-                                                       request, false);
+      ::nighthawk::client::PopSessionResultResponse>::Create(channel_.get(), cq,
+                                                             rpcmethod_PopSessionResult_, context,
+                                                             request, false);
 }
 
 ::grpc::Status NighthawkService::Stub::Shutdown(::grpc::ClientContext* context,
@@ -284,8 +285,8 @@ NighthawkService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       NighthawkService_method_names[3], ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler<NighthawkService::Service,
-                                             ::nighthawk::client::PopSessionRequest,
-                                             ::nighthawk::client::PopSessionResponse>(
+                                             ::nighthawk::client::PopSessionResultRequest,
+                                             ::nighthawk::client::PopSessionResultResponse>(
           std::mem_fn(&NighthawkService::Service::PopSessionResult), this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       NighthawkService_method_names[4], ::grpc::internal::RpcMethod::NORMAL_RPC,
@@ -325,10 +326,9 @@ NighthawkService::Service::QueueSession(::grpc::ServerContext* context,
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status
-NighthawkService::Service::PopSessionResult(::grpc::ServerContext* context,
-                                            const ::nighthawk::client::PopSessionRequest* request,
-                                            ::nighthawk::client::PopSessionResponse* response) {
+::grpc::Status NighthawkService::Service::PopSessionResult(
+    ::grpc::ServerContext* context, const ::nighthawk::client::PopSessionResultRequest* request,
+    ::nighthawk::client::PopSessionResultResponse* response) {
   (void)context;
   (void)request;
   (void)response;

@@ -121,25 +121,26 @@ public:
     }
     //
     // Blocking call that gets the results of a session initiated via QueueSession.
-    virtual ::grpc::Status PopSessionResult(::grpc::ClientContext* context,
-                                            const ::nighthawk::client::PopSessionRequest& request,
-                                            ::nighthawk::client::PopSessionResponse* response) = 0;
+    virtual ::grpc::Status
+    PopSessionResult(::grpc::ClientContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest& request,
+                     ::nighthawk::client::PopSessionResultResponse* response) = 0;
     std::unique_ptr<
-        ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResponse>>
+        ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResultResponse>>
     AsyncPopSessionResult(::grpc::ClientContext* context,
-                          const ::nighthawk::client::PopSessionRequest& request,
+                          const ::nighthawk::client::PopSessionResultRequest& request,
                           ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<
-          ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResponse>>(
+      return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
+          ::nighthawk::client::PopSessionResultResponse>>(
           AsyncPopSessionResultRaw(context, request, cq));
     }
     std::unique_ptr<
-        ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResponse>>
+        ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResultResponse>>
     PrepareAsyncPopSessionResult(::grpc::ClientContext* context,
-                                 const ::nighthawk::client::PopSessionRequest& request,
+                                 const ::nighthawk::client::PopSessionResultRequest& request,
                                  ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<
-          ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResponse>>(
+      return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
+          ::nighthawk::client::PopSessionResultResponse>>(
           PrepareAsyncPopSessionResultRaw(context, request, cq));
     }
     //
@@ -210,12 +211,12 @@ public:
       //
       // Blocking call that gets the results of a session initiated via QueueSession.
       virtual void PopSessionResult(::grpc::ClientContext* context,
-                                    const ::nighthawk::client::PopSessionRequest* request,
-                                    ::nighthawk::client::PopSessionResponse* response,
+                                    const ::nighthawk::client::PopSessionResultRequest* request,
+                                    ::nighthawk::client::PopSessionResultResponse* response,
                                     std::function<void(::grpc::Status)>) = 0;
       virtual void PopSessionResult(::grpc::ClientContext* context,
                                     const ::grpc::ByteBuffer* request,
-                                    ::nighthawk::client::PopSessionResponse* response,
+                                    ::nighthawk::client::PopSessionResultResponse* response,
                                     std::function<void(::grpc::Status)>) = 0;
       //
       // Requests the service to shut itself down.
@@ -258,13 +259,15 @@ public:
     PrepareAsyncIsSessionFinishedRaw(::grpc::ClientContext* context,
                                      const ::nighthawk::client::IsSessionFinishedRequest& request,
                                      ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResponse>*
+    virtual ::grpc::ClientAsyncResponseReaderInterface<
+        ::nighthawk::client::PopSessionResultResponse>*
     AsyncPopSessionResultRaw(::grpc::ClientContext* context,
-                             const ::nighthawk::client::PopSessionRequest& request,
+                             const ::nighthawk::client::PopSessionResultRequest& request,
                              ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::PopSessionResponse>*
+    virtual ::grpc::ClientAsyncResponseReaderInterface<
+        ::nighthawk::client::PopSessionResultResponse>*
     PrepareAsyncPopSessionResultRaw(::grpc::ClientContext* context,
-                                    const ::nighthawk::client::PopSessionRequest& request,
+                                    const ::nighthawk::client::PopSessionResultRequest& request,
                                     ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::ShutdownResponse>*
     AsyncShutdownRaw(::grpc::ClientContext* context,
@@ -341,23 +344,26 @@ public:
           ::grpc::ClientAsyncResponseReader<::nighthawk::client::IsSessionFinishedResponse>>(
           PrepareAsyncIsSessionFinishedRaw(context, request, cq));
     }
-    ::grpc::Status PopSessionResult(::grpc::ClientContext* context,
-                                    const ::nighthawk::client::PopSessionRequest& request,
-                                    ::nighthawk::client::PopSessionResponse* response) override;
-    std::unique_ptr<::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>>
+    ::grpc::Status
+    PopSessionResult(::grpc::ClientContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest& request,
+                     ::nighthawk::client::PopSessionResultResponse* response) override;
+    std::unique_ptr<
+        ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>>
     AsyncPopSessionResult(::grpc::ClientContext* context,
-                          const ::nighthawk::client::PopSessionRequest& request,
+                          const ::nighthawk::client::PopSessionResultRequest& request,
                           ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<
-          ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>>(
+          ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>>(
           AsyncPopSessionResultRaw(context, request, cq));
     }
-    std::unique_ptr<::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>>
+    std::unique_ptr<
+        ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>>
     PrepareAsyncPopSessionResult(::grpc::ClientContext* context,
-                                 const ::nighthawk::client::PopSessionRequest& request,
+                                 const ::nighthawk::client::PopSessionResultRequest& request,
                                  ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<
-          ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>>(
+          ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>>(
           PrepareAsyncPopSessionResultRaw(context, request, cq));
     }
     ::grpc::Status Shutdown(::grpc::ClientContext* context,
@@ -403,11 +409,11 @@ public:
                              ::nighthawk::client::IsSessionFinishedResponse* response,
                              std::function<void(::grpc::Status)>) override;
       void PopSessionResult(::grpc::ClientContext* context,
-                            const ::nighthawk::client::PopSessionRequest* request,
-                            ::nighthawk::client::PopSessionResponse* response,
+                            const ::nighthawk::client::PopSessionResultRequest* request,
+                            ::nighthawk::client::PopSessionResultResponse* response,
                             std::function<void(::grpc::Status)>) override;
       void PopSessionResult(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request,
-                            ::nighthawk::client::PopSessionResponse* response,
+                            ::nighthawk::client::PopSessionResultResponse* response,
                             std::function<void(::grpc::Status)>) override;
       void Shutdown(::grpc::ClientContext* context,
                     const ::nighthawk::client::ShutdownRequest* request,
@@ -456,13 +462,13 @@ public:
     PrepareAsyncIsSessionFinishedRaw(::grpc::ClientContext* context,
                                      const ::nighthawk::client::IsSessionFinishedRequest& request,
                                      ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>*
+    ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>*
     AsyncPopSessionResultRaw(::grpc::ClientContext* context,
-                             const ::nighthawk::client::PopSessionRequest& request,
+                             const ::nighthawk::client::PopSessionResultRequest& request,
                              ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResponse>*
+    ::grpc::ClientAsyncResponseReader<::nighthawk::client::PopSessionResultResponse>*
     PrepareAsyncPopSessionResultRaw(::grpc::ClientContext* context,
-                                    const ::nighthawk::client::PopSessionRequest& request,
+                                    const ::nighthawk::client::PopSessionResultRequest& request,
                                     ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader<::nighthawk::client::ShutdownResponse>*
     AsyncShutdownRaw(::grpc::ClientContext* context,
@@ -514,9 +520,10 @@ public:
                       ::nighthawk::client::IsSessionFinishedResponse* response);
     //
     // Blocking call that gets the results of a session initiated via QueueSession.
-    virtual ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
-                                            const ::nighthawk::client::PopSessionRequest* request,
-                                            ::nighthawk::client::PopSessionResponse* response);
+    virtual ::grpc::Status
+    PopSessionResult(::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response);
     //
     // Requests the service to shut itself down.
     virtual ::grpc::Status Shutdown(::grpc::ServerContext* context,
@@ -603,15 +610,16 @@ public:
     WithAsyncMethod_PopSessionResult() { ::grpc::Service::MarkMethodAsync(3); }
     ~WithAsyncMethod_PopSessionResult() override { BaseClassMustBeDerivedFromService(this); }
     // disable synchronous version of this method
-    ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
-                                    const ::nighthawk::client::PopSessionRequest* request,
-                                    ::nighthawk::client::PopSessionResponse* response) override {
+    ::grpc::Status
+    PopSessionResult(::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestPopSessionResult(
-        ::grpc::ServerContext* context, ::nighthawk::client::PopSessionRequest* request,
-        ::grpc::ServerAsyncResponseWriter<::nighthawk::client::PopSessionResponse>* response,
+        ::grpc::ServerContext* context, ::nighthawk::client::PopSessionResultRequest* request,
+        ::grpc::ServerAsyncResponseWriter<::nighthawk::client::PopSessionResultResponse>* response,
         ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq,
         void* tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq,
@@ -758,28 +766,30 @@ public:
   public:
     ExperimentalWithCallbackMethod_PopSessionResult() {
       ::grpc::Service::experimental().MarkMethodCallback(
-          3, new ::grpc::internal::CallbackUnaryHandler<::nighthawk::client::PopSessionRequest,
-                                                        ::nighthawk::client::PopSessionResponse>(
-                 [this](::grpc::ServerContext* context,
-                        const ::nighthawk::client::PopSessionRequest* request,
-                        ::nighthawk::client::PopSessionResponse* response,
-                        ::grpc::experimental::ServerCallbackRpcController* controller) {
-                   return this->PopSessionResult(context, request, response, controller);
-                 }));
+          3,
+          new ::grpc::internal::CallbackUnaryHandler<::nighthawk::client::PopSessionResultRequest,
+                                                     ::nighthawk::client::PopSessionResultResponse>(
+              [this](::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response,
+                     ::grpc::experimental::ServerCallbackRpcController* controller) {
+                return this->PopSessionResult(context, request, response, controller);
+              }));
     }
     ~ExperimentalWithCallbackMethod_PopSessionResult() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
-                                    const ::nighthawk::client::PopSessionRequest* request,
-                                    ::nighthawk::client::PopSessionResponse* response) override {
+    ::grpc::Status
+    PopSessionResult(::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual void PopSessionResult(::grpc::ServerContext* context,
-                                  const ::nighthawk::client::PopSessionRequest* request,
-                                  ::nighthawk::client::PopSessionResponse* response,
+                                  const ::nighthawk::client::PopSessionResultRequest* request,
+                                  ::nighthawk::client::PopSessionResultResponse* response,
                                   ::grpc::experimental::ServerCallbackRpcController* controller) {
       controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, ""));
     }
@@ -876,9 +886,10 @@ public:
     WithGenericMethod_PopSessionResult() { ::grpc::Service::MarkMethodGeneric(3); }
     ~WithGenericMethod_PopSessionResult() override { BaseClassMustBeDerivedFromService(this); }
     // disable synchronous version of this method
-    ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
-                                    const ::nighthawk::client::PopSessionRequest* request,
-                                    ::nighthawk::client::PopSessionResponse* response) override {
+    ::grpc::Status
+    PopSessionResult(::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -974,9 +985,10 @@ public:
     WithRawMethod_PopSessionResult() { ::grpc::Service::MarkMethodRaw(3); }
     ~WithRawMethod_PopSessionResult() override { BaseClassMustBeDerivedFromService(this); }
     // disable synchronous version of this method
-    ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
-                                    const ::nighthawk::client::PopSessionRequest* request,
-                                    ::nighthawk::client::PopSessionResponse* response) override {
+    ::grpc::Status
+    PopSessionResult(::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1124,9 +1136,10 @@ public:
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
-                                    const ::nighthawk::client::PopSessionRequest* request,
-                                    ::nighthawk::client::PopSessionResponse* response) override {
+    ::grpc::Status
+    PopSessionResult(::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1262,28 +1275,30 @@ public:
   public:
     WithStreamedUnaryMethod_PopSessionResult() {
       ::grpc::Service::MarkMethodStreamed(
-          3, new ::grpc::internal::StreamedUnaryHandler<::nighthawk::client::PopSessionRequest,
-                                                        ::nighthawk::client::PopSessionResponse>(
-                 std::bind(
-                     &WithStreamedUnaryMethod_PopSessionResult<BaseClass>::StreamedPopSessionResult,
-                     this, std::placeholders::_1, std::placeholders::_2)));
+          3,
+          new ::grpc::internal::StreamedUnaryHandler<::nighthawk::client::PopSessionResultRequest,
+                                                     ::nighthawk::client::PopSessionResultResponse>(
+              std::bind(
+                  &WithStreamedUnaryMethod_PopSessionResult<BaseClass>::StreamedPopSessionResult,
+                  this, std::placeholders::_1, std::placeholders::_2)));
     }
     ~WithStreamedUnaryMethod_PopSessionResult() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status PopSessionResult(::grpc::ServerContext* context,
-                                    const ::nighthawk::client::PopSessionRequest* request,
-                                    ::nighthawk::client::PopSessionResponse* response) override {
+    ::grpc::Status
+    PopSessionResult(::grpc::ServerContext* context,
+                     const ::nighthawk::client::PopSessionResultRequest* request,
+                     ::nighthawk::client::PopSessionResultResponse* response) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status
-    StreamedPopSessionResult(::grpc::ServerContext* context,
-                             ::grpc::ServerUnaryStreamer<::nighthawk::client::PopSessionRequest,
-                                                         ::nighthawk::client::PopSessionResponse>*
-                                 server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedPopSessionResult(
+        ::grpc::ServerContext* context,
+        ::grpc::ServerUnaryStreamer<::nighthawk::client::PopSessionResultRequest,
+                                    ::nighthawk::client::PopSessionResultResponse>*
+            server_unary_streamer) = 0;
   };
   template <class BaseClass> class WithStreamedUnaryMethod_Shutdown : public BaseClass {
   private:
