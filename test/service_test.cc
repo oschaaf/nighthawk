@@ -53,9 +53,13 @@ INSTANTIATE_TEST_SUITE_P(IpVersions, ServiceTest,
 
 TEST_P(ServiceTest, QueueSessionBasic) {
   nighthawk::client::NighthawkService::Stub stub(channel_);
-  nighthawk::client::StartRequest request;
-  nighthawk::client::StartResponse response;
-  grpc::Status status = stub.Start(&context_, request, &response);
+  nighthawk::client::SendCommandRequest request;
+  nighthawk::client::SendCommandResponse response;
+
+  auto r = stub.SendCommand(&context_);
+  r->WriteLast(request, {});
+  ASSERT_TRUE(r->Read(&response));
+  auto status = r->Finish();
   std::cerr << response.DebugString();
   EXPECT_TRUE(status.ok());
 }

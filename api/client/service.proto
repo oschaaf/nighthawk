@@ -5,27 +5,18 @@ package nighthawk.client;
 import "api/client/options.proto";
 import "api/client/output.proto";
 
-message StartRequest {
+message SendCommandRequest {
+  enum CommandType {
+    START = 0;
+    UPDATE = 1;
+    CANCEL = 2;
+  }
   CommandLineOptions options = 1;
 }
 
-message StartResponse {
-}
-
-message UpdateRequest {
-  // We support a subset of the options from CommandLineOptions for on-the-fly changes to running tests. 
-  // Any option names listed here should match 1:1 with the ones in CommandLineOptions.
-  uint64 requests_per_second = 1;
-}
-
-message UpdateResponse {
-}
-
-message StopRequest {
-}
-
-message StopResponse {
-  Output output = 1;
+message SendCommandResponse {
+  repeated Output output = 1;
+  bool exit_code = 2;
 }
 
 service NighthawkService {
@@ -33,9 +24,6 @@ service NighthawkService {
   Accepts a new configuration, and returns a string containing a benchmark session-id.
   The session will be queued up and run after any other session running/queued up earlier.
   */
-  rpc Start(StartRequest) returns (StartResponse) {
-  }
-
   /*
   Accepts a configuration, and applies it to the running session.
   Returns a Session.
@@ -47,12 +35,6 @@ service NighthawkService {
   connection pool). How to verify the diff in changes in a generic and easy way remains to be
   figured out.
   */
-  rpc Update(UpdateRequest) returns (UpdateResponse) {
-  }
-
-  /*
-  Blocking call that gets the results of a session initiated via Start.
-  */
-  rpc Stop(StopRequest) returns (StopResponse) {
+  rpc SendCommand(stream SendCommandRequest) returns (stream SendCommandResponse) {
   }
 }

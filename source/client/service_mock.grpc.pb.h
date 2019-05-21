@@ -13,39 +13,18 @@ namespace client {
 
 class MockNighthawkServiceStub : public NighthawkService::StubInterface {
 public:
-  MOCK_METHOD3(Start, ::grpc::Status(::grpc::ClientContext* context,
-                                     const ::nighthawk::client::StartRequest& request,
-                                     ::nighthawk::client::StartResponse* response));
-  MOCK_METHOD3(AsyncStartRaw,
-               ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::StartResponse>*(
-                   ::grpc::ClientContext* context, const ::nighthawk::client::StartRequest& request,
-                   ::grpc::CompletionQueue* cq));
-  MOCK_METHOD3(PrepareAsyncStartRaw,
-               ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::StartResponse>*(
-                   ::grpc::ClientContext* context, const ::nighthawk::client::StartRequest& request,
-                   ::grpc::CompletionQueue* cq));
-  MOCK_METHOD3(Update, ::grpc::Status(::grpc::ClientContext* context,
-                                      const ::nighthawk::client::UpdateRequest& request,
-                                      ::nighthawk::client::UpdateResponse* response));
-  MOCK_METHOD3(AsyncUpdateRaw,
-               ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::UpdateResponse>*(
-                   ::grpc::ClientContext* context,
-                   const ::nighthawk::client::UpdateRequest& request, ::grpc::CompletionQueue* cq));
-  MOCK_METHOD3(PrepareAsyncUpdateRaw,
-               ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::UpdateResponse>*(
-                   ::grpc::ClientContext* context,
-                   const ::nighthawk::client::UpdateRequest& request, ::grpc::CompletionQueue* cq));
-  MOCK_METHOD3(Stop, ::grpc::Status(::grpc::ClientContext* context,
-                                    const ::nighthawk::client::StopRequest& request,
-                                    ::nighthawk::client::StopResponse* response));
-  MOCK_METHOD3(AsyncStopRaw,
-               ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::StopResponse>*(
-                   ::grpc::ClientContext* context, const ::nighthawk::client::StopRequest& request,
-                   ::grpc::CompletionQueue* cq));
-  MOCK_METHOD3(PrepareAsyncStopRaw,
-               ::grpc::ClientAsyncResponseReaderInterface<::nighthawk::client::StopResponse>*(
-                   ::grpc::ClientContext* context, const ::nighthawk::client::StopRequest& request,
-                   ::grpc::CompletionQueue* cq));
+  MOCK_METHOD1(SendCommandRaw,
+               ::grpc::ClientReaderWriterInterface<::nighthawk::client::SendCommandRequest,
+                                                   ::nighthawk::client::SendCommandResponse>*(
+                   ::grpc::ClientContext* context));
+  MOCK_METHOD3(AsyncSendCommandRaw,
+               ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest,
+                                                        ::nighthawk::client::SendCommandResponse>*(
+                   ::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag));
+  MOCK_METHOD2(PrepareAsyncSendCommandRaw,
+               ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest,
+                                                        ::nighthawk::client::SendCommandResponse>*(
+                   ::grpc::ClientContext* context, ::grpc::CompletionQueue* cq));
 };
 
 } // namespace client
