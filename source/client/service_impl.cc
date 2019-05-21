@@ -4,9 +4,25 @@
 #include <grpc++/grpc++.h>
 
 #include "client/client.h"
+#include "client/options_impl.h"
 
 namespace Nighthawk {
 namespace Client {
+/*
+Accepts a new configuration, and returns a string containing a benchmark session-id.
+The session will be queued up and run after any other session running/queued up earlier.
+*/
+/*
+Accepts a configuration, and applies it to the running session.
+Returns a Session.
+
+An explicit flag will be passed in CommandLineOptions to indicate if re-using the existing
+connection-pool is intended. Nighthawk will verify that the requested changes support that, and
+return an error if that is not possible. (E.g. changing the QPS will be implemented by swapping
+the LinearRateLimiter, but requesting preference of new ssl cipers will imply creating a new
+connection pool). How to verify the diff in changes in a generic and easy way remains to be
+figured out.
+*/
 
 ::grpc::Status ServiceImpl::SendCommand(
     ::grpc::ServerContext* context,
@@ -17,31 +33,16 @@ namespace Client {
   nighthawk::client::SendCommandResponse response;
 
   while (stream->Read(&request)) {
-    // nighthawk::client::CommandLineOptions options = request->options();
-    // TODO(oschaaf): translate CommandLineOptions to OptionsImpl.
-    // Main main(options);
-
-    std::vector<const char*> argv;
-    argv.push_back("foo");
-    argv.push_back("--concurrency");
-    argv.push_back("1");
-    argv.push_back("--duration");
-    argv.push_back("1");
-    argv.push_back("--rps");
-    argv.push_back("1");
-    argv.push_back("--verbosity");
-    argv.push_back("error");
-    std::string url = "http://127.0.0.1:10000/";
-    argv.push_back(url.c_str());
-
-    Main program(argv.size(), argv.data());
-    response.set_exit_code(program.run() ? 0 : -1);
+    OptionsPtr options = std::make_unique<OptionsImpl>(request.options());
+    std::cerr << "Server read " << request.options().DebugString() << std::endl;
+    Main program(std::move(options));
+    response.set_success(program.run() == 0);
     if (!stream->Write(response)) {
+      std::cerr << "Cancelled?";
       return grpc::Status::CANCELLED;
     }
-    std::cerr << "Server read" << std::endl;
   }
-
+  std::cerr << "Server side done";
   return grpc::Status::OK;
 }
 

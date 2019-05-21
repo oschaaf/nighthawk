@@ -38,16 +38,6 @@ public:
   class StubInterface {
   public:
     virtual ~StubInterface() {}
-    //
-    // Accepts a configuration, and applies it to the running session.
-    // Returns a Session.
-    //
-    // An explicit flag will be passed in CommandLineOptions to indicate if re-using the existing
-    // connection-pool is intended. Nighthawk will verify that the requested changes support that,
-    // and return an error if that is not possible. (E.g. changing the QPS will be implemented by
-    // swapping the LinearRateLimiter, but requesting preference of new ssl cipers will imply
-    // creating a new connection pool). How to verify the diff in changes in a generic and easy way
-    // remains to be figured out.
     std::unique_ptr<::grpc::ClientReaderWriterInterface<::nighthawk::client::SendCommandRequest,
                                                         ::nighthawk::client::SendCommandResponse>>
     SendCommand(::grpc::ClientContext* context) {
@@ -72,16 +62,6 @@ public:
     class experimental_async_interface {
     public:
       virtual ~experimental_async_interface() {}
-      //
-      // Accepts a configuration, and applies it to the running session.
-      // Returns a Session.
-      //
-      // An explicit flag will be passed in CommandLineOptions to indicate if re-using the existing
-      // connection-pool is intended. Nighthawk will verify that the requested changes support that,
-      // and return an error if that is not possible. (E.g. changing the QPS will be implemented by
-      // swapping the LinearRateLimiter, but requesting preference of new ssl cipers will imply
-      // creating a new connection pool). How to verify the diff in changes in a generic and easy
-      // way remains to be figured out.
       virtual void
       SendCommand(::grpc::ClientContext* context,
                   ::grpc::experimental::ClientBidiReactor<::nighthawk::client::SendCommandRequest,
@@ -168,16 +148,6 @@ public:
   public:
     Service();
     virtual ~Service();
-    //
-    // Accepts a configuration, and applies it to the running session.
-    // Returns a Session.
-    //
-    // An explicit flag will be passed in CommandLineOptions to indicate if re-using the existing
-    // connection-pool is intended. Nighthawk will verify that the requested changes support that,
-    // and return an error if that is not possible. (E.g. changing the QPS will be implemented by
-    // swapping the LinearRateLimiter, but requesting preference of new ssl cipers will imply
-    // creating a new connection pool). How to verify the diff in changes in a generic and easy way
-    // remains to be figured out.
     virtual ::grpc::Status
     SendCommand(::grpc::ServerContext* context,
                 ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
@@ -310,9 +280,6 @@ public:
   typedef Service SplitStreamedService;
   typedef Service StreamedService;
 };
-//
-// Accepts a new configuration, and returns a string containing a benchmark session-id.
-// The session will be queued up and run after any other session running/queued up earlier.
 
 } // namespace client
 } // namespace nighthawk

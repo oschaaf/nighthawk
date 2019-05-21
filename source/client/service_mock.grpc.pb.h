@@ -2,8 +2,8 @@
 // If you make any local change, they will be lost.
 // source: api/client/service.proto
 
-#include "api/client/service.grpc.pb.h"
 #include "api/client/service.pb.h"
+#include "client/service.grpc.pb.h"
 
 #include <gmock/gmock.h>
 #include <grpcpp/impl/codegen/async_stream.h>

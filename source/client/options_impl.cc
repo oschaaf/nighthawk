@@ -175,6 +175,13 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   }
 }
 
+OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options)
+    : requests_per_second_(options.requests_per_second()), connections_(options.connections()),
+      duration_(options.duration().seconds()), timeout_(options.timeout().seconds()),
+      uri_(options.uri()), h2_(options.h2()), concurrency_(options.concurrency()),
+      verbosity_(options.verbosity()), output_format_(options.output_format()),
+      prefetch_connections_(options.prefetch_connections()) {}
+
 CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
   CommandLineOptionsPtr command_line_options =
       std::make_unique<nighthawk::client::CommandLineOptions>();

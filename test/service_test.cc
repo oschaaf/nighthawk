@@ -57,8 +57,13 @@ TEST_P(ServiceTest, QueueSessionBasic) {
   nighthawk::client::SendCommandResponse response;
 
   auto r = stub.SendCommand(&context_);
+  auto options = request.mutable_options();
+  options->set_uri("127.0.0.1:10000");
+  options->set_connections(2);
+  options->mutable_duration()->set_seconds(2);
+  options->set_output_format("human");
   r->WriteLast(request, {});
-  ASSERT_TRUE(r->Read(&response));
+  EXPECT_TRUE(r->Read(&response));
   auto status = r->Finish();
   std::cerr << response.DebugString();
   EXPECT_TRUE(status.ok());

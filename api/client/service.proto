@@ -7,34 +7,20 @@ import "api/client/output.proto";
 
 message SendCommandRequest {
   enum CommandType {
-    START = 0;
-    UPDATE = 1;
-    CANCEL = 2;
+    kStart = 0;
+    kUpdate = 1;
+    kCancel = 2;
+    UNSET = 3;
   }
   CommandLineOptions options = 1;
 }
 
 message SendCommandResponse {
   repeated Output output = 1;
-  bool exit_code = 2;
+  bool success = 2;
 }
 
 service NighthawkService {
-  /*
-  Accepts a new configuration, and returns a string containing a benchmark session-id.
-  The session will be queued up and run after any other session running/queued up earlier.
-  */
-  /*
-  Accepts a configuration, and applies it to the running session.
-  Returns a Session.
-
-  An explicit flag will be passed in CommandLineOptions to indicate if re-using the existing
-  connection-pool is intended. Nighthawk will verify that the requested changes support that, and
-  return an error if that is not possible. (E.g. changing the QPS will be implemented by swapping
-  the LinearRateLimiter, but requesting preference of new ssl cipers will imply creating a new
-  connection pool). How to verify the diff in changes in a generic and easy way remains to be
-  figured out.
-  */
   rpc SendCommand(stream SendCommandRequest) returns (stream SendCommandResponse) {
   }
 }
