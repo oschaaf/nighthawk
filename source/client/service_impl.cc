@@ -6,7 +6,7 @@
 
 namespace Nighthawk {
 namespace Client {
-
+/*
 ::grpc::Status ServiceImpl::QueueSession(::grpc::ServerContext* context,
                                          const ::nighthawk::client::QueueSessionRequest* request,
                                          ::nighthawk::client::QueueSessionResponse* response) {
@@ -53,6 +53,7 @@ ServiceImpl::PopSessionResult(::grpc::ServerContext* context,
                               ::nighthawk::client::PopSessionResultResponse* response) {
   return grpc::Status::OK;
 }
+*/
 
 } // namespace Client
 } // namespace Nighthawk

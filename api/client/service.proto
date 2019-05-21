@@ -4,55 +4,28 @@ package nighthawk.client;
 
 import "api/client/options.proto";
 import "api/client/output.proto";
-/*
-option cc_generic_services = true;
-*/
-message Session {
-  string id = 1;
-}
 
-message QueueSessionRequest {
+message StartRequest {
   CommandLineOptions options = 1;
 }
 
-message QueueSessionResponse {
-  Session session = 1;
+message StartResponse {
 }
 
-message ReconfigureSessionRequest {
-  Session session = 1;
-  CommandLineOptions options = 2;
+message UpdateRequest {
+  // We support a subset of the options from CommandLineOptions for on-the-fly changes to running tests. 
+  // Any option names listed here should match 1:1 with the ones in CommandLineOptions.
+  uint64 requests_per_second = 1;
 }
 
-message ReconfigureSessionResponse {
-  /*
-  Succeeded will equal false if changes could not be processed on the fly.
-  Most changes that require pool/upstream reconfiguration will not work in
-  the current approach. But changing the benchmark requests-per-second will.
-  */
-  bool succeeded = 1;
+message UpdateResponse {
 }
 
-message IsSessionFinishedResponse {
-  bool is_finished = 1;
+message StopRequest {
 }
 
-message IsSessionFinishedRequest {
-  Session session = 1;
-}
-
-message PopSessionResultRequest {
-  Session session = 1;
-}
-
-message PopSessionResultResponse {
+message StopResponse {
   Output output = 1;
-}
-
-message ShutdownRequest {
-}
-
-message ShutdownResponse {
 }
 
 service NighthawkService {
@@ -60,7 +33,7 @@ service NighthawkService {
   Accepts a new configuration, and returns a string containing a benchmark session-id.
   The session will be queued up and run after any other session running/queued up earlier.
   */
-  rpc QueueSession(QueueSessionRequest) returns (QueueSessionResponse) {
+  rpc Start(StartRequest) returns (StartResponse) {
   }
 
   /*
@@ -74,25 +47,12 @@ service NighthawkService {
   connection pool). How to verify the diff in changes in a generic and easy way remains to be
   figured out.
   */
-  rpc ReconfigureSession(ReconfigureSessionRequest) returns (ReconfigureSessionResponse) {
+  rpc Update(UpdateRequest) returns (UpdateResponse) {
   }
 
   /*
-  Relatively fast call which can be used to poll if a session initiated via QueueSession
-  has completed.
+  Blocking call that gets the results of a session initiated via Start.
   */
-  rpc IsSessionFinished(IsSessionFinishedRequest) returns (IsSessionFinishedResponse) {
-  }
-
-  /*
-  Blocking call that gets the results of a session initiated via QueueSession.
-  */
-  rpc PopSessionResult(PopSessionResultRequest) returns (PopSessionResultResponse) {
-  }
-
-  /*
-  Requests the service to shut itself down.
-  */
-  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse) {
+  rpc Stop(StopRequest) returns (StopResponse) {
   }
 }
