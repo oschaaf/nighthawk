@@ -15,7 +15,7 @@ namespace Client {
   // nighthawk::client::CommandLineOptions options = request->options();
   // TODO(oschaaf): translate CommandLineOptions to OptionsImpl.
   // Main main(options);
-  /*
+
     std::vector<const char*> argv;
     argv.push_back("foo");
     argv.push_back("--concurrency");
@@ -31,7 +31,7 @@ namespace Client {
 
     Main program(argv.size(), argv.data());
     program.run();
-  */
+
   return grpc::Status::OK;
 }
 
