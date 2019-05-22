@@ -67,10 +67,11 @@ TEST_P(ServiceTest, QueueSessionBasic) {
   options->mutable_request_options()->set_request_method(envoy::api::v2::core::RequestMethod::GET);
   options->set_address_family("v4");
 
+  r->Write(request, {});
+  EXPECT_TRUE(r->Read(&response));
   r->WriteLast(request, {});
   EXPECT_TRUE(r->Read(&response));
   auto status = r->Finish();
-  std::cerr << "response: " << response.DebugString() << std::endl;
   EXPECT_TRUE(status.ok());
 }
 

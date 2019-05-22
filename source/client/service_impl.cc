@@ -28,19 +28,19 @@ figured out.
     ::grpc::ServerContext* context,
     ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
                                ::nighthawk::client::SendCommandRequest>* stream) {
-
   nighthawk::client::SendCommandRequest request;
-  nighthawk::client::SendCommandResponse response;
   Envoy::Thread::MutexBasicLockable log_lock;
-  auto logging_context = std::make_unique<Envoy::Logger::Context>(
-      spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
 
   while (stream->Read(&request)) {
     OptionsPtr options = std::make_unique<OptionsImpl>(request.options());
+    auto logging_context = std::make_unique<Envoy::Logger::Context>(
+        spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
+
     ENVOY_LOG(info, "Server read {}", request.options().DebugString());
     ProcessContextImpl process_context(*options);
     OutputFormatterFactoryImpl output_format_factory(process_context.time_system(), *options);
     auto formatter = output_format_factory.create();
+    nighthawk::client::SendCommandResponse response;
 
     if (process_context.run(*formatter)) {
       response.set_success(true);
