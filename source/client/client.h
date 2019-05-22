@@ -10,11 +10,10 @@
 #include "nighthawk/common/statistic.h"
 
 #include "common/common/logger.h"
+#include "process_context_impl.h"
 
 namespace Nighthawk {
 namespace Client {
-
-class ProcessContext;
 
 class Main : public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
 public:

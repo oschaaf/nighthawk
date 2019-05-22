@@ -61,16 +61,16 @@ TEST_P(ServiceTest, QueueSessionBasic) {
   options->set_uri("http://127.0.0.1:10001/");
   options->set_connections(1);
   options->set_concurrency("1");
-  options->mutable_duration()->set_seconds(5);
+  options->mutable_duration()->set_seconds(3);
   options->set_output_format("human");
-  options->set_requests_per_second(1);
+  options->set_requests_per_second(30);
   options->mutable_request_options()->set_request_method(envoy::api::v2::core::RequestMethod::GET);
   options->set_address_family("v4");
 
   r->WriteLast(request, {});
   EXPECT_TRUE(r->Read(&response));
   auto status = r->Finish();
-  std::cerr << response.DebugString();
+  std::cerr << "response: " << response.DebugString() << std::endl;
   EXPECT_TRUE(status.ok());
 }
 
