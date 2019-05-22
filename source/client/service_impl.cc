@@ -31,20 +31,30 @@ figured out.
 
   nighthawk::client::SendCommandRequest request;
   nighthawk::client::SendCommandResponse response;
+  Envoy::Thread::MutexBasicLockable log_lock;
+  auto logging_context = std::make_unique<Envoy::Logger::Context>(
+      spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
 
   while (stream->Read(&request)) {
     OptionsPtr options = std::make_unique<OptionsImpl>(request.options());
-    std::cerr << "@@ Server read:\n" << request.options().DebugString() << std::endl;
-    Main program(std::move(options));
-    int exit_code = program.run();
-    response.set_success(exit_code == 0);
-    std::cerr << "@@ Finished run." << std::endl;
+    ENVOY_LOG(info, "Server read {}", request.options().DebugString());
+    ProcessContextImpl process_context(*options);
+    OutputFormatterFactoryImpl output_format_factory(process_context.time_system(), *options);
+    auto formatter = output_format_factory.create();
+
+    if (process_context.run(*formatter)) {
+      response.set_success(true);
+      *(response.mutable_output()->Add()) = formatter->toProto();
+    } else {
+      response.set_success(false);
+    }
+
     if (!stream->Write(response)) {
-      std::cerr << "@@ Cancelled?";
+      ENVOY_LOG(info, "Stream write failed");
       return grpc::Status::CANCELLED;
     }
   }
-  std::cerr << "@@ Server side done";
+  ENVOY_LOG(info, "Server side done");
   return grpc::Status::OK;
 }
 
