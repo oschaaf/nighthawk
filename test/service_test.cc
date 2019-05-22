@@ -68,6 +68,8 @@ TEST_P(ServiceTest, QueueSessionBasic) {
   options->set_address_family("v4");
 
   r->Write(request, {});
+  r->Write(request, {});
+  EXPECT_TRUE(r->Read(&response));
   EXPECT_TRUE(r->Read(&response));
   r->WriteLast(request, {});
   EXPECT_TRUE(r->Read(&response));

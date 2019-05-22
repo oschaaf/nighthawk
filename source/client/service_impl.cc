@@ -3,6 +3,8 @@
 
 #include <grpc++/grpc++.h>
 
+#include "common/common/lock_guard.h"
+
 #include "client/client.h"
 #include "client/options_impl.h"
 
@@ -24,38 +26,52 @@ connection pool). How to verify the diff in changes in a generic and easy way re
 figured out.
 */
 
+// TODO(oschaaf): unit-test ProcessContext
+// TODO(oschaaf): unit-test the new OptionImpl constructor that takes a proto arg.
+// TODO(oschaaf): update the comment above, move it to proto
+// TODO(oschaaf): move to async grpc server so we can process updates while running a benchmark
+// TODO(oschaaf): validate options, sensible defaults. consider abusing TCLAP for both
+// TODO(oschaaf): aggregate the logs and forward them in the grpc result-response.
 ::grpc::Status ServiceImpl::SendCommand(
     ::grpc::ServerContext* context,
     ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
                                ::nighthawk::client::SendCommandRequest>* stream) {
-  nighthawk::client::SendCommandRequest request;
-  Envoy::Thread::MutexBasicLockable log_lock;
 
-  while (stream->Read(&request)) {
-    OptionsPtr options = std::make_unique<OptionsImpl>(request.options());
-    auto logging_context = std::make_unique<Envoy::Logger::Context>(
-        spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
+  std::cerr << "incoming sendcommand stream" << std::endl;
 
-    ENVOY_LOG(info, "Server read {}", request.options().DebugString());
-    ProcessContextImpl process_context(*options);
-    OutputFormatterFactoryImpl output_format_factory(process_context.time_system(), *options);
-    auto formatter = output_format_factory.create();
-    nighthawk::client::SendCommandResponse response;
+  try {
+    nighthawk::client::SendCommandRequest request;
+    Envoy::Thread::MutexBasicLockable log_lock;
+    while (stream->Read(&request)) {
+      std::cerr << "incoming sendcommand request" << std::endl;
+      OptionsPtr options = std::make_unique<OptionsImpl>(request.options());
+      auto logging_context = std::make_unique<Envoy::Logger::Context>(
+          spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
 
-    if (process_context.run(*formatter)) {
-      response.set_success(true);
-      *(response.mutable_output()->Add()) = formatter->toProto();
-    } else {
-      response.set_success(false);
+      ENVOY_LOG(info, "Server read {}", request.options().DebugString());
+      ProcessContextImpl process_context(*options);
+      OutputFormatterFactoryImpl output_format_factory(process_context.time_system(), *options);
+      auto formatter = output_format_factory.create();
+      nighthawk::client::SendCommandResponse response;
+
+      if (process_context.run(*formatter)) {
+        response.set_success(true);
+        *(response.mutable_output()->Add()) = formatter->toProto();
+      } else {
+        response.set_success(false);
+      }
+
+      if (!stream->Write(response)) {
+        ENVOY_LOG(info, "Stream write failed");
+        return grpc::Status::CANCELLED;
+      }
     }
-
-    if (!stream->Write(response)) {
-      ENVOY_LOG(info, "Stream write failed");
-      return grpc::Status::CANCELLED;
-    }
+    ENVOY_LOG(info, "Server side done");
+    return grpc::Status::OK;
+  } catch (std::exception& e) {
+    ENVOY_LOG(critical, "Exception: {}", e.what());
+    return grpc::Status::CANCELLED;
   }
-  ENVOY_LOG(info, "Server side done");
-  return grpc::Status::OK;
 }
 
 } // namespace Client
