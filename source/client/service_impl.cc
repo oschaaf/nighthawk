@@ -34,15 +34,17 @@ figured out.
 
   while (stream->Read(&request)) {
     OptionsPtr options = std::make_unique<OptionsImpl>(request.options());
-    std::cerr << "Server read " << request.options().DebugString() << std::endl;
+    std::cerr << "@@ Server read:\n" << request.options().DebugString() << std::endl;
     Main program(std::move(options));
-    response.set_success(program.run() == 0);
+    int exit_code = program.run();
+    response.set_success(exit_code == 0);
+    std::cerr << "@@ Finished run." << std::endl;
     if (!stream->Write(response)) {
-      std::cerr << "Cancelled?";
+      std::cerr << "@@ Cancelled?";
       return grpc::Status::CANCELLED;
     }
   }
-  std::cerr << "Server side done";
+  std::cerr << "@@ Server side done";
   return grpc::Status::OK;
 }
 
