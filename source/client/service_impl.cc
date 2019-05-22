@@ -10,25 +10,9 @@
 
 namespace Nighthawk {
 namespace Client {
-/*
-Accepts a new configuration, and returns a string containing a benchmark session-id.
-The session will be queued up and run after any other session running/queued up earlier.
-*/
-/*
-Accepts a configuration, and applies it to the running session.
-Returns a Session.
-
-An explicit flag will be passed in CommandLineOptions to indicate if re-using the existing
-connection-pool is intended. Nighthawk will verify that the requested changes support that, and
-return an error if that is not possible. (E.g. changing the QPS will be implemented by swapping
-the LinearRateLimiter, but requesting preference of new ssl cipers will imply creating a new
-connection pool). How to verify the diff in changes in a generic and easy way remains to be
-figured out.
-*/
 
 // TODO(oschaaf): unit-test ProcessContext
 // TODO(oschaaf): unit-test the new OptionImpl constructor that takes a proto arg.
-// TODO(oschaaf): update the comment above, move it to proto
 // TODO(oschaaf): move to async grpc server so we can process updates while running a benchmark
 // TODO(oschaaf): validate options, sensible defaults. consider abusing TCLAP for both
 // TODO(oschaaf): aggregate the logs and forward them in the grpc result-response.
@@ -36,14 +20,10 @@ figured out.
     ::grpc::ServerContext* context,
     ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
                                ::nighthawk::client::SendCommandRequest>* stream) {
-
-  std::cerr << "incoming sendcommand stream" << std::endl;
-
   try {
     nighthawk::client::SendCommandRequest request;
     Envoy::Thread::MutexBasicLockable log_lock;
     while (stream->Read(&request)) {
-      std::cerr << "incoming sendcommand request" << std::endl;
       OptionsPtr options = std::make_unique<OptionsImpl>(request.options());
       auto logging_context = std::make_unique<Envoy::Logger::Context>(
           spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
@@ -55,10 +35,9 @@ figured out.
       nighthawk::client::SendCommandResponse response;
 
       if (process_context.run(*formatter)) {
-        response.set_success(true);
         *(response.mutable_output()->Add()) = formatter->toProto();
       } else {
-        response.set_success(false);
+        return grpc::Status(grpc::StatusCode::INTERNAL, "NH failed to execute");
       }
 
       if (!stream->Write(response)) {
@@ -68,9 +47,10 @@ figured out.
     }
     ENVOY_LOG(info, "Server side done");
     return grpc::Status::OK;
+    // TODO(oschaaf): which exceptions do we want to catch?
   } catch (std::exception& e) {
     ENVOY_LOG(critical, "Exception: {}", e.what());
-    return grpc::Status::CANCELLED;
+    return grpc::Status(grpc::StatusCode::INTERNAL, "NH encountered an exception");
   }
 }
 

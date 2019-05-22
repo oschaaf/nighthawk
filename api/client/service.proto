@@ -17,10 +17,15 @@ message SendCommandRequest {
 
 message SendCommandResponse {
   repeated Output output = 1;
-  bool success = 2;
 }
 
 service NighthawkService {
+
+  /*
+  Accepts a SendCommandRequest, which can be used to initiate, update, or cancel a test.
+  Returns a stream of SendCommandResponse objects which will contain results for all successfull
+  NH runs.
+  */
   rpc SendCommand(stream SendCommandRequest) returns (stream SendCommandResponse) {
   }
 }
