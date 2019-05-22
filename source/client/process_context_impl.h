@@ -25,9 +25,14 @@
 namespace Nighthawk {
 namespace Client {
 
-class ProcessContextImpl : public ProcessContext {
+class ProcessContextImpl : public ProcessContext,
+                           public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
 public:
   ProcessContextImpl(const Options& options);
+  ~ProcessContextImpl() override;
+
+  void configureComponentLogLevels(spdlog::level::level_enum level) override;
+  uint32_t determineConcurrency() const override;
 
   Envoy::Thread::ThreadFactory& thread_factory() override;
   Envoy::Filesystem::Instance& file_system() override;
@@ -46,9 +51,16 @@ public:
   std::vector<StatisticPtr>
   vectorizeStatisticPtrMap(const StatisticFactory& statistic_factory,
                            const StatisticPtrMap& statistics) const override;
-  bool runWorkers(OutputFormatter& formatter) override;
+  bool run(OutputFormatter& formatter) override;
 
 private:
+  std::vector<StatisticPtr>
+  mergeWorkerStatistics(const StatisticFactory& statistic_factory,
+                        const std::vector<ClientWorkerPtr>& workers) const;
+
+  std::map<std::string, uint64_t>
+  mergeWorkerCounters(const std::vector<ClientWorkerPtr>& workers) const;
+
   Envoy::Thread::ThreadFactoryImplPosix thread_factory_;
   Envoy::Filesystem::InstanceImplPosix file_system_;
   Envoy::Event::RealTimeSystem time_system_; // NO_CHECK_FORMAT(real_time)

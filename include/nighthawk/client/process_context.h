@@ -26,6 +26,8 @@ class ProcessContext {
 public:
   virtual ~ProcessContext() = default;
 
+  virtual void configureComponentLogLevels(spdlog::level::level_enum level) PURE;
+  virtual uint32_t determineConcurrency() const PURE;
   virtual Envoy::Thread::ThreadFactory& thread_factory() PURE;
   virtual Envoy::Filesystem::Instance& file_system() PURE;
   virtual Envoy::Event::TimeSystem& time_system() PURE;
@@ -45,7 +47,7 @@ public:
   vectorizeStatisticPtrMap(const StatisticFactory& statistic_factory,
                            const StatisticPtrMap& statistics) const PURE;
 
-  virtual bool runWorkers(OutputFormatter& formatter) PURE;
+  virtual bool run(OutputFormatter& formatter) PURE;
 };
 
 } // namespace Client
