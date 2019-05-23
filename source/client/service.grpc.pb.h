@@ -27,261 +27,201 @@ class CompletionQueue;
 class Channel;
 class ServerCompletionQueue;
 class ServerContext;
-} // namespace grpc
+}  // namespace grpc
 
 namespace nighthawk {
 namespace client {
 
 class NighthawkService final {
-public:
-  static constexpr char const* service_full_name() { return "nighthawk.client.NighthawkService"; }
+ public:
+  static constexpr char const* service_full_name() {
+    return "nighthawk.client.NighthawkService";
+  }
   class StubInterface {
-  public:
+   public:
     virtual ~StubInterface() {}
-    std::unique_ptr<::grpc::ClientReaderWriterInterface<::nighthawk::client::SendCommandRequest,
-                                                        ::nighthawk::client::SendCommandResponse>>
-    SendCommand(::grpc::ClientContext* context) {
-      return std::unique_ptr<::grpc::ClientReaderWriterInterface<
-          ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(
-          SendCommandRaw(context));
+    //
+    // Accepts a SendCommandRequest, which can be used to initiate, update, or cancel a test.
+    // Returns a stream of SendCommandResponse objects which will contain results for all successfull
+    // NH runs.
+    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>> SendCommand(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(SendCommandRaw(context));
     }
-    std::unique_ptr<::grpc::ClientAsyncReaderWriterInterface<
-        ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>
-    AsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr<::grpc::ClientAsyncReaderWriterInterface<
-          ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(
-          AsyncSendCommandRaw(context, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>> AsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(AsyncSendCommandRaw(context, cq, tag));
     }
-    std::unique_ptr<::grpc::ClientAsyncReaderWriterInterface<
-        ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>
-    PrepareAsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<::grpc::ClientAsyncReaderWriterInterface<
-          ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(
-          PrepareAsyncSendCommandRaw(context, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>> PrepareAsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(PrepareAsyncSendCommandRaw(context, cq));
     }
     class experimental_async_interface {
-    public:
+     public:
       virtual ~experimental_async_interface() {}
-      virtual void
-      SendCommand(::grpc::ClientContext* context,
-                  ::grpc::experimental::ClientBidiReactor<::nighthawk::client::SendCommandRequest,
-                                                          ::nighthawk::client::SendCommandResponse>*
-                      reactor) = 0;
+      //
+      // Accepts a SendCommandRequest, which can be used to initiate, update, or cancel a test.
+      // Returns a stream of SendCommandResponse objects which will contain results for all successfull
+      // NH runs.
+      virtual void SendCommand(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::nighthawk::client::SendCommandRequest,::nighthawk::client::SendCommandResponse>* reactor) = 0;
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
-
   private:
-    virtual ::grpc::ClientReaderWriterInterface<::nighthawk::client::SendCommandRequest,
-                                                ::nighthawk::client::SendCommandResponse>*
-    SendCommandRaw(::grpc::ClientContext* context) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest,
-                                                     ::nighthawk::client::SendCommandResponse>*
-    AsyncSendCommandRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest,
-                                                     ::nighthawk::client::SendCommandResponse>*
-    PrepareAsyncSendCommandRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>* SendCommandRaw(::grpc::ClientContext* context) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>* AsyncSendCommandRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>* PrepareAsyncSendCommandRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
-  public:
-    Stub(const std::shared_ptr<::grpc::ChannelInterface>& channel);
-    std::unique_ptr<::grpc::ClientReaderWriter<::nighthawk::client::SendCommandRequest,
-                                               ::nighthawk::client::SendCommandResponse>>
-    SendCommand(::grpc::ClientContext* context) {
-      return std::unique_ptr<::grpc::ClientReaderWriter<::nighthawk::client::SendCommandRequest,
-                                                        ::nighthawk::client::SendCommandResponse>>(
-          SendCommandRaw(context));
+   public:
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
+    std::unique_ptr< ::grpc::ClientReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>> SendCommand(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(SendCommandRaw(context));
     }
-    std::unique_ptr<::grpc::ClientAsyncReaderWriter<::nighthawk::client::SendCommandRequest,
-                                                    ::nighthawk::client::SendCommandResponse>>
-    AsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr<::grpc::ClientAsyncReaderWriter<
-          ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(
-          AsyncSendCommandRaw(context, cq, tag));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>> AsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(AsyncSendCommandRaw(context, cq, tag));
     }
-    std::unique_ptr<::grpc::ClientAsyncReaderWriter<::nighthawk::client::SendCommandRequest,
-                                                    ::nighthawk::client::SendCommandResponse>>
-    PrepareAsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<::grpc::ClientAsyncReaderWriter<
-          ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(
-          PrepareAsyncSendCommandRaw(context, cq));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>> PrepareAsyncSendCommand(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>>(PrepareAsyncSendCommandRaw(context, cq));
     }
-    class experimental_async final : public StubInterface::experimental_async_interface {
-    public:
-      void
-      SendCommand(::grpc::ClientContext* context,
-                  ::grpc::experimental::ClientBidiReactor<::nighthawk::client::SendCommandRequest,
-                                                          ::nighthawk::client::SendCommandResponse>*
-                      reactor) override;
-
-    private:
+    class experimental_async final :
+      public StubInterface::experimental_async_interface {
+     public:
+      void SendCommand(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::nighthawk::client::SendCommandRequest,::nighthawk::client::SendCommandResponse>* reactor) override;
+     private:
       friend class Stub;
-      explicit experimental_async(Stub* stub) : stub_(stub) {}
+      explicit experimental_async(Stub* stub): stub_(stub) { }
       Stub* stub() { return stub_; }
       Stub* stub_;
     };
-    class experimental_async_interface* experimental_async() override {
-      return &async_stub_;
-    }
+    class experimental_async_interface* experimental_async() override { return &async_stub_; }
 
-  private:
-    std::shared_ptr<::grpc::ChannelInterface> channel_;
-    class experimental_async async_stub_ {
-      this
-    };
-    ::grpc::ClientReaderWriter<::nighthawk::client::SendCommandRequest,
-                               ::nighthawk::client::SendCommandResponse>*
-    SendCommandRaw(::grpc::ClientContext* context) override;
-    ::grpc::ClientAsyncReaderWriter<::nighthawk::client::SendCommandRequest,
-                                    ::nighthawk::client::SendCommandResponse>*
-    AsyncSendCommandRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq,
-                        void* tag) override;
-    ::grpc::ClientAsyncReaderWriter<::nighthawk::client::SendCommandRequest,
-                                    ::nighthawk::client::SendCommandResponse>*
-    PrepareAsyncSendCommandRaw(::grpc::ClientContext* context,
-                               ::grpc::CompletionQueue* cq) override;
+   private:
+    std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    class experimental_async async_stub_{this};
+    ::grpc::ClientReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>* SendCommandRaw(::grpc::ClientContext* context) override;
+    ::grpc::ClientAsyncReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>* AsyncSendCommandRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReaderWriter< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>* PrepareAsyncSendCommandRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_SendCommand_;
   };
-  static std::unique_ptr<Stub> NewStub(const std::shared_ptr<::grpc::ChannelInterface>& channel,
-                                       const ::grpc::StubOptions& options = ::grpc::StubOptions());
+  static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
   class Service : public ::grpc::Service {
-  public:
+   public:
     Service();
     virtual ~Service();
-    virtual ::grpc::Status
-    SendCommand(::grpc::ServerContext* context,
-                ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
-                                           ::nighthawk::client::SendCommandRequest>* stream);
+    //
+    // Accepts a SendCommandRequest, which can be used to initiate, update, or cancel a test.
+    // Returns a stream of SendCommandResponse objects which will contain results for all successfull
+    // NH runs.
+    virtual ::grpc::Status SendCommand(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::nighthawk::client::SendCommandResponse, ::nighthawk::client::SendCommandRequest>* stream);
   };
-  template <class BaseClass> class WithAsyncMethod_SendCommand : public BaseClass {
-  private:
-    void BaseClassMustBeDerivedFromService(const Service* service) {}
-
-  public:
-    WithAsyncMethod_SendCommand() { ::grpc::Service::MarkMethodAsync(0); }
-    ~WithAsyncMethod_SendCommand() override { BaseClassMustBeDerivedFromService(this); }
+  template <class BaseClass>
+  class WithAsyncMethod_SendCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithAsyncMethod_SendCommand() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_SendCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
     // disable synchronous version of this method
-    ::grpc::Status SendCommand(
-        ::grpc::ServerContext* context,
-        ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
-                                   ::nighthawk::client::SendCommandRequest>* stream) override {
+    ::grpc::Status SendCommand(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::nighthawk::client::SendCommandResponse, ::nighthawk::client::SendCommandRequest>* stream)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestSendCommand(
-        ::grpc::ServerContext* context,
-        ::grpc::ServerAsyncReaderWriter<::nighthawk::client::SendCommandResponse,
-                                        ::nighthawk::client::SendCommandRequest>* stream,
-        ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq,
-        void* tag) {
-      ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq,
-                                                 tag);
+    void RequestSendCommand(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::nighthawk::client::SendCommandResponse, ::nighthawk::client::SendCommandRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_SendCommand<Service> AsyncService;
-  template <class BaseClass> class ExperimentalWithCallbackMethod_SendCommand : public BaseClass {
-  private:
-    void BaseClassMustBeDerivedFromService(const Service* service) {}
-
-  public:
+  typedef WithAsyncMethod_SendCommand<Service > AsyncService;
+  template <class BaseClass>
+  class ExperimentalWithCallbackMethod_SendCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
     ExperimentalWithCallbackMethod_SendCommand() {
-      ::grpc::Service::experimental().MarkMethodCallback(
-          0, new ::grpc::internal::CallbackBidiHandler<::nighthawk::client::SendCommandRequest,
-                                                       ::nighthawk::client::SendCommandResponse>(
-                 [this] { return this->SendCommand(); }));
+      ::grpc::Service::experimental().MarkMethodCallback(0,
+        new ::grpc::internal::CallbackBidiHandler< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>(
+          [this] { return this->SendCommand(); }));
     }
     ~ExperimentalWithCallbackMethod_SendCommand() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status SendCommand(
-        ::grpc::ServerContext* context,
-        ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
-                                   ::nighthawk::client::SendCommandRequest>* stream) override {
+    ::grpc::Status SendCommand(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::nighthawk::client::SendCommandResponse, ::nighthawk::client::SendCommandRequest>* stream)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerBidiReactor<::nighthawk::client::SendCommandRequest,
-                                                    ::nighthawk::client::SendCommandResponse>*
-    SendCommand() {
+    virtual ::grpc::experimental::ServerBidiReactor< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>* SendCommand() {
       return new ::grpc::internal::UnimplementedBidiReactor<
-          ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>;
-    }
+        ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>;}
   };
-  typedef ExperimentalWithCallbackMethod_SendCommand<Service> ExperimentalCallbackService;
-  template <class BaseClass> class WithGenericMethod_SendCommand : public BaseClass {
-  private:
-    void BaseClassMustBeDerivedFromService(const Service* service) {}
-
-  public:
-    WithGenericMethod_SendCommand() { ::grpc::Service::MarkMethodGeneric(0); }
-    ~WithGenericMethod_SendCommand() override { BaseClassMustBeDerivedFromService(this); }
+  typedef ExperimentalWithCallbackMethod_SendCommand<Service > ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_SendCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithGenericMethod_SendCommand() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_SendCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
     // disable synchronous version of this method
-    ::grpc::Status SendCommand(
-        ::grpc::ServerContext* context,
-        ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
-                                   ::nighthawk::client::SendCommandRequest>* stream) override {
+    ::grpc::Status SendCommand(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::nighthawk::client::SendCommandResponse, ::nighthawk::client::SendCommandRequest>* stream)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
-  template <class BaseClass> class WithRawMethod_SendCommand : public BaseClass {
-  private:
-    void BaseClassMustBeDerivedFromService(const Service* service) {}
-
-  public:
-    WithRawMethod_SendCommand() { ::grpc::Service::MarkMethodRaw(0); }
-    ~WithRawMethod_SendCommand() override { BaseClassMustBeDerivedFromService(this); }
+  template <class BaseClass>
+  class WithRawMethod_SendCommand : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithRawMethod_SendCommand() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_SendCommand() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
     // disable synchronous version of this method
-    ::grpc::Status SendCommand(
-        ::grpc::ServerContext* context,
-        ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
-                                   ::nighthawk::client::SendCommandRequest>* stream) override {
+    ::grpc::Status SendCommand(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::nighthawk::client::SendCommandResponse, ::nighthawk::client::SendCommandRequest>* stream)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestSendCommand(
-        ::grpc::ServerContext* context,
-        ::grpc::ServerAsyncReaderWriter<::grpc::ByteBuffer, ::grpc::ByteBuffer>* stream,
-        ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq,
-        void* tag) {
-      ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq,
-                                                 tag);
+    void RequestSendCommand(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_SendCommand : public BaseClass {
-  private:
-    void BaseClassMustBeDerivedFromService(const Service* service) {}
-
-  public:
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
     ExperimentalWithRawCallbackMethod_SendCommand() {
-      ::grpc::Service::experimental().MarkMethodRawCallback(
-          0, new ::grpc::internal::CallbackBidiHandler<::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-                 [this] { return this->SendCommand(); }));
+      ::grpc::Service::experimental().MarkMethodRawCallback(0,
+        new ::grpc::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+          [this] { return this->SendCommand(); }));
     }
     ~ExperimentalWithRawCallbackMethod_SendCommand() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status SendCommand(
-        ::grpc::ServerContext* context,
-        ::grpc::ServerReaderWriter<::nighthawk::client::SendCommandResponse,
-                                   ::nighthawk::client::SendCommandRequest>* stream) override {
+    ::grpc::Status SendCommand(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::nighthawk::client::SendCommandResponse, ::nighthawk::client::SendCommandRequest>* stream)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerBidiReactor<::grpc::ByteBuffer, ::grpc::ByteBuffer>*
-    SendCommand() {
-      return new ::grpc::internal::UnimplementedBidiReactor<::grpc::ByteBuffer, ::grpc::ByteBuffer>;
-    }
+    virtual ::grpc::experimental::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* SendCommand() {
+      return new ::grpc::internal::UnimplementedBidiReactor<
+        ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   typedef Service StreamedUnaryService;
   typedef Service SplitStreamedService;
   typedef Service StreamedService;
 };
 
-} // namespace client
-} // namespace nighthawk
+}  // namespace client
+}  // namespace nighthawk
 
-#endif // GRPC_api_2fclient_2fservice_2eproto__INCLUDED
+
+#endif  // GRPC_api_2fclient_2fservice_2eproto__INCLUDED

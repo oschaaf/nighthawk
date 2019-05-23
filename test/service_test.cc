@@ -67,12 +67,19 @@ TEST_P(ServiceTest, QueueSessionBasic) {
   options->mutable_request_options()->set_request_method(envoy::api::v2::core::RequestMethod::GET);
   options->set_address_family("v4");
 
+  request.set_command_type(
+      nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kStart);
   r->Write(request, {});
+  request.set_command_type(
+      nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kUpdate);
   r->Write(request, {});
   EXPECT_TRUE(r->Read(&response));
   EXPECT_TRUE(r->Read(&response));
+  request.set_command_type(
+      nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kFinish);
   r->WriteLast(request, {});
   EXPECT_TRUE(r->Read(&response));
+  std::cerr << response.DebugString() << std::endl;
   auto status = r->Finish();
   EXPECT_TRUE(status.ok());
 }

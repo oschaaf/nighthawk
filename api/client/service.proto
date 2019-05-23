@@ -10,9 +10,11 @@ message SendCommandRequest {
     kStart = 0;
     kUpdate = 1;
     kCancel = 2;
-    UNSET = 3;
+    kFinish = 3;
+    UNSET = 4;
   }
-  CommandLineOptions options = 1;
+  CommandType command_type = 1;
+  CommandLineOptions options = 2;
 }
 
 message SendCommandResponse {

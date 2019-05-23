@@ -12,20 +12,12 @@ namespace nighthawk {
 namespace client {
 
 class MockNighthawkServiceStub : public NighthawkService::StubInterface {
-public:
-  MOCK_METHOD1(SendCommandRaw,
-               ::grpc::ClientReaderWriterInterface<::nighthawk::client::SendCommandRequest,
-                                                   ::nighthawk::client::SendCommandResponse>*(
-                   ::grpc::ClientContext* context));
-  MOCK_METHOD3(AsyncSendCommandRaw,
-               ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest,
-                                                        ::nighthawk::client::SendCommandResponse>*(
-                   ::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag));
-  MOCK_METHOD2(PrepareAsyncSendCommandRaw,
-               ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest,
-                                                        ::nighthawk::client::SendCommandResponse>*(
-                   ::grpc::ClientContext* context, ::grpc::CompletionQueue* cq));
+ public:
+  MOCK_METHOD1(SendCommandRaw, ::grpc::ClientReaderWriterInterface< ::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>*(::grpc::ClientContext* context));
+  MOCK_METHOD3(AsyncSendCommandRaw, ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>*(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag));
+  MOCK_METHOD2(PrepareAsyncSendCommandRaw, ::grpc::ClientAsyncReaderWriterInterface<::nighthawk::client::SendCommandRequest, ::nighthawk::client::SendCommandResponse>*(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq));
 };
 
-} // namespace client
 } // namespace nighthawk
+} // namespace client
+
