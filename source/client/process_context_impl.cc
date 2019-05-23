@@ -212,7 +212,7 @@ bool ProcessContextImpl::run(OutputFormatter& formatter) {
   // nighthawk::client::
   for (auto& w : workers_) {
     w->waitForCompletion();
-    ok = ok && w->success();
+    ok = ok && w->success() && !cancelled_;
   }
 
   // We don't write per-worker results if we only have a single worker, because the global results
@@ -237,6 +237,13 @@ bool ProcessContextImpl::run(OutputFormatter& formatter) {
                         mergeWorkerCounters(workers));
   }
   return ok;
+}
+
+void ProcessContextImpl::cancel() {
+  cancelled_ = true;
+  for (auto& w : workers_) {
+    w->cancel();
+  }
 }
 
 } // namespace Client

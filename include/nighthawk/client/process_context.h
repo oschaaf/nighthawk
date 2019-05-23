@@ -48,7 +48,10 @@ public:
                            const StatisticPtrMap& statistics) const PURE;
 
   virtual bool run(OutputFormatter& formatter) PURE;
+  virtual void cancel() PURE;
 };
+
+using ProcessContextPtr = std::unique_ptr<ProcessContext>;
 
 } // namespace Client
 } // namespace Nighthawk

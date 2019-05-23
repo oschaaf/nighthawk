@@ -17,18 +17,22 @@ void ServiceImpl::NighthawkRunner(nighthawk::client::SendCommandRequest request)
   auto logging_context = std::make_unique<Envoy::Logger::Context>(
       spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock);
 
-  ENVOY_LOG(info, "Server read {}", request.options().DebugString());
-  ProcessContextImpl process_context(*options);
-  OutputFormatterFactoryImpl output_format_factory(process_context.time_system(), *options);
+  ENVOY_LOG(info, "starting {}", request.options().DebugString());
+  process_context_ = std::make_unique<ProcessContextImpl>(*options);
+  OutputFormatterFactoryImpl output_format_factory(process_context_->time_system(), *options);
   auto formatter = output_format_factory.create();
   nighthawk::client::SendCommandResponse response;
 
-  if (process_context.run(*formatter)) {
+  if (process_context_->run(*formatter)) {
     *(response.mutable_output()->Add()) = formatter->toProto();
-  } /*else {
+  }
+  /*
+  // TODO(oschaaf): communicate this actual failure to run.
+  else {
     return grpc::Status(grpc::StatusCode::INTERNAL, "NH failed to execute");
   }*/
   response_queue_.Push(response);
+  process_context_.reset();
 }
 
 bool ServiceImpl::EmitResponses(
@@ -70,6 +74,10 @@ bool ServiceImpl::EmitResponses(
       case nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kStart:
         if (nighthawk_runner_thread_.joinable()) {
           std::cerr << "Already running, wait for completion, and return an error" << std::endl;
+          // TODO(oschaaf): we must wait until the other thread is actuall running.. before we can
+          // cancel.
+          usleep(100000);
+          process_context_->cancel();
           error = true;
           break;
         }
@@ -93,12 +101,11 @@ bool ServiceImpl::EmitResponses(
   nighthawk_runner_thread_.join();
   std::cerr << "ProcessRequestQueue: stop 2" << std::endl;
 
-  if (!error) {
-    EmitResponses(stream);
-  }
+  EmitResponses(stream);
 
   ENVOY_LOG(info, "Server side done");
   std::cerr << "SendCommand: finish" << std::endl;
+
   return error ? grpc::Status(grpc::StatusCode::INTERNAL, "NH encountered an exception")
                : grpc::Status::OK;
 }

@@ -27,6 +27,7 @@ public:
   StatisticPtrMap statistics() const override;
   Envoy::Stats::Store& store() const override { return *store_; }
   bool success() const override { return success_; }
+  void cancel() override;
 
 protected:
   void work() override;

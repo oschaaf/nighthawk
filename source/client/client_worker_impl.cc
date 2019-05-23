@@ -32,6 +32,12 @@ void ClientWorkerImpl::work() {
   dispatcher_->exit();
 }
 
+void ClientWorkerImpl::cancel() {
+  // dispatcher_->post([this] {
+  sequencer_->cancel();
+  //});
+}
+
 StatisticPtrMap ClientWorkerImpl::statistics() const {
   StatisticPtrMap statistics;
   StatisticPtrMap s1 = benchmark_client_->statistics();

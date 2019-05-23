@@ -6,9 +6,12 @@
 #include <mutex>
 #include <queue>
 
+#include "nighthawk/client/process_context.h"
+
 namespace Nighthawk {
 namespace Client {
 
+// TODO(oschaaf): add tests & move into own file.
 template <class T> class BlockingQueue {
 public:
   void Push(T element) {
@@ -55,6 +58,7 @@ private:
   BlockingQueue<nighthawk::client::SendCommandRequest> request_queue_;
   BlockingQueue<nighthawk::client::SendCommandResponse> response_queue_;
   std::thread nighthawk_runner_thread_;
+  ProcessContextPtr process_context_;
 };
 
 } // namespace Client

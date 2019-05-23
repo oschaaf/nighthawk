@@ -90,7 +90,7 @@ TEST_P(ServiceTest, AttemptDoubleStart) {
   options->set_uri("http://127.0.0.1:10001/");
   options->set_connections(1);
   options->set_concurrency("1");
-  options->mutable_duration()->set_seconds(3);
+  options->mutable_duration()->set_seconds(30);
   options->set_output_format("human");
   options->set_requests_per_second(30);
   options->mutable_request_options()->set_request_method(envoy::api::v2::core::RequestMethod::GET);

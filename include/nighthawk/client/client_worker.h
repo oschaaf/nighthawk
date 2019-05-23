@@ -32,6 +32,11 @@ public:
    * @return bool True iff the worker ran and completed successfully.
    */
   virtual bool success() const PURE;
+
+  /**
+   * Request to cancel any work and punt asap.
+   */
+  virtual void cancel() PURE;
 };
 
 using ClientWorkerPtr = std::unique_ptr<ClientWorker>;

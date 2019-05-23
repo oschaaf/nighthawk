@@ -52,6 +52,7 @@ public:
   vectorizeStatisticPtrMap(const StatisticFactory& statistic_factory,
                            const StatisticPtrMap& statistics) const override;
   bool run(OutputFormatter& formatter) override;
+  void cancel() override;
 
 private:
   std::vector<StatisticPtr>
@@ -74,6 +75,7 @@ private:
   const BenchmarkClientFactoryImpl benchmark_client_factory_;
   const SequencerFactoryImpl sequencer_factory_;
   const Options& options_;
+  bool cancelled_{};
 };
 
 } // namespace Client
