@@ -33,7 +33,7 @@ envoy_cc_test(
         #"output_formatter_test.cc",
         #"platform_util_test.cc",
         #"rate_limiter_test.cc",
-        #"sequencer_test.cc",
+        "sequencer_test.cc",
         "service_test.cc",
         #"statistic_test.cc",
         #"stream_decoder_test.cc",
