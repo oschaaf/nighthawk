@@ -51,7 +51,7 @@ INSTANTIATE_TEST_SUITE_P(IpVersions, ServiceTest,
                          ValuesIn(Envoy::TestEnvironment::getIpVersionsForTest()),
                          Envoy::TestUtility::ipTestParamsToString);
 
-TEST_P(ServiceTest, QueueSessionBasic) {
+TEST_P(ServiceTest, Basic) {
   nighthawk::client::NighthawkService::Stub stub(channel_);
   nighthawk::client::SendCommandRequest request;
   nighthawk::client::SendCommandResponse response;
@@ -73,15 +73,40 @@ TEST_P(ServiceTest, QueueSessionBasic) {
   request.set_command_type(
       nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kUpdate);
   r->Write(request, {});
+  r->WritesDone();
   EXPECT_TRUE(r->Read(&response));
-  EXPECT_TRUE(r->Read(&response));
-  request.set_command_type(
-      nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kFinish);
-  r->WriteLast(request, {});
-  EXPECT_TRUE(r->Read(&response));
-  std::cerr << response.DebugString() << std::endl;
+  // std::cerr << response.DebugString() << std::endl;
   auto status = r->Finish();
   EXPECT_TRUE(status.ok());
+}
+
+TEST_P(ServiceTest, AttemptDoubleStart) {
+  nighthawk::client::NighthawkService::Stub stub(channel_);
+  nighthawk::client::SendCommandRequest request;
+  nighthawk::client::SendCommandResponse response;
+
+  auto r = stub.SendCommand(&context_);
+  auto options = request.mutable_options();
+  options->set_uri("http://127.0.0.1:10001/");
+  options->set_connections(1);
+  options->set_concurrency("1");
+  options->mutable_duration()->set_seconds(3);
+  options->set_output_format("human");
+  options->set_requests_per_second(30);
+  options->mutable_request_options()->set_request_method(envoy::api::v2::core::RequestMethod::GET);
+  options->set_address_family("v4");
+
+  request.set_command_type(
+      nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kStart);
+  EXPECT_TRUE(r->Write(request, {}));
+  request.set_command_type(
+      nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kStart);
+  EXPECT_TRUE(r->Write(request, {}));
+  EXPECT_TRUE(r->WritesDone());
+  EXPECT_FALSE(r->Read(&response));
+  // std::cerr << response.DebugString() << std::endl;
+  auto status = r->Finish();
+  EXPECT_FALSE(status.ok());
 }
 
 } // namespace Client

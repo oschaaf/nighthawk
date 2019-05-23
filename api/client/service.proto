@@ -9,9 +9,7 @@ message SendCommandRequest {
   enum CommandType {
     kStart = 0;
     kUpdate = 1;
-    kCancel = 2;
-    kFinish = 3;
-    UNSET = 4;
+    UNSET = 2;
   }
   CommandType command_type = 1;
   CommandLineOptions options = 2;

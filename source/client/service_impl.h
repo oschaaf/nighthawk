@@ -40,6 +40,7 @@ private:
 
 class ServiceImpl final : public nighthawk::client::NighthawkService::Service,
                           public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
+
 public:
   virtual ::grpc::Status
   SendCommand(::grpc::ServerContext* context,

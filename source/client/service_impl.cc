@@ -45,6 +45,10 @@ bool ServiceImpl::EmitResponses(
   return true;
 }
 
+// TODO(oschaaf): handle ProcessContext.run returning an error correctly.
+// TODO(oschaaf): implement Cancel()/Update() methods on ProcessContext()
+// TODO(oschaaf): create MockProcessContext & use in service_test.cc
+// TODO(oschaaf): add some logging to this.
 // TODO(oschaaf): unit-test BlockingQueue
 // TODO(oschaaf): unit-test ProcessContext
 // TODO(oschaaf): unit-test the new OptionImpl constructor that takes a proto arg.
@@ -57,47 +61,46 @@ bool ServiceImpl::EmitResponses(
                                ::nighthawk::client::SendCommandRequest>* stream) {
 
   std::cerr << "SendCommand: incoming start" << std::endl;
-
+  bool error = false;
   try {
     nighthawk::client::SendCommandRequest request;
-    bool running = true;
-    while (stream->Read(&request)) {
+    while (!error && stream->Read(&request)) {
       std::cerr << "SendCommand: read request" << std::endl;
-
       switch (request.command_type()) {
       case nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kStart:
+        if (nighthawk_runner_thread_.joinable()) {
+          std::cerr << "Already running, wait for completion, and return an error" << std::endl;
+          error = true;
+          break;
+        }
         nighthawk_runner_thread_ = std::thread(&ServiceImpl::NighthawkRunner, this, request);
-        response_queue_.Push(nighthawk::client::SendCommandResponse());
         break;
       case nighthawk::client::SendCommandRequest_CommandType::
-          SendCommandRequest_CommandType_kFinish:
-        std::cerr << "ProcessRequestQueue: stop 1" << std::endl;
-        nighthawk_runner_thread_.join();
-        std::cerr << "ProcessRequestQueue: stop 2" << std::endl;
-        running = false;
+          SendCommandRequest_CommandType_kUpdate:
+        // TODO(oschaaf): implement.
         break;
       default:
-        response_queue_.Push(nighthawk::client::SendCommandResponse());
-        break;
+        NOT_REACHED_GCOVR_EXCL_LINE;
       }
-
-      // TODO(oschaaf): handle return value;
-      EmitResponses(stream);
     }
-
-    if (!running) {
-      // TODO(oschaaf): handle return value;
-      EmitResponses(stream);
-    }
-
-    ENVOY_LOG(info, "Server side done");
-    std::cerr << "SendCommand: finish" << std::endl;
-    return grpc::Status::OK;
     // TODO(oschaaf): which exceptions do we want to catch?
   } catch (std::exception& e) {
     ENVOY_LOG(critical, "Exception: {}", e.what());
-    return grpc::Status(grpc::StatusCode::INTERNAL, "NH encountered an exception");
+    error = true;
   }
+
+  std::cerr << "ProcessRequestQueue: stop 1" << std::endl;
+  nighthawk_runner_thread_.join();
+  std::cerr << "ProcessRequestQueue: stop 2" << std::endl;
+
+  if (!error) {
+    EmitResponses(stream);
+  }
+
+  ENVOY_LOG(info, "Server side done");
+  std::cerr << "SendCommand: finish" << std::endl;
+  return error ? grpc::Status(grpc::StatusCode::INTERNAL, "NH encountered an exception")
+               : grpc::Status::OK;
 }
 
 } // namespace Client
