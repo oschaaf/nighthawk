@@ -103,7 +103,7 @@ TEST_P(ServiceTest, AttemptDoubleStart) {
       nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kStart);
   EXPECT_TRUE(r->Write(request, {}));
   EXPECT_TRUE(r->WritesDone());
-  EXPECT_FALSE(r->Read(&response));
+  EXPECT_TRUE(r->Read(&response));
   // std::cerr << response.DebugString() << std::endl;
   auto status = r->Finish();
   EXPECT_FALSE(status.ok());
