@@ -1,5 +1,7 @@
 #include "client/client_worker_impl.h"
 
+#include "envoy/filesystem/watcher.h"
+
 namespace Nighthawk {
 namespace Client {
 
@@ -22,6 +24,12 @@ void ClientWorkerImpl::simpleWarmup() {
 }
 
 void ClientWorkerImpl::work() {
+  std::cerr << "add watch 1" << std::endl;
+  watcher_ = dispatcher_->createFilesystemWatcher();
+  watcher_->addWatch("/tmp/nighthawk.run", Envoy::Filesystem::Watcher::Events::Modified,
+                     [this](uint32_t) -> void { this->cancel(); });
+
+  std::cerr << "add watch 2" << std::endl;
   benchmark_client_->initialize(*Envoy::Runtime::LoaderSingleton::getExisting());
   simpleWarmup();
   benchmark_client_->setMeasureLatencies(true);

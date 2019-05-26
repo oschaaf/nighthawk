@@ -39,6 +39,7 @@ private:
   bool success_{};
   const BenchmarkClientPtr benchmark_client_;
   const SequencerPtr sequencer_;
+  Envoy::Filesystem::WatcherPtr watcher_;
 };
 
 using ClientWorkerImplPtr = std::unique_ptr<ClientWorkerImpl>;

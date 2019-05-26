@@ -76,6 +76,7 @@ private:
   const SequencerFactoryImpl sequencer_factory_;
   const Options& options_;
   bool cancelled_{};
+  Envoy::Filesystem::FilePtr runlock_;
 };
 
 } // namespace Client

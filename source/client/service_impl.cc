@@ -74,9 +74,6 @@ bool ServiceImpl::EmitResponses(
       case nighthawk::client::SendCommandRequest_CommandType::SendCommandRequest_CommandType_kStart:
         if (nighthawk_runner_thread_.joinable()) {
           std::cerr << "Already running, wait for completion, and return an error" << std::endl;
-          // TODO(oschaaf): we must wait until the other thread is actuall running.. before we can
-          // cancel.
-          usleep(100000);
           process_context_->cancel();
           error = true;
           break;

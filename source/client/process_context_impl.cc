@@ -47,6 +47,9 @@ ProcessContextImpl::ProcessContextImpl(const Options& options)
   Envoy::Event::Libevent::Global::initialize();
   configureComponentLogLevels(spdlog::level::from_str(options_.verbosity()));
   tls_.registerThread(*dispatcher_, true);
+  std::cerr << "create lock" << std::endl;
+  runlock_ = file_system().createFile("/tmp/nighthawk.run");
+  std::cerr << "create lock done" << std::endl;
 }
 
 Envoy::Thread::ThreadFactory& ProcessContextImpl::thread_factory() { return thread_factory_; };
@@ -209,10 +212,10 @@ bool ProcessContextImpl::run(OutputFormatter& formatter) {
   for (auto& w : workers_) {
     w->start();
   }
-  // nighthawk::client::
+
   for (auto& w : workers_) {
     w->waitForCompletion();
-    ok = ok && w->success() && !cancelled_;
+    ok = ok && w->success();
   }
 
   // We don't write per-worker results if we only have a single worker, because the global results
@@ -240,10 +243,10 @@ bool ProcessContextImpl::run(OutputFormatter& formatter) {
 }
 
 void ProcessContextImpl::cancel() {
+  std::cerr << "cancel 1" << std::endl;
+  runlock_->close();
   cancelled_ = true;
-  for (auto& w : workers_) {
-    w->cancel();
-  }
+  std::cerr << "cancel 2" << std::endl;
 }
 
 } // namespace Client

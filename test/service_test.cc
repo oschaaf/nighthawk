@@ -75,6 +75,7 @@ TEST_P(ServiceTest, Basic) {
   r->Write(request, {});
   r->WritesDone();
   EXPECT_TRUE(r->Read(&response));
+
   // std::cerr << response.DebugString() << std::endl;
   auto status = r->Finish();
   EXPECT_TRUE(status.ok());
