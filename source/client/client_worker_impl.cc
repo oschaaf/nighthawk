@@ -1,7 +1,5 @@
 #include "client/client_worker_impl.h"
 
-#include "envoy/filesystem/watcher.h"
-
 namespace Nighthawk {
 namespace Client {
 
