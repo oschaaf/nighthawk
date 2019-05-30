@@ -31,7 +31,7 @@ namespace Client {
 BenchmarkClientHttpImpl::BenchmarkClientHttpImpl(
     Envoy::Api::Api& api, Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Store& store,
     StatisticPtr&& connect_statistic, StatisticPtr&& response_statistic, UriPtr&& uri, bool use_h2,
-    bool prefetch_connections, const envoy::api::v2::Cluster cluster_config)
+    bool prefetch_connections, const envoy::api::v2::Cluster& cluster_config)
     : api_(api), dispatcher_(dispatcher), store_(store),
       scope_(store_.createScope("client.benchmark.")),
       connect_statistic_(std::move(connect_statistic)),
