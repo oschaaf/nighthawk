@@ -31,7 +31,7 @@ public:
   std::string requestMethod() const override { return request_method_; };
   std::vector<std::string> requestHeaders() const override { return request_headers_; };
   uint32_t requestBodySize() const override { return request_body_size_; };
-  virtual const envoy::api::v2::Cluster& clusterConfig() const override { return cluster_config_; };
+  const envoy::api::v2::Cluster& clusterConfig() const override { return cluster_config_; };
 
 private:
   uint64_t requests_per_second_;
