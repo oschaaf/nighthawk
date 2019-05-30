@@ -225,7 +225,7 @@ TEST_P(BenchmarkClientHttpTest, BasicTestH1404) {
   EXPECT_EQ(7, nonZeroValuedCounterCount());
 }
 
-TEST_P(BenchmarkClientHttpsTest, BasicTestHttpsH1) {
+TEST_P(BenchmarkClientHttpsTest, DISABLED_BasicTestHttpsH1) {
   testBasicFunctionality("/lorem-ipsum-status-200", 1, 1, false, 10);
 
   EXPECT_EQ(1, getCounter("ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256"));
@@ -243,7 +243,7 @@ TEST_P(BenchmarkClientHttpsTest, BasicTestHttpsH1) {
   EXPECT_EQ(12, nonZeroValuedCounterCount());
 }
 
-TEST_P(BenchmarkClientHttpsTest, BasicTestH2) {
+TEST_P(BenchmarkClientHttpsTest, DISABLED_BasicTestH2) {
   testBasicFunctionality("/lorem-ipsum-status-200", 1, 1, true, 10);
 
   EXPECT_EQ(1, getCounter("ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256"));
