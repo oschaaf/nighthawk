@@ -56,7 +56,7 @@ public:
     RELEASE_ASSERT(test_server_process_pipe_ != nullptr, "Failed to start test server");
     std::string result;
     std::array<char, 10> buffer;
-    RELEASE_ASSERT(fgets(buffer.data(), buffer.size(), test_server_process_pipe_) != NULL,
+    RELEASE_ASSERT(fgets(buffer.data(), buffer.size(), test_server_process_pipe_) != nullptr,
                    "Failed to read test server output");
     result += buffer.data();
     port_ = std::stoi(result);
