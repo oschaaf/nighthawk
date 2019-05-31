@@ -63,7 +63,7 @@ public:
     pid_ = fork();
     RELEASE_ASSERT(pid_ >= 0, "Fork failed");
 
-    if (pid_ > 0) {
+    if (pid_ == 0) {
       // child process running the integration test server.
       ares_library_init(ARES_LIB_INIT_ALL);
       Envoy::Event::Libevent::Global::initialize();
@@ -81,7 +81,7 @@ public:
       // does that.
       RELEASE_ASSERT(read(fd_port_[0], &port_, sizeof(port_)) == -1, "read failed");
       GTEST_SKIP();
-    } else if (pid_ == 0) {
+    } else if (pid_ > 0) {
       RELEASE_ASSERT(read(fd_port_[0], &port_, sizeof(port_)) > 0, "read failed");
       RELEASE_ASSERT(port_ > 0, "read unexpected port_ value");
       RELEASE_ASSERT(write(fd_confirm_[1], &port_, sizeof(port_)) == sizeof(port_), "write failed");
@@ -89,7 +89,7 @@ public:
   }
 
   void TearDown() override {
-    if (pid_ > 0) {
+    if (pid_ == 0) {
       test_server_.reset();
       fake_upstreams_.clear();
       ares_library_cleanup();
@@ -101,7 +101,7 @@ public:
   }
 
   std::string testUrl() {
-    RELEASE_ASSERT(pid_ == 0, "Unexpected call to testUrl");
+    RELEASE_ASSERT(pid_ > 0, "Unexpected call to testUrl");
     const std::string address = Envoy::Network::Test::getLoopbackAddressUrlString(GetParam());
     return fmt::format("http://{}:{}/", address, port_);
   }
