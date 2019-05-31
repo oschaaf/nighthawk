@@ -5,11 +5,9 @@
 // TODO(oschaaf): clean this and the deps up.
 #include "exe/process_wide.h"
 
-#include "test/integration/http_integration.h"
+#include "envoy/network/address.h"
 #include "test/integration/integration.h"
-#include "test/integration/utility.h"
-#include "test/mocks/event/mocks.h"
-#include "test/mocks/stats/mocks.h"
+
 #include "gtest/gtest.h"
 
 using namespace std::chrono_literals;
@@ -18,7 +16,6 @@ using namespace testing;
 namespace Nighthawk {
 namespace Client {
 
-// TODO(oschaaf): Use Envoy::ProcesWide. Move implementation to .cc
 class HttpTestIntegrationServer : public TestWithParam<Envoy::Network::Address::IpVersion> {
 public:
   HttpTestIntegrationServer(bool https = false) : https_(https) {}
