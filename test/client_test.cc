@@ -22,13 +22,11 @@
 #include "client/options_impl.h"
 
 #include "test/client/utility.h"
-#include "test/integration/http_integration.h"
-#include "test/integration/integration.h"
-#include "test/integration/utility.h"
 #include "test/mocks.h"
 #include "test/mocks/event/mocks.h"
 #include "test/mocks/stats/mocks.h"
 #include "test/server/utility.h"
+#include "test/test_common/test_integration_server.h"
 #include "test/test_common/utility.h"
 
 #include "gtest/gtest.h"
@@ -39,65 +37,32 @@ using namespace testing;
 namespace Nighthawk {
 namespace Client {
 
-class ClientTest : public TestWithParam<Envoy::Network::Address::IpVersion> {
-public:
-  ClientTest() {}
+class HttpClientTest : public HttpTestIntegrationServer {};
+class HttpsClientTest : public HttpTestIntegrationServer {};
 
-  void SetUp() override {
-    Envoy::Event::Libevent::Global::initialize();
-
-    const std::string python = "/usr/bin/python3 ";
-    std::string command =
-        python + TestEnvironment::runfilesPath(
-                     std::string("test/test_data/test_server.py " +
-                                 Envoy::Network::Test::getLoopbackAddressUrlString(GetParam())));
-
-    test_server_process_pipe_ = popen(command.c_str(), "r");
-    RELEASE_ASSERT(test_server_process_pipe_ != nullptr, "Failed to start test server");
-    std::string result;
-    std::array<char, 10> buffer;
-    RELEASE_ASSERT(fgets(buffer.data(), buffer.size(), test_server_process_pipe_) != nullptr,
-                   "Failed to read test server output");
-    result += buffer.data();
-    port_ = std::stoi(result);
-  }
-
-  void TearDown() override {
-    const std::string shutdown_command = fmt::format("curl --insecure {}shutdown", testUrl());
-    std::system(shutdown_command.c_str());
-    RELEASE_ASSERT(pclose(test_server_process_pipe_) == 0, "Test server did not exit cleanly.");
-    ares_library_cleanup();
-  }
-
-  std::string testUrl() {
-    const std::string address = Envoy::Network::Test::getLoopbackAddressUrlString(GetParam());
-    return fmt::format("https://{}:{}/", address, port_);
-  }
-
-  const char* getAddressFamilyOptionString() {
-    auto ip_version = GetParam();
-    RELEASE_ASSERT(ip_version == Envoy::Network::Address::IpVersion::v4 ||
-                       ip_version == Envoy::Network::Address::IpVersion::v6,
-                   "bad ip version");
-    return ip_version == Envoy::Network::Address::IpVersion::v6 ? "v6" : "v4";
-  }
-
-  int port_;
-  FILE* test_server_process_pipe_;
-};
-
-INSTANTIATE_TEST_SUITE_P(IpVersions, ClientTest,
+INSTANTIATE_TEST_SUITE_P(IpVersions, HttpClientTest,
                          ValuesIn(Envoy::TestEnvironment::getIpVersionsForTest()),
                          Envoy::TestUtility::ipTestParamsToString);
 
-TEST_P(ClientTest, NormalRun) {
+TEST_P(HttpClientTest, NormalRun) {
   Main program(Nighthawk::Client::TestUtility::createOptionsImpl(
       fmt::format("foo --address-family {} --duration 2 --rps 10 {}",
                   getAddressFamilyOptionString(), testUrl())));
   EXPECT_TRUE(program.run());
 }
 
-TEST_P(ClientTest, AutoConcurrencyRun) {
+INSTANTIATE_TEST_SUITE_P(IpVersions, HttpsClientTest,
+                         ValuesIn(Envoy::TestEnvironment::getIpVersionsForTest()),
+                         Envoy::TestUtility::ipTestParamsToString);
+
+TEST_P(HttpsClientTest, NormalRun) {
+  Main program(Nighthawk::Client::TestUtility::createOptionsImpl(
+      fmt::format("foo --address-family {} --duration 2 --rps 10 {}",
+                  getAddressFamilyOptionString(), testUrl())));
+  EXPECT_TRUE(program.run());
+}
+
+TEST_P(HttpClientTest, AutoConcurrencyRun) {
   std::vector<const char*> argv;
   argv.push_back("foo");
   argv.push_back("--concurrency");
@@ -117,7 +82,7 @@ TEST_P(ClientTest, AutoConcurrencyRun) {
   EXPECT_TRUE(program.run());
 }
 
-TEST_P(ClientTest, BadRun) {
+TEST_P(HttpClientTest, BadRun) {
   Main program(Nighthawk::Client::TestUtility::createOptionsImpl(
       fmt::format("foo --address-family {} --duration 1 --rps 1 https://unresolveable.host/",
                   getAddressFamilyOptionString())));

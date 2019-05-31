@@ -5,6 +5,7 @@ import socket
 import ssl
 import threading
 from http.server import HTTPServer, SimpleHTTPRequestHandler, HTTPStatus
+import os
 
 
 class HttpTestRequestHandler(SimpleHTTPRequestHandler):
@@ -27,18 +28,25 @@ class HTTPServerV6(HTTPServer):
     address_family = socket.AF_INET6
 
 
-if sys.argv[1] == "127.0.0.1":
-    httpd = HTTPServer((sys.argv[1], 0), HttpTestRequestHandler)
-else:
+if ':' in sys.argv[1]:
     httpd = HTTPServerV6(
         (sys.argv[1].strip('[]'), 0), HttpTestRequestHandler)
+else:
+    httpd = HTTPServer((sys.argv[1], 0), HttpTestRequestHandler)
+
+https = sys.argv[2] == "https"
 
 print(httpd.server_port)
 print("     ")
 sys.stdout.flush()
 
-httpd.socket = ssl.wrap_socket(httpd.socket, server_side=True,  keyfile='external/envoy/test/config/integration/certs/serverkey.pem',
-                               certfile='external/envoy/test/config/integration/certs/servercert.pem')
+if https:
+    keyfile = os.path.join(
+        os.environ["TEST_RUNDIR"], "external/envoy/test/config/integration/certs/serverkey.pem")
+    certfile = os.path.join(
+        os.environ["TEST_RUNDIR"], "external/envoy/test/config/integration/certs/servercert.pem")
+    httpd.socket = ssl.wrap_socket(httpd.socket, server_side=True,  keyfile=keyfile,
+                                   certfile=certfile)
 httpd.serve_forever()
 httpd.socket.close()
 print("exit")
