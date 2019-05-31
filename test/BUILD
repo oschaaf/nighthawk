@@ -46,6 +46,7 @@ envoy_cc_test(
         "test_data/output_formatter.json.gold",
         "test_data/output_formatter.txt.gold",
         "test_data/output_formatter.yaml.gold",
+        "test_data/test_server.py",
         "@envoy//test/config/integration/certs",
         "@envoy//test/test_common:thread_factory_for_test_lib",
     ],

@@ -39,71 +39,39 @@ using namespace testing;
 namespace Nighthawk {
 namespace Client {
 
-class ClientTest : public Envoy::BaseIntegrationTest,
-                   public TestWithParam<Envoy::Network::Address::IpVersion> {
+class ClientTest : public TestWithParam<Envoy::Network::Address::IpVersion> {
 public:
-  ClientTest()
-      : Envoy::BaseIntegrationTest(GetParam(), realTime(), readEnvoyConfiguration()),
-        fd_port_(2, 0), fd_confirm_(2, 0) {}
-
-  std::string readEnvoyConfiguration() {
-    Envoy::Filesystem::InstanceImplPosix file_system;
-    std::string envoy_config = file_system.fileReadToEnd(Envoy::TestEnvironment::runfilesPath(
-        "test/test_data/benchmark_http_client_test_envoy.yaml"));
-    return Envoy::TestEnvironment::substitute(envoy_config);
-  }
+  ClientTest() {}
 
   void SetUp() override {
-    // We fork the integration test fixture into a child process, to avoid conflicting
-    // runtimeloaders as both NH and the integration server want to own that and we can have only
-    // one. The plan is to move to python for this type of testing, so hopefully we can deprecate
-    // this test and it's peculiar setup with fork/pipe soon.
-    RELEASE_ASSERT(pipe(fd_port_.data()) == 0, "Failed to open pipe");
-    RELEASE_ASSERT(pipe(fd_confirm_.data()) == 0, "Failed to open pipe");
-    pid_ = fork();
-    RELEASE_ASSERT(pid_ >= 0, "Fork failed");
+    Envoy::Event::Libevent::Global::initialize();
 
-    if (pid_ == 0) {
-      // child process running the integration test server.
-      ares_library_init(ARES_LIB_INIT_ALL);
-      Envoy::Event::Libevent::Global::initialize();
-      initialize();
-      int port = lookupPort("listener_0");
-      int parent_message;
-      RELEASE_ASSERT(write(fd_port_[1], &port, sizeof(port)) == sizeof(port), "write failed");
-      // The parent process writes to fd_confirm_ when it has read the port. This call to read
-      // blocks until that happens.
-      RELEASE_ASSERT(read(fd_confirm_[0], &parent_message, sizeof(parent_message)) ==
-                         sizeof(parent_message),
-                     "Invalid read size");
-      RELEASE_ASSERT(parent_message == port, "Failed to confirm port");
-      // The parent process closes fd_port_ when the test tears down. The read call blocks until it
-      // does that.
-      RELEASE_ASSERT(read(fd_port_[0], &port_, sizeof(port_)) == -1, "read failed");
-      GTEST_SKIP();
-    } else if (pid_ > 0) {
-      RELEASE_ASSERT(read(fd_port_[0], &port_, sizeof(port_)) > 0, "read failed");
-      RELEASE_ASSERT(port_ > 0, "read unexpected port_ value");
-      RELEASE_ASSERT(write(fd_confirm_[1], &port_, sizeof(port_)) == sizeof(port_), "write failed");
-    }
+    const std::string python = "/usr/bin/python3 ";
+    std::string command =
+        python + TestEnvironment::runfilesPath(
+                     std::string("test/test_data/test_server.py " +
+                                 Envoy::Network::Test::getLoopbackAddressUrlString(GetParam())));
+
+    test_server_process_pipe_ = popen(command.c_str(), "r");
+    RELEASE_ASSERT(test_server_process_pipe_ != nullptr, "Failed to start test server");
+    std::string result;
+    std::array<char, 10> buffer;
+    RELEASE_ASSERT(fgets(buffer.data(), buffer.size(), test_server_process_pipe_) != NULL,
+                   "Failed to read test server output");
+    result += buffer.data();
+    port_ = std::stoi(result);
   }
 
   void TearDown() override {
-    if (pid_ == 0) {
-      test_server_.reset();
-      fake_upstreams_.clear();
-      ares_library_cleanup();
-    }
-    RELEASE_ASSERT(!close(fd_confirm_[0]), "close failed");
-    RELEASE_ASSERT(!close(fd_confirm_[1]), "close failed");
-    RELEASE_ASSERT(!close(fd_port_[0]), "close failed");
-    RELEASE_ASSERT(!close(fd_port_[1]), "close failed");
+    const std::string shutdown_command = fmt::format("curl --insecure {}shutdown", testUrl());
+    std::system(shutdown_command.c_str());
+    RELEASE_ASSERT(pclose(test_server_process_pipe_) == 0, "Test server did not exit cleanly.");
+    ares_library_cleanup();
   }
 
   std::string testUrl() {
-    RELEASE_ASSERT(pid_ > 0, "Unexpected call to testUrl");
     const std::string address = Envoy::Network::Test::getLoopbackAddressUrlString(GetParam());
-    return fmt::format("http://{}:{}/", address, port_);
+    return fmt::format("https://{}:{}/", address, port_);
   }
 
   const char* getAddressFamilyOptionString() {
@@ -115,9 +83,7 @@ public:
   }
 
   int port_;
-  pid_t pid_;
-  std::vector<int> fd_port_;
-  std::vector<int> fd_confirm_;
+  FILE* test_server_process_pipe_;
 };
 
 INSTANTIATE_TEST_SUITE_P(IpVersions, ClientTest,
