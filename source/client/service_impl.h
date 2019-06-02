@@ -1,12 +1,14 @@
-#include "client/service.grpc.pb.h"
-
-#include "common/common/logger.h"
+#pragma once
 
 #include <condition_variable>
 #include <mutex>
 #include <queue>
 
 #include "nighthawk/client/process.h"
+
+#include "common/common/logger.h"
+
+#include "api/client/service.grpc.pb.h"
 
 namespace Nighthawk {
 namespace Client {
