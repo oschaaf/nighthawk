@@ -300,7 +300,9 @@ TEST_P(BenchmarkClientHttpTest, H1ConnectionFailure) {
   EXPECT_EQ(1, getCounter("upstream_cx_total"));
   EXPECT_LE(1, getCounter("upstream_rq_pending_failure_eject"));
   EXPECT_EQ(1, getCounter("upstream_rq_pending_total"));
-  EXPECT_EQ(5, nonZeroValuedCounterCount());
+  EXPECT_EQ(1, getCounter("upstream_cx_destroy_remote"));
+  EXPECT_EQ(1, getCounter("upstream_cx_destroy"));
+  EXPECT_EQ(7, nonZeroValuedCounterCount());
 }
 
 TEST_P(BenchmarkClientHttpTest, H1MultiConnectionFailure) {
@@ -314,7 +316,9 @@ TEST_P(BenchmarkClientHttpTest, H1MultiConnectionFailure) {
   EXPECT_EQ(10, getCounter("upstream_cx_total"));
   EXPECT_LE(10, getCounter("upstream_rq_pending_failure_eject"));
   EXPECT_EQ(10, getCounter("upstream_rq_pending_total"));
-  EXPECT_EQ(5, nonZeroValuedCounterCount());
+  EXPECT_EQ(10, getCounter("upstream_cx_destroy_remote"));
+  EXPECT_EQ(10, getCounter("upstream_cx_destroy"));
+  EXPECT_EQ(7, nonZeroValuedCounterCount());
 }
 
 TEST_P(BenchmarkClientHttpTest, EnableLatencyMeasurement) {
@@ -423,7 +427,9 @@ TEST_P(BenchmarkClientHttpTest, RequestMethodPost) {
   EXPECT_EQ(1, getCounter("upstream_rq_pending_total"));
   EXPECT_EQ(1, getCounter("upstream_cx_close_notify"));
   EXPECT_EQ(1, getCounter("upstream_cx_http1_total"));
-  EXPECT_EQ(9, nonZeroValuedCounterCount());
+  EXPECT_EQ(1, getCounter("upstream_cx_close_notify"));
+  EXPECT_EQ(1, getCounter("upstream_cx_destroy_local"));
+  EXPECT_EQ(11, nonZeroValuedCounterCount());
 }
 
 // TODO(oschaaf): test protocol violations, stream resets, etc.
