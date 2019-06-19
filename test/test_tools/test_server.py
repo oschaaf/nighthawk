@@ -37,7 +37,6 @@ else:
 https = sys.argv[2] == "https"
 
 print(httpd.server_port)
-print("     ")
 sys.stdout.flush()
 
 if https:
@@ -49,4 +48,3 @@ if https:
                                    certfile=certfile)
 httpd.serve_forever()
 httpd.socket.close()
-print("exit")
