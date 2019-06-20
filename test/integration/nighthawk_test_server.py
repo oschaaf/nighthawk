@@ -6,6 +6,8 @@ import threading
 import socket
 import json
 from string import Template
+import tempfile
+import logging
 
 
 class TestServerBase():
@@ -28,9 +30,17 @@ class TestServerBase():
             config = Template(f.read())
             config = config.substitute(self.parameters)
 
-        # TODO(oschaaf): write the config to a tmp file, for better x-server compatibility.
-        self.server_process = subprocess.Popen(
-            [self.server_binary_path, "--config-yaml",  config])
+        parameterized_config_path = None
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yaml") as tmp:
+            parameterized_config_path = tmp.name
+            parameterized_config = tmp.name
+            tmp.write(config)
+
+        args = [self.server_binary_path,
+                "--config-path", parameterized_config_path]
+        logging.info("Popen args: [%s]" % args)
+        # TODO(oschaaf): commandline is server specific and should be passed in
+        self.server_process = subprocess.Popen(args)
         self.server_process.communicate()
 
     def waitForServerReady(self):
@@ -43,6 +53,8 @@ class TestServerBase():
             if sock.connect_ex((self.server_ip, self.server_port)) == 0:
                 sock.close()
                 return True
+        logging.error(
+            "Timeout while waiting for server listener at %s:%s to accept connections.", self.server_ip, self.server_port)
         return False
 
     def start(self):
