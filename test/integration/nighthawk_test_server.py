@@ -10,7 +10,7 @@ import tempfile
 import logging
 
 
-class TestServerBase():
+class TestServerBase(object):
     def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6, parameters):
         self.ipv6 = ipv6
         self.server_binary_path = server_binary_path
@@ -33,7 +33,6 @@ class TestServerBase():
         parameterized_config_path = None
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yaml") as tmp:
             parameterized_config_path = tmp.name
-            parameterized_config = tmp.name
             tmp.write(config)
 
         args = [self.server_binary_path,
