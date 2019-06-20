@@ -12,7 +12,7 @@ function do_test() {
     # TODO(oschaaf): when bazel 0.27.0 lands in CI we can drop the python3 path/force line
     bazel test $BAZEL_BUILD_OPTIONS $BAZEL_TEST_OPTIONS \
     --test_output=all \
-    --python_top=//integration/:python3-runtime \
+    --python_top=//integration:python3-runtime \
     //test:nighthawk_test //test/server:http_test_server_filter_integration_test \
     //integration:integration_test
 }
