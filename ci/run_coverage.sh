@@ -10,7 +10,7 @@ set -e
 # projects that want to run coverage on a different/combined target.
 [[ -z "${COVERAGE_TARGET}" ]] && COVERAGE_TARGET="//test/... -//test/integration:integration_test"
 
-#bazel clean
+bazel clean
 
 # Generate coverage data.
 "${BAZEL_COVERAGE}" coverage ${BAZEL_TEST_OPTIONS} \
