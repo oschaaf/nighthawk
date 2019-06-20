@@ -10,7 +10,8 @@ function do_build () {
 
 function do_test() {
     bazel test $BAZEL_BUILD_OPTIONS $BAZEL_TEST_OPTIONS --test_output=all \
-    //test:nighthawk_test //test/server:http_test_server_filter_integration_test
+    //test:nighthawk_test //test/server:http_test_server_filter_integration_test \
+    //test/integration:integration_test
 }
 
 function do_test_with_valgrind() {
@@ -91,14 +92,14 @@ if [ -n "$CIRCLECI" ]; then
         mv "${HOME:-/root}/.gitconfig" "${HOME:-/root}/.gitconfig_save"
         echo 1
     fi
-
+    
     NUM_CPUS=8
     if [ "$1" == "coverage" ]; then
         NUM_CPUS=6
     fi
 fi
 
- if grep 'docker\|lxc' /proc/1/cgroup; then
+if grep 'docker\|lxc' /proc/1/cgroup; then
     # Create a fake home. Python site libs tries to do getpwuid(3) if we don't and the CI
     # Docker image gets confused as it has no passwd entry when running non-root
     # unless we do this.
@@ -106,14 +107,14 @@ fi
     mkdir -p "${FAKE_HOME}"
     export HOME="${FAKE_HOME}"
     export PYTHONUSERBASE="${FAKE_HOME}"
-
+    
     export BUILD_DIR=/build
     if [[ ! -d "${BUILD_DIR}" ]]
     then
         echo "${BUILD_DIR} mount missing - did you forget -v <something>:${BUILD_DIR}? Creating."
         mkdir -p "${BUILD_DIR}"
     fi
-
+    
     # Environment setup.
     export USER=bazel
     export TEST_TMPDIR=/build/tmp
