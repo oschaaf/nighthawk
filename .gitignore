@@ -11,3 +11,4 @@ generated/
 .vscode/
 bazel.output.txt
 envoy/
+*.pyc

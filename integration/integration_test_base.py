@@ -83,7 +83,7 @@ class IntegrationTestBase(unittest.TestCase):
             self.assertNotEqual(0, process_result.returncode)
         else:
             self.assertEqual(0, process_result.returncode)
-            return json.loads(process_result.stdout)
+            return json.loads(process_result.stdout.decode('utf-8'))
 
 
 class HttpIntegrationTestBase(IntegrationTestBase):
