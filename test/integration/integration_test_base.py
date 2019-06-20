@@ -15,10 +15,11 @@ class IntegrationTestBase(unittest.TestCase):
         self.assertTrue(not IntegrationTestBase.ipv6 is None)
         self.test_rundir = os.path.join(os.environ["TEST_SRCDIR"],
                                         os.environ["TEST_WORKSPACE"])
+
         self.nighthawk_test_server_path = os.path.join(
             self.test_rundir, "nighthawk_test_server")
         self.nighthawk_test_config_path = os.path.join(
-            self.test_rundir, "test/integration/configurations/nighthawk_test_server.yaml")
+            self.test_rundir, "test/integration/configurations/nighthawk_http_origin.yaml")
 
         self.nighthawk_client_path = os.path.join(
             self.test_rundir, "nighthawk_client")
@@ -26,6 +27,7 @@ class IntegrationTestBase(unittest.TestCase):
         self.socket_type = socket.AF_INET6 if IntegrationTestBase.ipv6 else socket.AF_INET
         self.test_server = None
         self.server_port = -1
+        self.parameters = dict()
 
     def getFreeListenerPortForAddress(self, address):
         with socket.socket(self.socket_type, socket.SOCK_STREAM) as sock:
@@ -38,7 +40,7 @@ class IntegrationTestBase(unittest.TestCase):
         self.server_port = self.getFreeListenerPortForAddress(
             self.server_ip)
         self.test_server = NighthawkTestServer(
-            self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip, self.server_port, IntegrationTestBase.ipv6)
+            self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip, self.server_port, IntegrationTestBase.ipv6, self.parameters)
         self.assertTrue(self.test_server.start())
 
     def tearDown(self):
@@ -68,7 +70,7 @@ class IntegrationTestBase(unittest.TestCase):
                                uri_host, self.test_server.server_port)
         return uri
 
-    def runNighthawk(self, args, expect_failure=False, timeout=10):
+    def runNighthawk(self, args, expect_failure=False, timeout=30):
         if IntegrationTestBase.ipv6:
             args.insert(0, "--address-family v6")
         args.insert(0, "--output-format json")
@@ -80,3 +82,25 @@ class IntegrationTestBase(unittest.TestCase):
         else:
             self.assertEqual(0, process_result.returncode)
             return json.loads(process_result.stdout)
+
+
+class HttpIntegrationTestBase(IntegrationTestBase):
+    def __init__(self, *args, **kwargs):
+        super(HttpIntegrationTestBase, self).__init__(*args, **kwargs)
+
+    def getTestServerRootUri(self):
+        return super(HttpIntegrationTestBase, self).getTestServerRootUri(False)
+
+
+class HttpsIntegrationTestBase(IntegrationTestBase):
+    def __init__(self, *args, **kwargs):
+        super(HttpsIntegrationTestBase, self).__init__(*args, **kwargs)
+        self.parameters["ssl_key_path"] = os.path.join(
+            self.test_rundir, "external/envoy/test/config/integration/certs/serverkey.pem")
+        self.parameters["ssl_cert_path"] = os.path.join(
+            self.test_rundir, "external/envoy/test/config/integration/certs/servercert.pem")
+        self.nighthawk_test_config_path = os.path.join(
+            self.test_rundir, "test/integration/configurations/nighthawk_https_origin.yaml")
+
+    def getTestServerRootUri(self):
+        return super(HttpsIntegrationTestBase, self).getTestServerRootUri(True)

@@ -5,10 +5,11 @@ import subprocess
 import threading
 import socket
 import json
+from string import Template
 
 
 class TestServerBase():
-    def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6):
+    def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6, parameters):
         self.ipv6 = ipv6
         self.server_binary_path = server_binary_path
         self.config_template_path = config_template_path
@@ -17,13 +18,15 @@ class TestServerBase():
         self.server_ip = server_ip
         self.socket_type = socket.AF_INET6 if ipv6 else socket.AF_INET
         self.server_port = server_port
+        self.parameters = parameters
 
     def serverThreadRunner(self):
+        self.parameters["server_ip"] = self.server_ip
+        self.parameters["server_port"] = self.server_port
+
         with open(self.config_template_path) as f:
-            config = f.read()
-            config = config.replace(
-                "{{ server_ip }}", self.server_ip)
-            config = config.replace("{{ server_port }}", str(self.server_port))
+            config = Template(f.read())
+            config = config.substitute(self.parameters)
 
         # TODO(oschaaf): write the config to a tmp file, for better x-server compatibility.
         self.server_process = subprocess.Popen(
@@ -53,6 +56,6 @@ class TestServerBase():
 
 
 class NighthawkTestServer(TestServerBase):
-    def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6):
+    def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6, parameters=dict()):
         super(NighthawkTestServer, self).__init__(server_binary_path,
-                                                  config_template_path, server_ip, server_port, ipv6)
+                                                  config_template_path, server_ip, server_port, ipv6, parameters)
