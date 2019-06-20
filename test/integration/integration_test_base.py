@@ -30,9 +30,11 @@ class IntegrationTestBase(unittest.TestCase):
         self.parameters = dict()
 
     def getFreeListenerPortForAddress(self, address):
-        with socket.socket(self.socket_type, socket.SOCK_STREAM) as sock:
-            sock.bind((address, 0))
-            return sock.getsockname()[1]
+        sock = socket.socket(self.socket_type, socket.SOCK_STREAM)
+        sock.bind((address, 0))
+        port = sock.getsockname()[1]
+        sock.close()
+        return port
 
     def setUp(self):
         self.assertTrue(os.path.exists(self.nighthawk_test_server_path))

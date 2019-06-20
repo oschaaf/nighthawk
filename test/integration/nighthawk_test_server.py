@@ -34,14 +34,15 @@ class TestServerBase():
         self.server_process.communicate()
 
     def waitForServerReady(self):
-        with socket.socket(self.socket_type, socket.SOCK_STREAM) as sock:
-            sock.settimeout(1)
-            tries = 10
-            while tries > 0:
-                time.sleep(0.5)
-                tries -= 1
-                if sock.connect_ex((self.server_ip, self.server_port)) == 0:
-                    return True
+        sock = socket.socket(self.socket_type, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        tries = 10
+        while tries > 0:
+            time.sleep(0.5)
+            tries -= 1
+            if sock.connect_ex((self.server_ip, self.server_port)) == 0:
+                sock.close()
+                return True
         return False
 
     def start(self):
