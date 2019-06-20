@@ -22,7 +22,6 @@
 
 #include "client/benchmark_client_impl.h"
 
-#include "test/integration/http_integration.h"
 #include "test/integration/integration.h"
 #include "test/integration/utility.h"
 #include "test/mocks/runtime/mocks.h"
