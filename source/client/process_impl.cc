@@ -19,7 +19,9 @@
 #include "common/event/real_time_system.h"
 #include "common/filesystem/filesystem_impl.h"
 #include "common/frequency.h"
+#include "common/init/manager_impl.h"
 #include "common/network/utility.h"
+#include "common/protobuf/message_validator_impl.h"
 #include "common/runtime/runtime_impl.h"
 #include "common/thread_local/thread_local_impl.h"
 #include "common/uri_impl.h"
@@ -184,10 +186,12 @@ bool ProcessImpl::run(OutputCollector& collector) {
   const std::vector<ClientWorkerPtr>& workers = createWorkers(uri, determineConcurrency());
 
   bool ok = true;
+  Envoy::Init::ManagerImpl init_manager{"Validation process"};
   Envoy::Runtime::RandomGeneratorImpl generator;
-  Envoy::Runtime::ScopedLoaderSingleton loader(
-      Envoy::Runtime::LoaderPtr{new Envoy::Runtime::LoaderImpl(
-          *dispatcher_, tls_, {}, "foo-cluster", *store_, generator, api_)});
+  Envoy::Runtime::ScopedLoaderSingleton loader(Envoy::Runtime::LoaderPtr{
+      new Envoy::Runtime::LoaderImpl(*dispatcher_, tls_, {}, "foo-cluster", init_manager, *store_,
+                                     generator, Envoy::ProtobufMessage::getNullValidationVisitor(),
+                                     api_)});
 
   for (auto& w : workers_) {
     w->start();

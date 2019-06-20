@@ -3,6 +3,8 @@
 
 #include "common/api/api_impl.h"
 #include "common/filesystem/filesystem_impl.h"
+#include "common/init/manager_impl.h"
+#include "common/protobuf/message_validator_impl.h"
 #include "common/runtime/runtime_impl.h"
 #include "common/statistic_impl.h"
 #include "common/stats/isolated_store_impl.h"
@@ -27,7 +29,8 @@ public:
       : api_(Envoy::Thread::threadFactoryForTest(), store_, time_system_, file_system_),
         thread_id_(std::this_thread::get_id()),
         loader_(Envoy::Runtime::LoaderPtr{new Envoy::Runtime::LoaderImpl(
-            dispatcher_, tls_, {}, "test-cluster", store_, rand_, api_)}) {
+            dispatcher_, tls_, {}, "test-cluster", init_manager_, store_, rand_,
+            Envoy::ProtobufMessage::getNullValidationVisitor(), api_)}) {
     benchmark_client_ = new MockBenchmarkClient();
     sequencer_ = new MockSequencer();
 
@@ -67,6 +70,7 @@ public:
   NiceMock<Envoy::Event::MockDispatcher> dispatcher_;
   Envoy::Runtime::ScopedLoaderSingleton loader_;
   Envoy::Filesystem::InstanceImplPosix file_system_;
+  Envoy::Init::ManagerImpl init_manager_{"Validation"};
 };
 
 TEST_F(ClientWorkerTest, BasicTest) {

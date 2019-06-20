@@ -6,6 +6,8 @@
 #include "common/stats/isolated_store_impl.h"
 #include "common/worker_impl.h"
 
+#include "common/init/manager_impl.h"
+#include "common/protobuf/message_validator_impl.h"
 #include "test/mocks.h"
 #include "test/mocks/thread_local/mocks.h"
 #include "test/test_common/thread_factory_for_test.h"
@@ -50,8 +52,11 @@ TEST_F(WorkerTest, WorkerExecutesOnThread) {
 
   TestWorker worker(api_, tls_);
   NiceMock<Envoy::Event::MockDispatcher> dispatcher;
+  Envoy::Init::ManagerImpl init_manager{"Validation"};
   Envoy::Runtime::ScopedLoaderSingleton loader(Envoy::Runtime::LoaderPtr{
-      new Envoy::Runtime::LoaderImpl(dispatcher, tls_, {}, "test-cluster", store_, rand_, api_)});
+      new Envoy::Runtime::LoaderImpl(dispatcher, tls_, {}, "test-cluster", init_manager, store_,
+                                     rand_, Envoy::ProtobufMessage::getNullValidationVisitor(),
+                                     api_)});
 
   worker.start();
   worker.waitForCompletion();
