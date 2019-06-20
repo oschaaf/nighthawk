@@ -19,7 +19,7 @@ class IntegrationTestBase(unittest.TestCase):
         self.nighthawk_test_server_path = os.path.join(
             self.test_rundir, "nighthawk_test_server")
         self.nighthawk_test_config_path = os.path.join(
-            self.test_rundir, "test/integration/configurations/nighthawk_http_origin.yaml")
+            self.test_rundir, "integration/configurations/nighthawk_http_origin.yaml")
 
         self.nighthawk_client_path = os.path.join(
             self.test_rundir, "nighthawk_client")
@@ -102,7 +102,7 @@ class HttpsIntegrationTestBase(IntegrationTestBase):
         self.parameters["ssl_cert_path"] = os.path.join(
             self.test_rundir, "external/envoy/test/config/integration/certs/servercert.pem")
         self.nighthawk_test_config_path = os.path.join(
-            self.test_rundir, "test/integration/configurations/nighthawk_https_origin.yaml")
+            self.test_rundir, "integration/configurations/nighthawk_https_origin.yaml")
 
     def getTestServerRootUri(self):
         return super(HttpsIntegrationTestBase, self).getTestServerRootUri(True)
