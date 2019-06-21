@@ -20,7 +20,6 @@ bazel clean
 --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main \
 --combined_report=lcov
 
-
 # Generate HTML
 declare -r COVERAGE_DIR="${SRCDIR}"/generated/coverage
 declare -r COVERAGE_SUMMARY="${COVERAGE_DIR}/coverage_summary.txt"
