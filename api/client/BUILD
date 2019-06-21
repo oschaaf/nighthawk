@@ -17,31 +17,6 @@ api_proto_library(
     ],
 )
 
-# TODO(oschaaf): This is a bit of a hack, we conjure the expected _base_cc_only ourselves here
-# because it doesn't get generated for us. Also see https://github.com/grpc/grpc/issues/14145
-proto_library(
-    name = "_base_cc_only",
-    srcs = [
-        "options.proto",
-        "output.proto",
-        "service.proto",
-    ],
-    deps = [
-        "@com_envoyproxy_protoc_gen_validate//validate:validate_proto",
-        "@com_github_gogo_protobuf//:gogo_proto",
-        "@com_google_protobuf//:any_proto",
-        "@com_google_protobuf//:descriptor_proto",
-        "@com_google_protobuf//:duration_proto",
-        "@com_google_protobuf//:empty_proto",
-        "@com_google_protobuf//:struct_proto",
-        "@com_google_protobuf//:timestamp_proto",
-        "@com_google_protobuf//:wrappers_proto",
-        "@envoy_api//envoy/api/v2/core:base_export",
-        "@googleapis//:http_api_protos_proto",
-        "@googleapis//:rpc_status_protos_lib",
-    ],
-)
-
 cc_grpc_library(
     name = "grpc_service_lib",
     srcs = [
