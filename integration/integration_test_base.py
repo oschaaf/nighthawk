@@ -1,18 +1,18 @@
-import unittest
-import os
-import time
-import sys
-import subprocess
-import threading
-import socket
 import json
+import logging
 from nighthawk_test_server import NighthawkTestServer
+import os
+import threading
+import time
+import subprocess
+import sys
+import socket
+import unittest
 
 
 class IntegrationTestBase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(IntegrationTestBase, self).__init__(*args, **kwargs)
-        self.assertTrue(not IntegrationTestBase.ipv6 is None)
         self.test_rundir = os.path.join(os.environ["TEST_SRCDIR"],
                                         os.environ["TEST_WORKSPACE"])
 
@@ -42,7 +42,7 @@ class IntegrationTestBase(unittest.TestCase):
         self.server_port = self.getFreeListenerPortForAddress(
             self.server_ip)
         self.test_server = NighthawkTestServer(
-            self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip, self.server_port, IntegrationTestBase.ipv6, self.parameters)
+            self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip, self.server_port, IntegrationTestBase.ipv6, "--config-path", self.parameters)
         self.assertTrue(self.test_server.start())
 
     def tearDown(self):
@@ -77,13 +77,17 @@ class IntegrationTestBase(unittest.TestCase):
             args.insert(0, "--address-family v6")
         args.insert(0, "--output-format json")
         args.insert(0, self.nighthawk_client_path)
-        process_result = subprocess.run(
-            args, stdout=subprocess.PIPE, timeout=timeout)
+        logging.info("Nighthawk client popen() args: [%s]" % args)
+        client_process = subprocess.Popen(
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = client_process.communicate()
+        logging.info(stderr.decode('utf-8'))
+        json_string = stdout.decode('utf-8')
         if expect_failure:
-            self.assertNotEqual(0, process_result.returncode)
+            self.assertNotEqual(0, client_process.returncode)
         else:
-            self.assertEqual(0, process_result.returncode)
-            return json.loads(process_result.stdout.decode('utf-8'))
+            self.assertEqual(0, client_process.returncode)
+            return json.loads(json_string)
 
 
 class HttpIntegrationTestBase(IntegrationTestBase):
@@ -106,3 +110,6 @@ class HttpsIntegrationTestBase(IntegrationTestBase):
 
     def getTestServerRootUri(self):
         return super(HttpsIntegrationTestBase, self).getTestServerRootUri(True)
+
+
+IntegrationTestBase.ipv6 = False

@@ -12,3 +12,4 @@ generated/
 bazel.output.txt
 envoy/
 *.pyc
+__pycache__
