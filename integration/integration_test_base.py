@@ -1,3 +1,7 @@
+"""@package integration_test_base
+Base classes for Nighthawk integration tests
+"""
+
 import json
 import logging
 from nighthawk_test_server import NighthawkTestServer
@@ -11,6 +15,11 @@ import unittest
 
 
 class IntegrationTestBase(unittest.TestCase):
+    """
+    IntegrationTestBase facilitates testing against the Nighthawk test server, by running
+    determining a free port, and starting it up in a separate process in setUp().
+    """
+
     def __init__(self, *args, **kwargs):
         super(IntegrationTestBase, self).__init__(*args, **kwargs)
         self.test_rundir = os.path.join(os.environ["TEST_SRCDIR"],
@@ -18,9 +27,7 @@ class IntegrationTestBase(unittest.TestCase):
 
         self.nighthawk_test_server_path = os.path.join(
             self.test_rundir, "nighthawk_test_server")
-        self.nighthawk_test_config_path = os.path.join(
-            self.test_rundir, "integration/configurations/nighthawk_http_origin.yaml")
-
+        self.nighthawk_test_config_path = None
         self.nighthawk_client_path = os.path.join(
             self.test_rundir, "nighthawk_client")
         self.server_ip = "::1" if IntegrationTestBase.ipv6 else "127.0.0.1"
@@ -30,6 +37,12 @@ class IntegrationTestBase(unittest.TestCase):
         self.parameters = dict()
 
     def getFreeListenerPortForAddress(self, address):
+        """
+        Determines a free port and returns that. Theoretically it is possible that another process
+        will steal the port before our caller is able to leverage it, but we take that chance.
+        The upside is that we can push the port upon the server we are about to start through configuration
+        which is compatible accross servers.
+        """
         sock = socket.socket(self.socket_type, socket.SOCK_STREAM)
         sock.bind((address, 0))
         port = sock.getsockname()[1]
@@ -37,18 +50,28 @@ class IntegrationTestBase(unittest.TestCase):
         return port
 
     def setUp(self):
+        """
+        Performs sanity checks and starts up the server. Upon exit the server is ready to accept connections.
+        """
         self.assertTrue(os.path.exists(self.nighthawk_test_server_path))
         self.assertTrue(os.path.exists(self.nighthawk_client_path))
         self.server_port = self.getFreeListenerPortForAddress(
             self.server_ip)
         self.test_server = NighthawkTestServer(
-            self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip, self.server_port, IntegrationTestBase.ipv6, "--config-path", self.parameters)
+            self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip, self.server_port, IntegrationTestBase.ipv6, self.parameters)
         self.assertTrue(self.test_server.start())
 
     def tearDown(self):
+        """
+        Stops the server.
+        """
         self.assertEqual(0, self.test_server.stop())
 
     def getNighthawkCounter(self, parsed_json, name):
+        """
+        Utility method to get a counter from a nighthawk json result. Requesting a non-existing
+        counter will trigger an assert.
+        """
         counters = parsed_json["results"][0]["counters"]
         for counter in counters:
             if counter["name"] == "client.%s" % name:
@@ -63,13 +86,10 @@ class IntegrationTestBase(unittest.TestCase):
         counters = parsed_json["results"][0]["counters"]
         self.assertEqual(len(counters), count)
 
-    def debugDumpCounterExpectations(self, parsed_json):
-        counters = parsed_json["results"][0]["counters"]
-        for counter in counters:
-            print('\t\tself.assertNighthawkCounterEqual(parsed_json, "%s", %s)' %
-                  (counter["name"].lstrip("client."), counter["value"]))
-
     def getTestServerRootUri(self, https=False):
+        """
+        Utility for getting the http://host:port/ that can be used to query the server we started in setUp()
+        """
         uri_host = self.server_ip
         if IntegrationTestBase.ipv6:
             uri_host = "[%s]" % self.server_ip
@@ -79,6 +99,10 @@ class IntegrationTestBase(unittest.TestCase):
         return uri
 
     def runNighthawk(self, args, expect_failure=False, timeout=30):
+        """
+        Runs Nighthawk against the test server, returning a json-formatted result.
+        If the timeout is exceeded an exception will be raised.
+        """
         if IntegrationTestBase.ipv6:
             args.insert(0, "--address-family v6")
         args.insert(0, "--output-format json")
@@ -96,15 +120,30 @@ class IntegrationTestBase(unittest.TestCase):
             return json.loads(json_string)
 
 
+# We don't have a straightforward way to do parameterized tests yet.
+# But the tests can be run twice if desired so, and setting this to true will enable ipv6 mode.
+IntegrationTestBase.ipv6 = False
+
+
 class HttpIntegrationTestBase(IntegrationTestBase):
+    """
+    Base for running plain http tests against the Nighthawk test server
+    """
+
     def __init__(self, *args, **kwargs):
         super(HttpIntegrationTestBase, self).__init__(*args, **kwargs)
+        self.nighthawk_test_config_path = os.path.join(
+            self.test_rundir, "integration/configurations/nighthawk_http_origin.yaml")
 
     def getTestServerRootUri(self):
         return super(HttpIntegrationTestBase, self).getTestServerRootUri(False)
 
 
 class HttpsIntegrationTestBase(IntegrationTestBase):
+    """
+    Base for https tests against the Nighthawk test server
+    """
+
     def __init__(self, *args, **kwargs):
         super(HttpsIntegrationTestBase, self).__init__(*args, **kwargs)
         self.parameters["ssl_key_path"] = os.path.join(
@@ -116,6 +155,3 @@ class HttpsIntegrationTestBase(IntegrationTestBase):
 
     def getTestServerRootUri(self):
         return super(HttpsIntegrationTestBase, self).getTestServerRootUri(True)
-
-
-IntegrationTestBase.ipv6 = False

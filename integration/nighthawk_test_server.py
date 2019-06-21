@@ -11,6 +11,10 @@ import logging
 
 
 class TestServerBase(object):
+    """
+    Base class for running a server in a separate process.
+    """
+
     def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6, server_binary_config_path_arg, parameters):
         self.ipv6 = ipv6
         self.server_binary_path = server_binary_path
@@ -42,7 +46,7 @@ class TestServerBase(object):
         self.server_process = subprocess.Popen(args)
         self.server_process.communicate()
 
-    def waitForServerReady(self):
+    def waitUntillServerListening(self):
         sock = socket.socket(self.socket_type, socket.SOCK_STREAM)
         sock.settimeout(1)
         tries = 10
@@ -59,7 +63,7 @@ class TestServerBase(object):
     def start(self):
         self.server_thread.daemon = True
         self.server_thread.start()
-        return self.waitForServerReady()
+        return self.waitUntillServerListening()
 
     def stop(self):
         self.server_process.terminate()
@@ -68,6 +72,11 @@ class TestServerBase(object):
 
 
 class NighthawkTestServer(TestServerBase):
-    def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6, server_binary_config_path_arg, parameters=dict()):
+    """
+    Will run the Nighthawk test server in a separate process. Passes in the right cli-arg to point it to its
+    configuration. For, say, NGINX this would be '-c' instead.
+    """
+
+    def __init__(self, server_binary_path, config_template_path, server_ip, server_port, ipv6, parameters=dict()):
         super(NighthawkTestServer, self).__init__(server_binary_path,
-                                                  config_template_path, server_ip, server_port, ipv6, server_binary_config_path_arg, parameters)
+                                                  config_template_path, server_ip, server_port, ipv6, "--config-path", parameters)

@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""@package integration_test.py
+Entry point for our integration testing
+"""
 
 import logging
 import os
