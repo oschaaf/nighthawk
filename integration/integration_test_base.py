@@ -48,14 +48,20 @@ class IntegrationTestBase(unittest.TestCase):
     def tearDown(self):
         self.assertEqual(0, self.test_server.stop())
 
-    def assertNighthawkCounterEqual(self, parsed_json, name, value):
+    def getNighthawkCounter(self, parsed_json, name):
         counters = parsed_json["results"][0]["counters"]
         for counter in counters:
             if counter["name"] == "client.%s" % name:
-                self.assertEqual(value, int(counter["value"]))
-                return
-        # Shouldn't get here
+                return int(counter["value"])
         self.assertTrue(False)
+
+    def assertNighthawkCounterEqual(self, parsed_json, name, value):
+        self.assertEqual(int(value), self.getNighthawkCounter(
+            parsed_json, name))
+
+    def assertNumberOfCountersEqual(self, parsed_json, count):
+        counters = parsed_json["results"][0]["counters"]
+        self.assertEqual(len(counters), count)
 
     def debugDumpCounterExpectations(self, parsed_json):
         counters = parsed_json["results"][0]["counters"]

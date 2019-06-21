@@ -4,15 +4,12 @@ import logging
 import os
 import sys
 import unittest
-
 from integration_test_base import IntegrationTestBase
-from integration_test_base import HttpIntegrationTestBase
-from integration_test_base import HttpsIntegrationTestBase
 
 import test_integration_basics
 
 
-def determineIpVersions():
+def determineIpVersionsFromEnvironment():
     ipv4 = True
     ipv6 = True
     versions = os.environ.get("ENVOY_IP_TEST_VERSIONS", "all")
@@ -31,16 +28,15 @@ def runTests(ipv6):
     logging.info("Running %s integration tests." %
                  ("ipv6" if ipv6 else "ipv4"))
     IntegrationTestBase.ipv6 = ipv6
-
     res = unittest.TextTestRunner(verbosity=2).run(
         unittest.TestLoader().loadTestsFromModule(test_integration_basics))
-    print(res)
+
     return res.wasSuccessful()
 
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-    (v4, v6) = determineIpVersions()
+    (v4, v6) = determineIpVersionsFromEnvironment()
     assert(v4 or v6)
     ok = True
     if v4:
