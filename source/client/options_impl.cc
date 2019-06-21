@@ -100,9 +100,8 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       "to the number specified here. (default: 0, no data).",
       false, 0, "uint32_t", cmd);
 
-  TCLAP::ValueArg<std::string> cluster_config("", "cluster-config",
-                                              "Cluster configuration settings in yaml or json.",
-                                              false, "", "string", cmd);
+  TCLAP::ValueArg<std::string> pool_options("", "pool-options", "Pool options in yaml or json.",
+                                            false, "", "string", cmd);
 
   TCLAP::UnlabeledValueArg<std::string> uri("uri",
                                             "uri to benchmark. http:// and https:// are supported, "
@@ -141,9 +140,9 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   request_method_ = request_method.getValue();
   request_headers_ = request_headers.getValue();
   request_body_size_ = request_body_size.getValue();
-  if (!cluster_config.getValue().empty()) {
+  if (!pool_options.getValue().empty()) {
     // TODO(oschaaf): used to by loadFromJsonEx, which is now gone.
-    Envoy::MessageUtil::loadFromJson(cluster_config.getValue(), cluster_config_,
+    Envoy::MessageUtil::loadFromJson(pool_options.getValue(), pool_options_,
                                      Envoy::ProtobufMessage::getNullValidationVisitor());
   }
 
@@ -240,7 +239,7 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
     }
   }
   request_options->set_request_body_size(requestBodySize());
-  *(command_line_options->mutable_cluster_config()) = clusterConfig();
+  *(command_line_options->mutable_pool_options()) = poolOptions();
   return command_line_options;
 }
 

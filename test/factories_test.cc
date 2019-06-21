@@ -31,7 +31,7 @@ public:
 
 TEST_F(FactoriesTest, CreateBenchmarkClient) {
   BenchmarkClientFactoryImpl factory(options_);
-  envoy::api::v2::Cluster cluster_config;
+  nighthawk::client::PoolOptions pool_options;
 
   EXPECT_CALL(options_, timeout()).Times(1);
   EXPECT_CALL(options_, connections()).Times(1);
@@ -39,7 +39,7 @@ TEST_F(FactoriesTest, CreateBenchmarkClient) {
   EXPECT_CALL(options_, prefetchConnections()).Times(1);
   EXPECT_CALL(options_, requestMethod()).Times(1);
   EXPECT_CALL(options_, requestBodySize()).Times(1);
-  EXPECT_CALL(options_, clusterConfig()).Times(1).WillOnce(ReturnRef(cluster_config));
+  EXPECT_CALL(options_, poolOptions()).Times(1).WillOnce(ReturnRef(pool_options));
   auto cmd = std::make_unique<nighthawk::client::CommandLineOptions>();
   auto request_headers = cmd->mutable_request_options()->add_request_headers();
   request_headers->mutable_header()->set_key("foo");

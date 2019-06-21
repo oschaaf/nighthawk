@@ -5,12 +5,21 @@ package nighthawk.client;
 import "google/protobuf/duration.proto";
 import "validate/validate.proto";
 import "envoy/api/v2/cds.proto";
+import "envoy/api/v2/cluster/circuit_breaker.proto";
+import "envoy/api/v2/auth/cert.proto";
 import "envoy/api/v2/core/base.proto";
 
 message RequestOptions {
   envoy.api.v2.core.RequestMethod request_method = 1;
   repeated envoy.api.v2.core.HeaderValueOption request_headers = 2;
   uint32 request_body_size = 3 [(validate.rules).uint32 = {lte: 4194304}];
+}
+
+message PoolOptions {
+  envoy.api.v2.cluster.CircuitBreakers circuit_breakers = 1;
+  envoy.api.v2.auth.UpstreamTlsContext tls_context = 2;
+  // TODO(oschaaf): XXX revisit. Conflicts on CLI
+  // google.protobuf.Duration connect_timeout = 3; 
 }
 
 // TODO(oschaaf): Ultimately this will be a load test specification. The fact that it
@@ -43,8 +52,8 @@ message CommandLineOptions {
     // See :option:`--request_options` for details.
     RequestOptions request_options = 12;
   }
-  // See :option:`--cluster_config` for details.
-  envoy.api.v2.Cluster cluster_config = 13;
+  // See :option:`--pool_options` for details.
+  PoolOptions pool_options = 13;
   // See :option:`--uri` for details.
   string uri = 14;// [(validate.rules).string.uri = true];
 }

@@ -76,7 +76,7 @@ public:
   MOCK_CONST_METHOD0(requestMethod, std::string());
   MOCK_CONST_METHOD0(requestHeaders, std::vector<std::string>());
   MOCK_CONST_METHOD0(requestBodySize, uint32_t());
-  MOCK_CONST_METHOD0(clusterConfig, envoy::api::v2::Cluster&());
+  MOCK_CONST_METHOD0(poolOptions, nighthawk::client::PoolOptions&());
   MOCK_CONST_METHOD0(toCommandLineOptions, Client::CommandLineOptionsPtr());
 };
 

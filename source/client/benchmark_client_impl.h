@@ -24,6 +24,8 @@
 
 #include "client/stream_decoder.h"
 
+#include "api/client/options.pb.h"
+
 namespace Nighthawk {
 namespace Client {
 
@@ -51,7 +53,7 @@ public:
   BenchmarkClientHttpImpl(Envoy::Api::Api& api, Envoy::Event::Dispatcher& dispatcher,
                           Envoy::Stats::Store& store, StatisticPtr&& connect_statistic,
                           StatisticPtr&& response_statistic, UriPtr&& uri, bool use_h2,
-                          bool prefetch_connections, envoy::api::v2::Cluster cluster_config);
+                          bool prefetch_connections, nighthawk::client::PoolOptions pool_options);
 
   void setConnectionLimit(uint64_t connection_limit) { connection_limit_ = connection_limit; }
   void setConnectionTimeout(std::chrono::seconds timeout) { timeout_ = timeout; }
@@ -113,7 +115,7 @@ private:
   bool measure_latencies_{};
   BenchmarkClientStats benchmark_client_stats_;
   uint32_t request_body_size_{0};
-  const envoy::api::v2::Cluster cluster_config_;
+  const nighthawk::client::PoolOptions pool_options_;
 };
 
 } // namespace Client

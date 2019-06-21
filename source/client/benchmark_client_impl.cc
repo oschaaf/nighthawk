@@ -32,14 +32,14 @@ namespace Client {
 BenchmarkClientHttpImpl::BenchmarkClientHttpImpl(
     Envoy::Api::Api& api, Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Store& store,
     StatisticPtr&& connect_statistic, StatisticPtr&& response_statistic, UriPtr&& uri, bool use_h2,
-    bool prefetch_connections, envoy::api::v2::Cluster cluster_config)
+    bool prefetch_connections, nighthawk::client::PoolOptions pool_options)
     : api_(api), dispatcher_(dispatcher), store_(store),
       scope_(store_.createScope("client.benchmark.")),
       connect_statistic_(std::move(connect_statistic)),
       response_statistic_(std::move(response_statistic)), use_h2_(use_h2),
       prefetch_connections_(prefetch_connections), uri_(std::move(uri)),
       benchmark_client_stats_({ALL_BENCHMARK_CLIENT_STATS(POOL_COUNTER(*scope_))}),
-      cluster_config_(std::move(cluster_config)) {
+      pool_options_(std::move(pool_options)) {
   connect_statistic_->setId("benchmark_http_client.queue_to_connect");
   response_statistic_->setId("benchmark_http_client.request_to_response");
 
@@ -83,11 +83,15 @@ void BenchmarkClientHttpImpl::prefetchPoolConnections() { pool_->prefetchConnect
 
 void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
   ASSERT(uri_->address() != nullptr);
-  // We use the passed in cluster configuration as a base, and override with specific options.
-  envoy::api::v2::Cluster cluster_config = cluster_config_;
+  envoy::api::v2::Cluster cluster_config;
   envoy::api::v2::core::BindConfig bind_config;
 
+  // TODO(oschaaf): XXX
   cluster_config.mutable_connect_timeout()->set_seconds(timeout_.count());
+  if (pool_options_.has_circuit_breakers()) {
+    *(cluster_config.mutable_circuit_breakers()) = pool_options_.circuit_breakers();
+  }
+  // TODO(oschaaf): XXX
   auto thresholds = cluster_config.mutable_circuit_breakers()->add_thresholds();
 
   thresholds->mutable_max_retries()->set_value(0);
@@ -106,13 +110,12 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
       common_tls_context->add_alpn_protocols("http/1.1");
     }
     auto transport_socket = cluster_config.transport_socket();
-    if (!cluster_config.has_transport_socket()) {
-      ASSERT(cluster_config.has_tls_context());
-      transport_socket.set_name(
-          Envoy::Extensions::TransportSockets::TransportSocketNames::get().Tls);
-      transport_socket.mutable_typed_config()->PackFrom(cluster_config.tls_context());
+    ASSERT(!cluster_config.has_transport_socket());
+    ASSERT(cluster_config.has_tls_context());
+    transport_socket.set_name(Envoy::Extensions::TransportSockets::TransportSocketNames::get().Tls);
+    if (pool_options_.has_tls_context()) {
+      transport_socket.mutable_typed_config()->PackFrom(pool_options_.tls_context());
     }
-
     // TODO(oschaaf): Ideally we'd just re-use Tls::Upstream::createTransportFactory().
     // But instead of doing that, we need to perform some of what that implements ourselves here,
     // so we can skip message validation which may trigger an assert in integration tests.
@@ -192,6 +195,7 @@ void BenchmarkClientHttpImpl::setRequestHeader(absl::string_view key, absl::stri
 }
 
 bool BenchmarkClientHttpImpl::tryStartOne(std::function<void()> caller_completion_callback) {
+  // TODO(oschaaf): XXX revisit this before finalizing this PR.
   if (!cluster_->resourceManager(Envoy::Upstream::ResourcePriority::Default)
            .pendingRequests()
            .canCreate() ||
