@@ -4,6 +4,7 @@
 
 #include "envoy/server/filter_config.h"
 
+#include "common/protobuf/message_validator_impl.h"
 #include "common/protobuf/utility.h"
 
 #include "absl/strings/numbers.h"
@@ -28,7 +29,9 @@ bool HttpTestServerDecoderFilter::mergeJsonConfig(absl::string_view json,
   error_message = absl::nullopt;
   try {
     nighthawk::server::ResponseOptions json_config;
-    Envoy::MessageUtil::loadFromJson(std::string(json), json_config);
+    // TODO(oschaaf): pass in the right ValidationVisitor type.
+    Envoy::MessageUtil::loadFromJson(std::string(json), json_config,
+                                     Envoy::ProtobufMessage::getNullValidationVisitor());
     config.MergeFrom(json_config);
     Envoy::MessageUtil::validate(config);
   } catch (Envoy::EnvoyException exception) {
@@ -64,12 +67,12 @@ HttpTestServerDecoderFilter::decodeHeaders(Envoy::Http::HeaderMap& headers, bool
         [this, &base_config](Envoy::Http::HeaderMap& direct_response_headers) {
           applyConfigToResponseHeaders(direct_response_headers, base_config);
         },
-        absl::nullopt);
+        absl::nullopt, "");
   } else {
     decoder_callbacks_->sendLocalReply(
         static_cast<Envoy::Http::Code>(500),
         fmt::format("test-server didn't understand the request: {}", *error_message), nullptr,
-        absl::nullopt);
+        absl::nullopt, "");
   }
   return Envoy::Http::FilterHeadersStatus::StopIteration;
 }

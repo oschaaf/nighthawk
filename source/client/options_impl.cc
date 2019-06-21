@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "common/protobuf/message_validator_impl.h"
 #include "common/protobuf/utility.h"
 #include "common/uri_impl.h"
 #include "common/utility.h"
@@ -140,8 +141,9 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   request_headers_ = request_headers.getValue();
   request_body_size_ = request_body_size.getValue();
   if (!cluster_config.getValue().empty()) {
-    Envoy::MessageUtil::loadFromJsonEx(cluster_config.getValue(), cluster_config_,
-                                       Envoy::ProtoUnknownFieldsMode::Strict);
+    // TODO(oschaaf): used to by loadFromJsonEx, which is now gone.
+    Envoy::MessageUtil::loadFromJson(cluster_config.getValue(), cluster_config_,
+                                     Envoy::ProtobufMessage::getNullValidationVisitor());
   }
 
   // We cap on negative values. TCLAP accepts negative values which we will get here as very
@@ -181,6 +183,23 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
     UriImpl uri(uri_);
   } catch (const UriException) {
     throw MalformedArgvException("Invalid URI");
+  }
+}
+
+OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options)
+    : requests_per_second_(options.requests_per_second()), connections_(options.connections()),
+      duration_(options.duration().seconds()), timeout_(options.timeout().seconds()),
+      uri_(options.uri()), h2_(options.h2()), concurrency_(options.concurrency()),
+      verbosity_(options.verbosity()), output_format_(options.output_format()),
+      prefetch_connections_(options.prefetch_connections()), burst_size_(options.burst_size()),
+      address_family_(options.address_family()),
+      request_method_(
+          ::envoy::api::v2::core::RequestMethod_Name(options.request_options().request_method())),
+      request_body_size_(options.request_options().request_body_size()) {
+  for (const auto& header : options.request_options().request_headers()) {
+    std::string header_string =
+        fmt::format("{}:{}", header.header().key(), header.header().value());
+    request_headers_.push_back(header_string);
   }
 }
 
