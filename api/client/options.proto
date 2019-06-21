@@ -19,7 +19,7 @@ message PoolOptions {
   envoy.api.v2.cluster.CircuitBreakers circuit_breakers = 1;
   envoy.api.v2.auth.UpstreamTlsContext tls_context = 2;
   // TODO(oschaaf): XXX revisit. Conflicts on CLI
-  // google.protobuf.Duration connect_timeout = 3; 
+  // google.protobuf.Duration connect_timeout = 3;
 }
 
 // TODO(oschaaf): Ultimately this will be a load test specification. The fact that it
@@ -36,7 +36,7 @@ message CommandLineOptions {
   // See :option:`--h2` for details.
   bool h2 = 5;
   // See :option:`--concurrency` for details.
-  string concurrency = 6;// [(validate.rules).string = {pattern: "^([0-9]*|auto)$"}];
+  string concurrency = 6; // [(validate.rules).string = {pattern: "^([0-9]*|auto)$"}];
   // See :option:`--verbosity` for details.
   string verbosity = 7
       [(validate.rules).string = {in: ["trace", "debug", "info", "warn", "error", "critical"]}];
@@ -55,5 +55,5 @@ message CommandLineOptions {
   // See :option:`--pool_options` for details.
   PoolOptions pool_options = 13;
   // See :option:`--uri` for details.
-  string uri = 14;// [(validate.rules).string.uri = true];
+  string uri = 14; // [(validate.rules).string.uri = true];
 }
