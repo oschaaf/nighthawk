@@ -53,7 +53,8 @@ public:
   BenchmarkClientHttpImpl(Envoy::Api::Api& api, Envoy::Event::Dispatcher& dispatcher,
                           Envoy::Stats::Store& store, StatisticPtr&& connect_statistic,
                           StatisticPtr&& response_statistic, UriPtr&& uri, bool use_h2,
-                          bool prefetch_connections, nighthawk::client::PoolOptions pool_options);
+                          bool prefetch_connections,
+                          envoy::api::v2::auth::UpstreamTlsContext tls_context);
 
   void setConnectionLimit(uint64_t connection_limit) { connection_limit_ = connection_limit; }
   void setConnectionTimeout(std::chrono::seconds timeout) { timeout_ = timeout; }
@@ -115,7 +116,7 @@ private:
   bool measure_latencies_{};
   BenchmarkClientStats benchmark_client_stats_;
   uint32_t request_body_size_{0};
-  const nighthawk::client::PoolOptions pool_options_;
+  const envoy::api::v2::auth::UpstreamTlsContext tls_context_;
 };
 
 } // namespace Client

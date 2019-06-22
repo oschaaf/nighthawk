@@ -34,12 +34,15 @@ TEST_F(OptionsImplTest, BogusInput) {
 
 // This test should cover every option we offer.
 TEST_F(OptionsImplTest, All) {
-  std::unique_ptr<OptionsImpl> options = TestUtility::createOptionsImpl(
-      fmt::format("{} --rps 4 --connections 5 --duration 6 --timeout 7 --h2 "
-                  "--concurrency 8 --verbosity error --output-format json --prefetch-connections "
-                  "--burst-size 13 --address-family v6 --request-method POST --request-body-size "
-                  "1234 --request-header f1:b1 --request-header f2:b2 {}",
-                  client_name_, good_test_uri_));
+  Envoy::MessageUtil util;
+  std::unique_ptr<OptionsImpl> options = TestUtility::createOptionsImpl(fmt::format(
+      "{} --rps 4 --connections 5 --duration 6 --timeout 7 --h2 "
+      "--concurrency 8 --verbosity error --output-format json --prefetch-connections "
+      "--burst-size 13 --address-family v6 --request-method POST --request-body-size 1234 "
+      "--tls-context {} --request-header f1:b1 --request-header f2:b2 {}",
+      client_name_,
+      "{common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES256-GCM-SHA384\"]}}}",
+      good_test_uri_));
 
   EXPECT_EQ(4, options->requestsPerSecond());
   EXPECT_EQ(5, options->connections());
@@ -57,6 +60,9 @@ TEST_F(OptionsImplTest, All) {
   const std::vector<std::string> expected_headers = {"f1:b1", "f2:b2"};
   EXPECT_EQ(expected_headers, options->requestHeaders());
   EXPECT_EQ(1234, options->requestBodySize());
+  EXPECT_EQ("common_tls_context {\n  tls_params {\n    cipher_suites: "
+            "\"-ALL:ECDHE-RSA-AES256-GCM-SHA384\"\n  }\n}\n",
+            options->tlsContext().DebugString());
 
   // Check that our conversion to CommandLineOptionsPtr makes sense.
   CommandLineOptionsPtr cmd = options->toCommandLineOptions();
@@ -84,13 +90,13 @@ TEST_F(OptionsImplTest, All) {
   }
 
   EXPECT_EQ(request_options.request_body_size(), options->requestBodySize());
+  EXPECT_TRUE(util(cmd->tls_context(), options->tlsContext()));
 
   // Now we construct a new options from the proto we created above. This should result in an
   // OptionsImpl instance equivalent to options. We test that by converting both to yaml strings,
   // expecting them to be equal. This should provide helpful output when the test fails by showing
   // the unexpected (yaml) diff.
   OptionsImpl options_from_proto(*cmd);
-  Envoy::MessageUtil util;
   std::string s1 = Envoy::MessageUtil::getYamlStringFromMessage(
       *(options_from_proto.toCommandLineOptions()), true, true);
   std::string s2 = Envoy::MessageUtil::getYamlStringFromMessage(*cmd, true, true);

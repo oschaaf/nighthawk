@@ -41,21 +41,22 @@ bazel build -c opt //:nighthawk_client
 
 USAGE: 
 
-   bazel-bin/nighthawk_client  [--request-body-size <uint32_t>]
-                               [--request-header <string>] ... 
-                               [--request-method <GET|HEAD|POST|PUT|DELETE
-                               |CONNECT|OPTIONS|TRACE>] [--address-family
-                               <auto|v4|v6>] [--burst-size <uint64_t>]
-                               [--prefetch-connections] [--output-format
-                               <human|yaml|json>] [-v <trace|debug|info
-                               |warn|error|critical>] [--concurrency
-                               <string>] [--h2] [--timeout <uint64_t>]
-                               [--duration <uint64_t>] [--connections
-                               <uint64_t>] [--rps <uint64_t>] [--]
-                               [--version] [-h] <uri format>
+   nighthawk_client  [--tls-context <string>] [--request-body-size
+                     <uint32_t>] [--request-header <string>] ... 
+                     [--request-method <GET|HEAD|POST|PUT|DELETE|CONNECT
+                     |OPTIONS|TRACE>] [--address-family <auto|v4|v6>]
+                     [--burst-size <uint64_t>] [--prefetch-connections]
+                     [--output-format <human|yaml|json>] [-v <trace|debug
+                     |info|warn|error|critical>] [--concurrency <string>]
+                     [--h2] [--timeout <uint64_t>] [--duration <uint64_t>]
+                     [--connections <uint64_t>] [--rps <uint64_t>] [--]
+                     [--version] [-h] <uri format>
 
 
 Where: 
+
+   --tls-context <string>
+     Tls context configuration in yaml or json.
 
    --request-body-size <uint32_t>
      Size of the request body to send. NH will send a number of consecutive
@@ -128,7 +129,7 @@ Where:
      in case of https no certificates are validated.
 
 
-   Nighthawk, a L7 (HTTP/HTTPS/HTTP2) performance characterization tool.
+   L7 (HTTP/HTTPS/HTTP2) performance characterization tool.
 
 
 ```

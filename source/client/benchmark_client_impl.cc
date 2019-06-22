@@ -32,14 +32,14 @@ namespace Client {
 BenchmarkClientHttpImpl::BenchmarkClientHttpImpl(
     Envoy::Api::Api& api, Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Store& store,
     StatisticPtr&& connect_statistic, StatisticPtr&& response_statistic, UriPtr&& uri, bool use_h2,
-    bool prefetch_connections, nighthawk::client::PoolOptions pool_options)
+    bool prefetch_connections, envoy::api::v2::auth::UpstreamTlsContext tls_context)
     : api_(api), dispatcher_(dispatcher), store_(store),
       scope_(store_.createScope("client.benchmark.")),
       connect_statistic_(std::move(connect_statistic)),
       response_statistic_(std::move(response_statistic)), use_h2_(use_h2),
       prefetch_connections_(prefetch_connections), uri_(std::move(uri)),
       benchmark_client_stats_({ALL_BENCHMARK_CLIENT_STATS(POOL_COUNTER(*scope_))}),
-      pool_options_(std::move(pool_options)) {
+      tls_context_(std::move(tls_context)) {
   connect_statistic_->setId("benchmark_http_client.queue_to_connect");
   response_statistic_->setId("benchmark_http_client.request_to_response");
 
@@ -86,11 +86,7 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
   envoy::api::v2::Cluster cluster_config;
   envoy::api::v2::core::BindConfig bind_config;
 
-  // TODO(oschaaf): XXX
   cluster_config.mutable_connect_timeout()->set_seconds(timeout_.count());
-  if (pool_options_.has_circuit_breakers()) {
-    *(cluster_config.mutable_circuit_breakers()) = pool_options_.circuit_breakers();
-  }
   // TODO(oschaaf): XXX
   auto thresholds = cluster_config.mutable_circuit_breakers()->add_thresholds();
 
@@ -111,11 +107,9 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
     }
     auto transport_socket = cluster_config.transport_socket();
     ASSERT(!cluster_config.has_transport_socket());
-    ASSERT(cluster_config.has_tls_context());
     transport_socket.set_name(Envoy::Extensions::TransportSockets::TransportSocketNames::get().Tls);
-    if (pool_options_.has_tls_context()) {
-      transport_socket.mutable_typed_config()->PackFrom(pool_options_.tls_context());
-    }
+    transport_socket.mutable_typed_config()->PackFrom(tls_context_);
+
     // TODO(oschaaf): Ideally we'd just re-use Tls::Upstream::createTransportFactory().
     // But instead of doing that, we need to perform some of what that implements ourselves here,
     // so we can skip message validation which may trigger an assert in integration tests.
@@ -176,7 +170,7 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
   if (prefetch_connections_) {
     prefetchPoolConnections();
   }
-}
+} // namespace Client
 
 void BenchmarkClientHttpImpl::terminate() { pool_.reset(); }
 

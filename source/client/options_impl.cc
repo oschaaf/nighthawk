@@ -100,8 +100,8 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       "to the number specified here. (default: 0, no data).",
       false, 0, "uint32_t", cmd);
 
-  TCLAP::ValueArg<std::string> pool_options("", "pool-options", "Pool options in yaml or json.",
-                                            false, "", "string", cmd);
+  TCLAP::ValueArg<std::string> tls_context(
+      "", "tls-context", "Tls context configuration in yaml or json.", false, "", "string", cmd);
 
   TCLAP::UnlabeledValueArg<std::string> uri("uri",
                                             "uri to benchmark. http:// and https:// are supported, "
@@ -140,9 +140,9 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   request_method_ = request_method.getValue();
   request_headers_ = request_headers.getValue();
   request_body_size_ = request_body_size.getValue();
-  if (!pool_options.getValue().empty()) {
+  if (!tls_context.getValue().empty()) {
     // TODO(oschaaf): used to by loadFromJsonEx, which is now gone.
-    Envoy::MessageUtil::loadFromJson(pool_options.getValue(), pool_options_,
+    Envoy::MessageUtil::loadFromJson(tls_context.getValue(), tls_context_,
                                      Envoy::ProtobufMessage::getNullValidationVisitor());
   }
 
@@ -202,6 +202,7 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options)
         fmt::format("{}:{}", header.header().key(), header.header().value());
     request_headers_.push_back(header_string);
   }
+  tls_context_.MergeFrom(options.tls_context());
 }
 
 CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
@@ -239,7 +240,7 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
     }
   }
   request_options->set_request_body_size(requestBodySize());
-  *(command_line_options->mutable_pool_options()) = poolOptions();
+  *(command_line_options->mutable_tls_context()) = tlsContext();
   return command_line_options;
 }
 

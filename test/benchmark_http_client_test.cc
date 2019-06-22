@@ -112,11 +112,11 @@ public:
                                    ? Envoy::Network::DnsLookupFamily::V4Only
                                    : Envoy::Network::DnsLookupFamily::V6Only);
     // TODO(oschaaf): XXX
-    nighthawk::client::PoolOptions pool_options;
+    envoy::api::v2::auth::UpstreamTlsContext tls_context;
     client_ = std::make_unique<Client::BenchmarkClientHttpImpl>(
         api_, *dispatcher_, store_, std::make_unique<StreamingStatistic>(),
         std::make_unique<StreamingStatistic>(), std::move(uri), use_h2, prefetch_connections,
-        pool_options);
+        tls_context);
   }
 
   uint64_t nonZeroValuedCounterCount() {
@@ -355,10 +355,10 @@ TEST_P(BenchmarkClientHttpTest, StatusTrackingInOnComplete) {
   auto uri = std::make_unique<UriImpl>("http://foo/");
   auto store = std::make_unique<Envoy::Stats::IsolatedStoreImpl>();
   // TODO(oschaaf): XXX
-  nighthawk::client::PoolOptions pool_options;
+  envoy::api::v2::auth::UpstreamTlsContext tls_context;
   client_ = std::make_unique<Client::BenchmarkClientHttpImpl>(
       api_, *dispatcher_, *store, std::make_unique<StreamingStatistic>(),
-      std::make_unique<StreamingStatistic>(), std::move(uri), false, false, pool_options);
+      std::make_unique<StreamingStatistic>(), std::move(uri), false, false, tls_context);
   Envoy::Http::HeaderMapImpl header;
 
   auto& status = header.insertStatus();
