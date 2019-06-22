@@ -47,18 +47,5 @@ TEST_F(ClientTest, BadRun) {
   EXPECT_FALSE(program.run());
 }
 
-// TODO(oschaaf): XXX port to python integration test & deprecate
-TEST_F(ClientTest, CipherSuiteSelection) {
-  // This is just a PoC, and has been manually verified to work; the statistic-counters show the
-  // expected ciphers are used.
-  Main program_128(Nighthawk::Client::TestUtility::createOptionsImpl(
-      R"CFG(foo --pool-options {tls_context:{common_tls_context:{tls_params:{cipher_suites:["-ALL:ECDHE-RSA-AES128-SHA"]}}}} --rps 1 --concurrency 1 --output-format yaml --duration 1 https://www.microsoft.com/ )CFG"));
-  EXPECT_TRUE(program_128.run());
-
-  Main program_256(Nighthawk::Client::TestUtility::createOptionsImpl(
-      R"CFG(foo --pool-options {tls_context:{common_tls_context:{tls_params:{cipher_suites:["-ALL:ECDHE-RSA-AES256-GCM-SHA384"]}}}} --rps 1 --concurrency 1 --output-format yaml --duration 1 https://www.microsoft.com/ )CFG"));
-  EXPECT_TRUE(program_256.run());
-}
-
 } // namespace Client
 } // namespace Nighthawk
