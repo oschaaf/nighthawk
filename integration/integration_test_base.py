@@ -34,7 +34,7 @@ class IntegrationTestBase(unittest.TestCase):
         self.socket_type = socket.AF_INET6 if IntegrationTestBase.ipv6 else socket.AF_INET
         self.test_server = None
         self.server_port = -1
-        self.parameters = dict()
+        self.parameters = {"--base-id": "TODO"}
 
     def getFreeListenerPortForAddress(self, address):
         """
@@ -57,8 +57,10 @@ class IntegrationTestBase(unittest.TestCase):
         self.assertTrue(os.path.exists(self.nighthawk_client_path))
         self.server_port = self.getFreeListenerPortForAddress(
             self.server_ip)
+        self.parameters["--base-id"] = self.server_port
         self.test_server = NighthawkTestServer(
-            self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip, self.server_port, IntegrationTestBase.ipv6, self.parameters)
+            self.nighthawk_test_server_path, self.nighthawk_test_config_path,
+            self.server_ip, self.server_port, IntegrationTestBase.ipv6, self.parameters)
         self.assertTrue(self.test_server.start())
 
     def tearDown(self):
@@ -98,7 +100,7 @@ class IntegrationTestBase(unittest.TestCase):
                                uri_host, self.test_server.server_port)
         return uri
 
-    def runNighthawk(self, args, expect_failure=False, timeout=30):
+    def runNighthawkClient(self, args, expect_failure=False, timeout=30):
         """
         Runs Nighthawk against the test server, returning a json-formatted result.
         If the timeout is exceeded an exception will be raised.

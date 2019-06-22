@@ -4,7 +4,6 @@ package nighthawk.client;
 
 import "google/protobuf/duration.proto";
 import "validate/validate.proto";
-import "envoy/api/v2/cds.proto";
 import "envoy/api/v2/cluster/circuit_breaker.proto";
 import "envoy/api/v2/auth/cert.proto";
 import "envoy/api/v2/core/base.proto";
@@ -18,8 +17,6 @@ message RequestOptions {
 message PoolOptions {
   envoy.api.v2.cluster.CircuitBreakers circuit_breakers = 1;
   envoy.api.v2.auth.UpstreamTlsContext tls_context = 2;
-  // TODO(oschaaf): XXX revisit. Conflicts on CLI
-  // google.protobuf.Duration connect_timeout = 3;
 }
 
 // TODO(oschaaf): Ultimately this will be a load test specification. The fact that it

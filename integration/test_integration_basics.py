@@ -12,7 +12,7 @@ from integration_test_base import HttpsIntegrationTestBase
 
 class TestHttp(HttpIntegrationTestBase):
     def test_h1(self):
-        parsed_json = self.runNighthawk([self.getTestServerRootUri()])
+        parsed_json = self.runNighthawkClient([self.getTestServerRootUri()])
         self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
         self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
         self.assertNighthawkCounterEqual(
@@ -30,7 +30,8 @@ class TestHttp(HttpIntegrationTestBase):
         self.assertNumberOfCountersEqual(parsed_json, 9)
 
     def test_h2(self):
-        parsed_json = self.runNighthawk(["--h2", self.getTestServerRootUri()])
+        parsed_json = self.runNighthawkClient(
+            ["--h2", self.getTestServerRootUri()])
         self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
         self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
         self.assertNighthawkCounterEqual(
@@ -50,7 +51,7 @@ class TestHttp(HttpIntegrationTestBase):
 
 class TestHttps(HttpsIntegrationTestBase):
     def test_h1(self):
-        parsed_json = self.runNighthawk(
+        parsed_json = self.runNighthawkClient(
             [self.getTestServerRootUri()])
         self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
         self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
@@ -78,7 +79,7 @@ class TestHttps(HttpsIntegrationTestBase):
         self.assertNumberOfCountersEqual(parsed_json, 14)
 
     def test_h2(self):
-        parsed_json = self.runNighthawk(
+        parsed_json = self.runNighthawkClient(
             ["--h2", self.getTestServerRootUri()])
         self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
         self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)

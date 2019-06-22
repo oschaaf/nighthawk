@@ -1,7 +1,7 @@
-licenses(["notice"])  # Apache 2
-
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@envoy_api//bazel:api_build_system.bzl", "api_proto_library")
+
+licenses(["notice"])  # Apache 2
 
 api_proto_library(
     name = "base",
@@ -12,7 +12,6 @@ api_proto_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@envoy_api//envoy/api/v2:cds_export",
         "@envoy_api//envoy/api/v2/auth:cert_export",
         "@envoy_api//envoy/api/v2/cluster:circuit_breaker_export",
         "@envoy_api//envoy/api/v2/core:base_export",

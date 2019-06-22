@@ -46,7 +46,7 @@ class TestServerBase(object):
         self.server_process = subprocess.Popen(args)
         self.server_process.communicate()
 
-    def waitUntillServerListening(self):
+    def waitUntilServerListening(self):
         sock = socket.socket(self.socket_type, socket.SOCK_STREAM)
         sock.settimeout(1)
         tries = 10
@@ -63,7 +63,7 @@ class TestServerBase(object):
     def start(self):
         self.server_thread.daemon = True
         self.server_thread.start()
-        return self.waitUntillServerListening()
+        return self.waitUntilServerListening()
 
     def stop(self):
         self.server_process.terminate()
