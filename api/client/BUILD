@@ -1,7 +1,14 @@
 licenses(["notice"])  # Apache 2
 
-load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_package",
+)
+
+envoy_package()
+
 load("@envoy_api//bazel:api_build_system.bzl", "api_proto_library")
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 api_proto_library(
     name = "base",
