@@ -1,6 +1,13 @@
-load("@python_pip_deps//:requirements.bzl", "requirement")
-
 licenses(["notice"])  # Apache 2
+
+load("@python_pip_deps//:requirements.bzl", "requirement")
+load("//bazel:envoy_build_system.bzl", "envoy_package")
+
+envoy_package()
+
+load("//bazel:envoy_build_system.bzl", "envoy_package")
+
+envoy_package()
 
 py_test(
     name = "integration_test",
