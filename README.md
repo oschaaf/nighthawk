@@ -44,7 +44,7 @@ USAGE:
    nighthawk_client  [--max-active-requests <uint64_t>]
                      [--max-pending-requests <uint64_t>] [--tls-context
                      <string>] [--request-body-size <uint32_t>]
-                     [--request-header <string>] ...  [--request-method
+                     [--request-header <string>] ... [--request-method
                      <GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE>]
                      [--address-family <auto|v4|v6>] [--burst-size
                      <uint64_t>] [--prefetch-connections] [--output-format
