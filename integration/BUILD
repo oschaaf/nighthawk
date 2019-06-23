@@ -1,13 +1,12 @@
-licenses(["notice"])  # Apache 2
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_package",
 )
+load("@python_pip_deps//:requirements.bzl", "requirement")
+
+licenses(["notice"])  # Apache 2
 
 envoy_package()
-
-load("@python_pip_deps//:requirements.bzl", "requirement")
 
 py_test(
     name = "integration_test",
@@ -31,5 +30,6 @@ py_test(
         requirement("urllib3"),
         requirement("chardet"),
         requirement("certifi"),
+        requirement("idna"),
     ],
 )
