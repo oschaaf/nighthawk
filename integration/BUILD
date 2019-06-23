@@ -1,5 +1,3 @@
-licenses(["notice"])  # Apache 2
-
 py_test(
     name = "integration_test",
     srcs = [

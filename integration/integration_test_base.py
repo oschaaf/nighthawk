@@ -12,7 +12,7 @@ import subprocess
 import sys
 import socket
 import unittest
-from urllib.request import urlopen
+import requests
 
 
 class IntegrationTestBase(unittest.TestCase):
@@ -112,8 +112,9 @@ class IntegrationTestBase(unittest.TestCase):
         if IntegrationTestBase.ipv6:
             uri_host = "[%s]" % self.server_ip
         uri = "http://%s:%s/stats?format=json" % (uri_host, self.admin_port)
-        text = urlopen(uri).read()
-        return json.loads(text)
+        r = requests.get(uri)
+        self.assertEqual(r.status_code, 200)
+        return r.json()
 
     def getServerStatFromJson(self, server_stats_json, name):
         counters = server_stats_json["stats"]
