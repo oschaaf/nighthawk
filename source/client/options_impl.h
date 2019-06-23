@@ -35,6 +35,8 @@ public:
   const envoy::api::v2::auth::UpstreamTlsContext& tlsContext() const override {
     return tls_context_;
   };
+  uint64_t maxPendingRequests() const override { return max_pending_requests_; }
+  uint64_t maxActiveRequests() const override { return max_active_requests_; }
 
 private:
   uint64_t requests_per_second_;
@@ -53,6 +55,8 @@ private:
   std::vector<std::string> request_headers_;
   uint32_t request_body_size_;
   envoy::api::v2::auth::UpstreamTlsContext tls_context_;
+  uint64_t max_pending_requests_;
+  uint64_t max_active_requests_;
 };
 
 } // namespace Client

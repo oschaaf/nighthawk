@@ -53,6 +53,8 @@ public:
     options->mutable_request_options()->set_request_method(
         envoy::api::v2::core::RequestMethod::GET);
     options->set_address_family("v4");
+    options->set_max_pending_requests(1);
+    options->set_max_active_requests(UINT64_MAX);
   }
 
   void runWithFailingValidationExpectations(absl::string_view match_error = "") {
@@ -88,7 +90,7 @@ TEST_P(ServiceTest, Basic) {
   r->Write(request_, {});
   r->WritesDone();
   EXPECT_TRUE(r->Read(&response_));
-  EXPECT_FALSE(response_.has_error_detail());
+  ASSERT_FALSE(response_.has_error_detail());
   EXPECT_TRUE(response_.has_output());
   EXPECT_EQ(8, response_.output().results(0).counters().size());
   auto status = r->Finish();
@@ -103,7 +105,7 @@ TEST_P(ServiceTest, NoConcurrentStart) {
   EXPECT_TRUE(r->Write(request_, {}));
   EXPECT_TRUE(r->WritesDone());
   EXPECT_TRUE(r->Read(&response_));
-  EXPECT_FALSE(response_.has_error_detail());
+  ASSERT_FALSE(response_.has_error_detail());
   EXPECT_TRUE(response_.has_output());
   EXPECT_FALSE(r->Read(&response_));
   auto status = r->Finish();
@@ -115,7 +117,7 @@ TEST_P(ServiceTest, BackToBackExecution) {
   auto r = stub_->ExecutionStream(&context_);
   EXPECT_TRUE(r->Write(request_, {}));
   EXPECT_TRUE(r->Read(&response_));
-  EXPECT_FALSE(response_.has_error_detail());
+  ASSERT_FALSE(response_.has_error_detail());
   EXPECT_TRUE(response_.has_output());
   EXPECT_TRUE(r->Write(request_, {}));
   EXPECT_TRUE(r->Read(&response_));
@@ -161,7 +163,7 @@ TEST_P(ServiceTest, CancelNotSupported) {
   EXPECT_FALSE(status.ok());
 }
 
-TEST_P(ServiceTest, Unresolveable) {
+TEST_P(ServiceTest, Unresolvable) {
   auto options = request_.mutable_start_request()->mutable_options();
   options->set_uri("http://unresolvable-host/");
   runWithFailingValidationExpectations("Unknown failure");

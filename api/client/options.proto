@@ -45,6 +45,10 @@ message CommandLineOptions {
   }
   // See :option:`--tls_context` for details.
   envoy.api.v2.auth.UpstreamTlsContext tls_context = 13;
+  // See :option:`--max-pending_requests` for details.
+  uint64 max_pending_requests = 14 [(validate.rules).uint64 = {gte: 1}];
+  // See :option:`--max-active_requests` for details.
+  uint64 max_active_requests = 15 [(validate.rules).uint64 = {gte: 1}];
   // See :option:`--uri` for details.
-  string uri = 14; // [(validate.rules).string.uri = true];
+  string uri = 16; // [(validate.rules).string.uri = true];
 }

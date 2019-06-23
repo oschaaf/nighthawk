@@ -87,12 +87,13 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
   envoy::api::v2::core::BindConfig bind_config;
 
   cluster_config.mutable_connect_timeout()->set_seconds(timeout_.count());
-  // TODO(oschaaf): XXX
   auto thresholds = cluster_config.mutable_circuit_breakers()->add_thresholds();
 
+  // We do not support any retrying.
   thresholds->mutable_max_retries()->set_value(0);
   thresholds->mutable_max_connections()->set_value(connection_limit_);
   thresholds->mutable_max_pending_requests()->set_value(max_pending_requests_);
+  thresholds->mutable_max_requests()->set_value(max_active_requests_);
 
   Envoy::Network::TransportSocketFactoryPtr socket_factory;
 
@@ -189,15 +190,16 @@ void BenchmarkClientHttpImpl::setRequestHeader(absl::string_view key, absl::stri
 }
 
 bool BenchmarkClientHttpImpl::tryStartOne(std::function<void()> caller_completion_callback) {
-  // TODO(oschaaf): XXX revisit this before finalizing this PR.
-  if (!cluster_->resourceManager(Envoy::Upstream::ResourcePriority::Default)
-           .pendingRequests()
-           .canCreate() ||
-      // In closed loop mode we want to be able to control the pacing as exactly as possible.
-      // In open-loop mode we probably want to skip this.
-      // NOTE(oschaaf): We can't consistently rely on resourceManager()::requests() because that
-      // isn't used for h/1 (it is used in tcp and h2 though).
-      ((requests_initiated_ - requests_completed_) >= connection_limit_)) {
+  // When no client side queueing is specified (via max_pending_requests_), we are in closed loop
+  // mode. In closed loop mode we want to be able to control the pacing as exactly as possible. In
+  // open-loop mode we probably want to skip this. NOTE(oschaaf): We can't consistently rely on
+  // resourceManager()::requests() because that isn't used for h/1 (it is used in tcp and h2
+  // though).
+  if (max_pending_requests_ == 1 &&
+      (!cluster_->resourceManager(Envoy::Upstream::ResourcePriority::Default)
+            .pendingRequests()
+            .canCreate() ||
+       ((requests_initiated_ - requests_completed_) >= connection_limit_))) {
     return false;
   }
 

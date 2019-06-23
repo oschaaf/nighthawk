@@ -39,6 +39,8 @@ BenchmarkClientPtr BenchmarkClientFactoryImpl::create(Envoy::Api::Api& api,
   benchmark_client->setRequestBodySize(options_.requestBodySize());
   benchmark_client->setConnectionTimeout(options_.timeout());
   benchmark_client->setConnectionLimit(options_.connections());
+  benchmark_client->setMaxPendingRequests(options_.maxPendingRequests());
+  benchmark_client->setMaxActiveRequests(options_.maxActiveRequests());
   return benchmark_client;
 }
 

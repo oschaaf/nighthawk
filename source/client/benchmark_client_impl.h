@@ -61,6 +61,9 @@ public:
   void setMaxPendingRequests(uint64_t max_pending_requests) {
     max_pending_requests_ = max_pending_requests;
   }
+  void setMaxActiveRequests(uint64_t max_active_requests) {
+    max_active_requests_ = max_active_requests;
+  }
 
   // BenchmarkClient
   void initialize(Envoy::Runtime::Loader& runtime) override;
@@ -108,6 +111,7 @@ private:
   std::chrono::seconds timeout_{5s};
   uint64_t connection_limit_{1};
   uint64_t max_pending_requests_{1};
+  uint64_t max_active_requests_{UINT64_MAX};
   PrefetchablePoolPtr pool_;
   Envoy::Event::TimerPtr timer_;
   Envoy::Runtime::RandomGeneratorImpl generator_;

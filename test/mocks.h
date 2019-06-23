@@ -77,6 +77,8 @@ public:
   MOCK_CONST_METHOD0(requestHeaders, std::vector<std::string>());
   MOCK_CONST_METHOD0(requestBodySize, uint32_t());
   MOCK_CONST_METHOD0(tlsContext, envoy::api::v2::auth::UpstreamTlsContext&());
+  MOCK_CONST_METHOD0(maxPendingRequests, uint64_t());
+  MOCK_CONST_METHOD0(maxActiveRequests, uint64_t());
   MOCK_CONST_METHOD0(toCommandLineOptions, Client::CommandLineOptionsPtr());
 };
 

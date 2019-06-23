@@ -37,6 +37,9 @@ public:
   virtual std::vector<std::string> requestHeaders() const PURE;
   virtual uint32_t requestBodySize() const PURE;
   virtual const envoy::api::v2::auth::UpstreamTlsContext& tlsContext() const PURE;
+  virtual uint64_t maxPendingRequests() const PURE;
+  virtual uint64_t maxActiveRequests() const PURE;
+
   /**
    * Converts an Options instance to an equivalent CommandLineOptions instance in terms of option
    * values.

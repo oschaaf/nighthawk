@@ -41,19 +41,27 @@ bazel build -c opt //:nighthawk_client
 
 USAGE: 
 
-   nighthawk_client  [--tls-context <string>] [--request-body-size
-                     <uint32_t>] [--request-header <string>] ... 
-                     [--request-method <GET|HEAD|POST|PUT|DELETE|CONNECT
-                     |OPTIONS|TRACE>] [--address-family <auto|v4|v6>]
-                     [--burst-size <uint64_t>] [--prefetch-connections]
-                     [--output-format <human|yaml|json>] [-v <trace|debug
-                     |info|warn|error|critical>] [--concurrency <string>]
-                     [--h2] [--timeout <uint64_t>] [--duration <uint64_t>]
-                     [--connections <uint64_t>] [--rps <uint64_t>] [--]
-                     [--version] [-h] <uri format>
+   nighthawk_client  [--max-active-requests <uint64_t>]
+                     [--max-pending-requests <uint64_t>] [--tls-context
+                     <string>] [--request-body-size <uint32_t>]
+                     [--request-header <string>] ...  [--request-method
+                     <GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE>]
+                     [--address-family <auto|v4|v6>] [--burst-size
+                     <uint64_t>] [--prefetch-connections] [--output-format
+                     <human|yaml|json>] [-v <trace|debug|info|warn|error
+                     |critical>] [--concurrency <string>] [--h2] [--timeout
+                     <uint64_t>] [--duration <uint64_t>] [--connections
+                     <uint64_t>] [--rps <uint64_t>] [--] [--version] [-h]
+                     <uri format>
 
 
 Where: 
+
+   --max-active-requests <uint64_t>
+     Max active requests (default: UINT64_MAX, no limit).
+
+   --max-pending-requests <uint64_t>
+     Max pending requests (default: 1, no queuing).
 
    --tls-context <string>
      Tls context configuration in yaml or json.
@@ -130,7 +138,6 @@ Where:
 
 
    L7 (HTTP/HTTPS/HTTP2) performance characterization tool.
-
 
 ```
 

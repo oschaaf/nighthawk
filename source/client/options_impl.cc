@@ -103,6 +103,16 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   TCLAP::ValueArg<std::string> tls_context(
       "", "tls-context", "Tls context configuration in yaml or json.", false, "", "string", cmd);
 
+  TCLAP::ValueArg<uint64_t> max_pending_requests(
+      "", "max-pending-requests",
+      "Max pending requests (default: 1, no client side queuing. Specifying any other value will "
+      "allow client-side queuing of requests).",
+      false, 1, "uint64_t", cmd);
+
+  TCLAP::ValueArg<uint64_t> max_active_requests(
+      "", "max-active-requests", "Max active requests (default: UINT64_MAX, no limit).", false,
+      UINT64_MAX, "uint64_t", cmd);
+
   TCLAP::UnlabeledValueArg<std::string> uri("uri",
                                             "uri to benchmark. http:// and https:// are supported, "
                                             "but in case of https no certificates are validated.",
@@ -178,6 +188,8 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       throw MalformedArgvException("Value for --concurrency should be greater then 0.");
     }
   }
+  max_pending_requests_ = max_pending_requests.getValue();
+  max_active_requests_ = max_active_requests.getValue();
 
   try {
     UriImpl uri(uri_);
@@ -195,7 +207,9 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options)
       address_family_(options.address_family()),
       request_method_(
           ::envoy::api::v2::core::RequestMethod_Name(options.request_options().request_method())),
-      request_body_size_(options.request_options().request_body_size()) {
+      request_body_size_(options.request_options().request_body_size()),
+      max_pending_requests_(options.max_pending_requests()),
+      max_active_requests_(options.max_active_requests()) {
   Envoy::MessageUtil::validate(options);
   for (const auto& header : options.request_options().request_headers()) {
     std::string header_string =
@@ -241,6 +255,8 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
   }
   request_options->set_request_body_size(requestBodySize());
   *(command_line_options->mutable_tls_context()) = tlsContext();
+  command_line_options->set_max_pending_requests(maxPendingRequests());
+  command_line_options->set_max_active_requests(maxActiveRequests());
   return command_line_options;
 }
 
