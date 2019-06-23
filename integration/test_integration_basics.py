@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import unittest
+import json
 
 from integration_test_base import IntegrationTestBase
 from integration_test_base import HttpIntegrationTestBase
@@ -28,6 +29,12 @@ class TestHttp(HttpIntegrationTestBase):
             parsed_json, "upstream_rq_pending_total", 1)
         self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
         self.assertNumberOfCountersEqual(parsed_json, 9)
+
+        server_stats = self.getTestServerStatisticsJson()
+        self.assertEqual(self.getServerStatFromJson(
+            server_stats, "http.ingress_http.downstream_rq_2xx"), 25)
+
+        logging.info(json.dumps(server_stats, indent=4))
 
     def test_h2(self):
         parsed_json = self.runNighthawkClient(

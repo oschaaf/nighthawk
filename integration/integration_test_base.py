@@ -12,6 +12,7 @@ import subprocess
 import sys
 import socket
 import unittest
+from urllib.request import urlopen
 
 
 class IntegrationTestBase(unittest.TestCase):
@@ -34,7 +35,8 @@ class IntegrationTestBase(unittest.TestCase):
         self.socket_type = socket.AF_INET6 if IntegrationTestBase.ipv6 else socket.AF_INET
         self.test_server = None
         self.server_port = -1
-        self.parameters = {"--base-id": "TODO"}
+        self.admin_port = -1
+        self.parameters = {}
 
     def getFreeListenerPortForAddress(self, address):
         """
@@ -57,7 +59,9 @@ class IntegrationTestBase(unittest.TestCase):
         self.assertTrue(os.path.exists(self.nighthawk_client_path))
         self.server_port = self.getFreeListenerPortForAddress(
             self.server_ip)
-        self.parameters["--base-id"] = self.server_port
+        self.admin_port = self.getFreeListenerPortForAddress(
+            self.server_ip)
+        self.parameters["admin_port"] = self.admin_port
         self.test_server = NighthawkTestServer(
             self.nighthawk_test_server_path, self.nighthawk_test_config_path,
             self.server_ip, self.server_port, IntegrationTestBase.ipv6, self.parameters)
@@ -99,6 +103,24 @@ class IntegrationTestBase(unittest.TestCase):
         uri = "%s://%s:%s/" % ("https" if https else "http",
                                uri_host, self.test_server.server_port)
         return uri
+
+    def getTestServerStatisticsJson(self):
+        """
+        Uri to grab a server stats snapshot over http from the admin interface.
+        """
+        uri_host = self.server_ip
+        if IntegrationTestBase.ipv6:
+            uri_host = "[%s]" % self.server_ip
+        uri = "http://%s:%s/stats?format=json" % (uri_host, self.admin_port)
+        text = urlopen(uri).read()
+        return json.loads(text)
+
+    def getServerStatFromJson(self, server_stats_json, name):
+        counters = server_stats_json["stats"]
+        for counter in counters:
+            if counter["name"] == name:
+                return int(counter["value"])
+        return None
 
     def runNighthawkClient(self, args, expect_failure=False, timeout=30):
         """
