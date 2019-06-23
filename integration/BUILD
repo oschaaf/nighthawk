@@ -1,3 +1,5 @@
+load("@python_pip_deps//:requirements.bzl", "requirement")
+
 licenses(["notice"])  # Apache 2
 
 py_test(
@@ -11,5 +13,16 @@ py_test(
         "//:nighthawk_client",
         "//:nighthawk_test_server",
         "@envoy//test/config/integration/certs",
+    ],
+    # We enforce python 2, but I we may be able to stop doing that when we update
+    # bazel in CI. (Or we add python3 explicitly as a build dependency somehow).
+    python_version = "PY2",
+    srcs_version = "PY2ONLY",
+    deps = [
+        requirement("requests"),
+        # I think the following are implied by 'request'.
+        requirement("urllib3"),
+        requirement("chardet"),
+        requirement("certifi"),
     ],
 )
