@@ -64,7 +64,9 @@ Where:
      Max pending requests (default: 1, no queuing).
 
    --tls-context <string>
-     Tls context configuration in yaml or json.
+     Tls context configuration in yaml or json. Example
+     (json):{common_tls_context:{tls_params:{cipher_suites:["-ALL:ECDHE-RSA
+     -AES128-SHA"]}}}
 
    --request-body-size <uint32_t>
      Size of the request body to send. NH will send a number of consecutive

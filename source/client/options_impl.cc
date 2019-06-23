@@ -101,7 +101,10 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       false, 0, "uint32_t", cmd);
 
   TCLAP::ValueArg<std::string> tls_context(
-      "", "tls-context", "Tls context configuration in yaml or json.", false, "", "string", cmd);
+      "", "tls-context",
+      "Tls context configuration in yaml or json. Example (json):"
+      "{common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES128-SHA\"]}}}",
+      false, "", "string", cmd);
 
   TCLAP::ValueArg<uint64_t> max_pending_requests(
       "", "max-pending-requests",
