@@ -40,7 +40,9 @@ using namespace Envoy; // We need this because of macro expectations.
   COUNTER(http_3xx)                                                                                \
   COUNTER(http_4xx)                                                                                \
   COUNTER(http_5xx)                                                                                \
-  COUNTER(http_xxx)
+  COUNTER(http_xxx)                                                                                \
+  COUNTER(pool_overflow)                                                                           \
+  COUNTER(pool_connection_failure)
 
 struct BenchmarkClientStats {
   ALL_BENCHMARK_CLIENT_STATS(GENERATE_COUNTER_STRUCT)

@@ -237,7 +237,16 @@ void BenchmarkClientHttpImpl::onComplete(bool success, const Envoy::Http::Header
 }
 
 void BenchmarkClientHttpImpl::onPoolFailure(Envoy::Http::ConnectionPool::PoolFailureReason reason) {
-  ASSERT(reason == Envoy::Http::ConnectionPool::PoolFailureReason::ConnectionFailure);
+  switch (reason) {
+  case Envoy::Http::ConnectionPool::PoolFailureReason::Overflow:
+    benchmark_client_stats_.pool_overflow_.inc();
+    break;
+  case Envoy::Http::ConnectionPool::PoolFailureReason::ConnectionFailure:
+    benchmark_client_stats_.pool_connection_failure_.inc();
+    break;
+  default:
+    NOT_REACHED_GCOVR_EXCL_LINE;
+  }
 }
 
 } // namespace Client

@@ -92,7 +92,7 @@ TEST_P(ServiceTest, Basic) {
   EXPECT_TRUE(r->Read(&response_));
   ASSERT_FALSE(response_.has_error_detail());
   EXPECT_TRUE(response_.has_output());
-  EXPECT_EQ(8, response_.output().results(0).counters().size());
+  EXPECT_EQ(9, response_.output().results(0).counters().size());
   auto status = r->Finish();
   EXPECT_TRUE(status.ok());
 }
