@@ -11,6 +11,7 @@
   "address_family": "",
   "max_pending_requests": "0",
   "max_active_requests": "0",
+  "max_requests_per_connection": "0",
   "uri": "",
   "duration": "1s"
  },

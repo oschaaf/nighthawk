@@ -43,6 +43,9 @@ public:
 
   void setBasicRequestOptions() {
     auto options = request_.mutable_start_request()->mutable_options();
+    // XXX(oschaaf): Set defaults in the options header.
+    // See if we can get rid of the ones in TCLAP to disambiguate
+    // how we handle default values.
     options->set_uri("http://127.0.0.1:10001/");
     options->set_verbosity("info");
     options->set_connections(1);
@@ -54,7 +57,8 @@ public:
         envoy::api::v2::core::RequestMethod::GET);
     options->set_address_family("v4");
     options->set_max_pending_requests(1);
-    options->set_max_active_requests(UINT64_MAX);
+    options->set_max_active_requests(UINT32_MAX);
+    options->set_max_requests_per_connection(UINT32_MAX);
   }
 
   void runWithFailingValidationExpectations(absl::string_view match_error = "") {

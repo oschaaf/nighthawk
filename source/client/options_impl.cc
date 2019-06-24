@@ -21,11 +21,11 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   TCLAP::ValueArg<uint64_t> requests_per_second("", "rps",
                                                 "The target requests-per-second rate. Default: 5.",
                                                 false, 5 /*default qps*/, "uint64_t", cmd);
-  TCLAP::ValueArg<uint64_t> connections(
+  TCLAP::ValueArg<uint32_t> connections(
       "", "connections",
       "The number of connections per event loop that the test should maximally "
       "use. HTTP/1 only. Default: 1.",
-      false, 1, "uint64_t", cmd);
+      false, 1, "uint32_t", cmd);
   TCLAP::ValueArg<uint64_t> duration("", "duration",
                                      "The number of seconds that the test should run. Default: 5.",
                                      false, 5, "uint64_t", cmd);
@@ -69,10 +69,10 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   // Note: we allow a burst size of 1, which intuitively may not make sense. However, allowing it
   // doesn't hurt either, and it does allow one to use a the same code-execution-paths in test
   // series that ramp up burst sizes.
-  TCLAP::ValueArg<uint64_t> burst_size(
+  TCLAP::ValueArg<uint32_t> burst_size(
       "", "burst-size",
       "Release requests in bursts of the specified size (default: 0, no bursting).", false, 0,
-      "uint64_t", cmd);
+      "uint32_t", cmd);
   std::vector<std::string> address_families = {"auto", "v4", "v6"};
   TCLAP::ValuesConstraint<std::string> address_families_allowed(address_families);
 
@@ -106,15 +106,19 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       "{common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES128-SHA\"]}}}",
       false, "", "string", cmd);
 
-  TCLAP::ValueArg<uint64_t> max_pending_requests(
+  TCLAP::ValueArg<uint32_t> max_pending_requests(
       "", "max-pending-requests",
       "Max pending requests (default: 1, no client side queuing. Specifying any other value will "
       "allow client-side queuing of requests).",
-      false, 1, "uint64_t", cmd);
+      false, 1, "uint32_t", cmd);
 
-  TCLAP::ValueArg<uint64_t> max_active_requests(
-      "", "max-active-requests", "Max active requests (default: UINT64_MAX, no limit).", false,
-      UINT64_MAX, "uint64_t", cmd);
+  TCLAP::ValueArg<uint32_t> max_active_requests("", "max-active-requests",
+                                                "Max active requests (default: 2^31).", false,
+                                                2ul << 30, "uint32_t", cmd);
+
+  TCLAP::ValueArg<uint32_t> max_requests_per_connection(
+      "", "max-requests-per-connection", "Max requests per connection (default: 2^31).", false,
+      2ul << 30, "uint32_t", cmd);
 
   TCLAP::UnlabeledValueArg<std::string> uri("uri",
                                             "uri to benchmark. http:// and https:// are supported, "
@@ -153,6 +157,10 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   request_method_ = request_method.getValue();
   request_headers_ = request_headers.getValue();
   request_body_size_ = request_body_size.getValue();
+  max_pending_requests_ = max_pending_requests.getValue();
+  max_active_requests_ = max_active_requests.getValue();
+  max_requests_per_connection_ = max_requests_per_connection.getValue();
+
   if (!tls_context.getValue().empty()) {
     // TODO(oschaaf): used to by loadFromJsonEx, which is now gone.
     Envoy::MessageUtil::loadFromJson(tls_context.getValue(), tls_context_,
@@ -160,21 +168,38 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   }
 
   // We cap on negative values. TCLAP accepts negative values which we will get here as very
-  // large values. We just cap values to 2^63.
-  const uint64_t largest_acceptable_uint64_option_value =
-      static_cast<uint64_t>(std::pow(2ull, 63ull));
+  // large values. We just cap values to 2^31.
+  const uint32_t largest_acceptable_uint32_option_value =
+      static_cast<uint32_t>(std::pow(2ul, 31ul));
 
-  if (requests_per_second_ == 0 || requests_per_second_ > largest_acceptable_uint64_option_value) {
+  if (requests_per_second_ == 0 || requests_per_second_ > largest_acceptable_uint32_option_value) {
     throw MalformedArgvException("Invalid value for --rps");
   }
-  if (connections_ == 0 || connections_ > largest_acceptable_uint64_option_value) {
+  if (connections_ == 0 || connections_ > largest_acceptable_uint32_option_value) {
     throw MalformedArgvException("Invalid value for --connections");
   }
-  if (duration_ == 0 || duration_ > largest_acceptable_uint64_option_value) {
+  if (duration_ == 0 || duration_ > largest_acceptable_uint32_option_value) {
     throw MalformedArgvException("Invalid value for --duration");
   }
-  if (timeout_ == 0 || timeout_ > largest_acceptable_uint64_option_value) {
+  if (timeout_ == 0 || timeout_ > largest_acceptable_uint32_option_value) {
     throw MalformedArgvException("Invalid value for --timeout");
+  }
+  if (request_body_size_ > largest_acceptable_uint32_option_value) {
+    throw MalformedArgvException("Invalid value for --request-body-size");
+  }
+  if (burst_size_ > largest_acceptable_uint32_option_value) {
+    throw MalformedArgvException("Invalid value for --burst-size");
+  }
+  if (max_pending_requests_ == 0 ||
+      max_pending_requests_ > largest_acceptable_uint32_option_value) {
+    throw MalformedArgvException("Invalid value for --max-pending-requests");
+  }
+  if (max_active_requests_ == 0 || max_active_requests_ > largest_acceptable_uint32_option_value) {
+    throw MalformedArgvException("Invalid value for --max-active-requests");
+  }
+  if (max_requests_per_connection_ == 0 ||
+      max_requests_per_connection_ > largest_acceptable_uint32_option_value) {
+    throw MalformedArgvException("Invalid value for --max-requests-per-connection");
   }
 
   // concurrency must be either 'auto' or a positive integer.
@@ -191,8 +216,6 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       throw MalformedArgvException("Value for --concurrency should be greater then 0.");
     }
   }
-  max_pending_requests_ = max_pending_requests.getValue();
-  max_active_requests_ = max_active_requests.getValue();
 
   try {
     UriImpl uri(uri_);
@@ -212,7 +235,8 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options)
           ::envoy::api::v2::core::RequestMethod_Name(options.request_options().request_method())),
       request_body_size_(options.request_options().request_body_size()),
       max_pending_requests_(options.max_pending_requests()),
-      max_active_requests_(options.max_active_requests()) {
+      max_active_requests_(options.max_active_requests()),
+      max_requests_per_connection_(options.max_requests_per_connection()) {
   Envoy::MessageUtil::validate(options);
   for (const auto& header : options.request_options().request_headers()) {
     std::string header_string =
@@ -260,6 +284,7 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
   *(command_line_options->mutable_tls_context()) = tlsContext();
   command_line_options->set_max_pending_requests(maxPendingRequests());
   command_line_options->set_max_active_requests(maxActiveRequests());
+  command_line_options->set_max_requests_per_connection(maxRequestsPerConnection());
   return command_line_options;
 }
 

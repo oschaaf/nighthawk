@@ -42,6 +42,7 @@ TEST_F(FactoriesTest, CreateBenchmarkClient) {
   EXPECT_CALL(options_, tlsContext()).Times(1).WillOnce(ReturnRef(tls_context));
   EXPECT_CALL(options_, maxPendingRequests()).Times(1);
   EXPECT_CALL(options_, maxActiveRequests()).Times(1);
+  EXPECT_CALL(options_, maxRequestsPerConnection()).Times(1);
 
   auto cmd = std::make_unique<nighthawk::client::CommandLineOptions>();
   auto request_headers = cmd->mutable_request_options()->add_request_headers();

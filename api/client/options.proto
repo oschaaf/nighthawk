@@ -49,6 +49,8 @@ message CommandLineOptions {
   uint64 max_pending_requests = 14 [(validate.rules).uint64 = {gte: 1}];
   // See :option:`--max-active_requests` for details.
   uint64 max_active_requests = 15 [(validate.rules).uint64 = {gte: 1}];
+  // See :option:`--max-requests-per-connection` for details.
+  uint64 max_requests_per_connection = 16 [(validate.rules).uint64 = {gte: 1}];
   // See :option:`--uri` for details.
-  string uri = 16; // [(validate.rules).string.uri = true];
+  string uri = 17; // [(validate.rules).string.uri = true];
 }

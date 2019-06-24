@@ -87,6 +87,7 @@ void BenchmarkClientHttpImpl::initialize(Envoy::Runtime::Loader& runtime) {
   envoy::api::v2::core::BindConfig bind_config;
 
   cluster_config.mutable_connect_timeout()->set_seconds(timeout_.count());
+  cluster_config.mutable_max_requests_per_connection()->set_value(max_requests_per_connection_);
   auto thresholds = cluster_config.mutable_circuit_breakers()->add_thresholds();
 
   // We do not support any retrying.

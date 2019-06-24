@@ -41,8 +41,9 @@ bazel build -c opt //:nighthawk_client
 
 USAGE: 
 
-   nighthawk_client  [--max-active-requests <uint64_t>]
-                     [--max-pending-requests <uint64_t>] [--tls-context
+   nighthawk_client  [--max-requests-per-connection <uint32_t>]
+                     [--max-active-requests <uint32_t>]
+                     [--max-pending-requests <uint32_t>] [--tls-context
                      <string>] [--request-body-size <uint32_t>]
                      [--request-header <string>] ... [--request-method
                      <GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE>]
@@ -51,17 +52,21 @@ USAGE:
                      <human|yaml|json>] [-v <trace|debug|info|warn|error
                      |critical>] [--concurrency <string>] [--h2] [--timeout
                      <uint64_t>] [--duration <uint64_t>] [--connections
-                     <uint64_t>] [--rps <uint64_t>] [--] [--version] [-h]
+                     <uint32_t>] [--rps <uint64_t>] [--] [--version] [-h]
                      <uri format>
 
 
 Where: 
 
-   --max-active-requests <uint64_t>
-     Max active requests (default: UINT64_MAX, no limit).
+   --max-requests-per-connection <uint32_t>
+     Max requests per connection (default: 2^31).
 
-   --max-pending-requests <uint64_t>
-     Max pending requests (default: 1, no queuing).
+   --max-active-requests <uint32_t>
+     Max active requests (default: 2^31).
+
+   --max-pending-requests <uint32_t>
+     Max pending requests (default: 1, no client side queuing. Specifying
+     any other value will allow client-side queuing of requests).
 
    --tls-context <string>
      Tls context configuration in yaml or json. Example
@@ -118,7 +123,7 @@ Where:
    --duration <uint64_t>
      The number of seconds that the test should run. Default: 5.
 
-   --connections <uint64_t>
+   --connections <uint32_t>
      The number of connections per event loop that the test should
      maximally use. HTTP/1 only. Default: 1.
 
