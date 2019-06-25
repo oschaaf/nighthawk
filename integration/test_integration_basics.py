@@ -12,125 +12,110 @@ from integration_test_base import HttpsIntegrationTestBase
 
 
 class TestHttp(HttpIntegrationTestBase):
-    def test_h1(self):
-        parsed_json = self.runNighthawkClient([self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_destroy_local", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_http1_total", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_rx_bytes_total", 3400)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_tx_bytes_total", 1400 if IntegrationTestBase.ipv6 else 1500)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_rq_pending_total", 1)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
-        self.assertNumberOfCountersEqual(parsed_json, 9)
 
-        server_stats = self.getTestServerStatisticsJson()
-        self.assertEqual(self.getServerStatFromJson(
-            server_stats, "http.ingress_http.downstream_rq_2xx"), 25)
+  def test_h1(self):
+    parsed_json = self.runNighthawkClient([self.getTestServerRootUri()])
+    self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy_local", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_http1_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_rx_bytes_total", 3400)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_tx_bytes_total",
+                                     1400 if IntegrationTestBase.ipv6 else 1500)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_pending_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
+    self.assertNumberOfCountersEqual(parsed_json, 9)
 
-        logging.info(json.dumps(server_stats, indent=4))
+    server_stats = self.getTestServerStatisticsJson()
+    self.assertEqual(
+        self.getServerStatFromJson(server_stats, "http.ingress_http.downstream_rq_2xx"), 25)
 
-    def test_h2(self):
-        parsed_json = self.runNighthawkClient(
-            ["--h2", self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_destroy_local", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_http2_total", 1)
-        self.assertGreaterEqual(self.getNighthawkCounter(
-            parsed_json, "upstream_cx_rx_bytes_total"), 1145)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
-        self.assertGreaterEqual(self.getNighthawkCounter(
-            parsed_json, "upstream_cx_tx_bytes_total"), 403)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_rq_pending_total", 1)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
-        self.assertNumberOfCountersEqual(parsed_json, 9)
+    logging.info(json.dumps(server_stats, indent=4))
+
+  def test_h2(self):
+    parsed_json = self.runNighthawkClient(["--h2", self.getTestServerRootUri()])
+    self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy_local", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_http2_total", 1)
+    self.assertGreaterEqual(
+        self.getNighthawkCounter(parsed_json, "upstream_cx_rx_bytes_total"), 1145)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
+    self.assertGreaterEqual(
+        self.getNighthawkCounter(parsed_json, "upstream_cx_tx_bytes_total"), 403)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_pending_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
+    self.assertNumberOfCountersEqual(parsed_json, 9)
 
 
 class TestHttps(HttpsIntegrationTestBase):
-    def test_h1(self):
-        parsed_json = self.runNighthawkClient(
-            [self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_destroy_local", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_http1_total", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_rx_bytes_total", 3400)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_tx_bytes_total", 1400 if IntegrationTestBase.ipv6 else 1500)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_rq_pending_total", 1)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.curves.X25519", 1)
-        self.assertNighthawkCounterEqual(parsed_json, "ssl.handshake", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.sigalgs.rsa_pss_rsae_sha256", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.versions.TLSv1.2", 1)
-        self.assertNumberOfCountersEqual(parsed_json, 14)
 
-    def test_h2(self):
-        parsed_json = self.runNighthawkClient(
-            ["--h2", self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_destroy_local", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_cx_http2_total", 1)
-        self.assertGreaterEqual(self.getNighthawkCounter(
-            parsed_json, "upstream_cx_rx_bytes_total"), 1145)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
-        self.assertGreaterEqual(self.getNighthawkCounter(
-            parsed_json, "upstream_cx_tx_bytes_total"), 403)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "upstream_rq_pending_total", 1)
-        self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.curves.X25519", 1)
-        self.assertNighthawkCounterEqual(parsed_json, "ssl.handshake", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.sigalgs.rsa_pss_rsae_sha256", 1)
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.versions.TLSv1.2", 1)
-        self.assertNumberOfCountersEqual(parsed_json, 14)
+  def test_h1(self):
+    parsed_json = self.runNighthawkClient([self.getTestServerRootUri()])
+    self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy_local", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_http1_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_rx_bytes_total", 3400)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_tx_bytes_total",
+                                     1400 if IntegrationTestBase.ipv6 else 1500)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_pending_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.curves.X25519", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.handshake", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.sigalgs.rsa_pss_rsae_sha256", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.versions.TLSv1.2", 1)
+    self.assertNumberOfCountersEqual(parsed_json, 14)
 
-    def test_h1_tls_context_configuration(self):
-        parsed_json = self.runNighthawkClient(
-            ["--duration 1", "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES128-SHA\"]}}}", self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-SHA", 1)
+  def test_h2(self):
+    parsed_json = self.runNighthawkClient(["--h2", self.getTestServerRootUri()])
+    self.assertNighthawkCounterEqual(parsed_json, "benchmark.http_2xx", 25)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_destroy_local", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_http2_total", 1)
+    self.assertGreaterEqual(
+        self.getNighthawkCounter(parsed_json, "upstream_cx_rx_bytes_total"), 1145)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
+    self.assertGreaterEqual(
+        self.getNighthawkCounter(parsed_json, "upstream_cx_tx_bytes_total"), 403)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_pending_total", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.curves.X25519", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.handshake", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.sigalgs.rsa_pss_rsae_sha256", 1)
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.versions.TLSv1.2", 1)
+    self.assertNumberOfCountersEqual(parsed_json, 14)
 
-        parsed_json = self.runNighthawkClient(
-            ["--h2", "--duration 1", "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES256-GCM-SHA384\"]}}}", self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.ciphers.ECDHE-RSA-AES256-GCM-SHA384", 1)
+  def test_h1_tls_context_configuration(self):
+    parsed_json = self.runNighthawkClient([
+        "--duration 1",
+        "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES128-SHA\"]}}}",
+        self.getTestServerRootUri()
+    ])
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-SHA", 1)
 
-    def test_h2_tls_context_configuration(self):
-        parsed_json = self.runNighthawkClient(
-            ["--duration 1", "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES128-SHA\"]}}}", self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-SHA", 1)
+    parsed_json = self.runNighthawkClient([
+        "--h2", "--duration 1",
+        "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES256-GCM-SHA384\"]}}}",
+        self.getTestServerRootUri()
+    ])
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.ciphers.ECDHE-RSA-AES256-GCM-SHA384", 1)
 
-        parsed_json = self.runNighthawkClient(
-            ["--h2", "--duration 1", "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES256-GCM-SHA384\"]}}}", self.getTestServerRootUri()])
-        self.assertNighthawkCounterEqual(
-            parsed_json, "ssl.ciphers.ECDHE-RSA-AES256-GCM-SHA384", 1)
+  def test_h2_tls_context_configuration(self):
+    parsed_json = self.runNighthawkClient([
+        "--duration 1",
+        "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES128-SHA\"]}}}",
+        self.getTestServerRootUri()
+    ])
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-SHA", 1)
+
+    parsed_json = self.runNighthawkClient([
+        "--h2", "--duration 1",
+        "--tls-context {common_tls_context:{tls_params:{cipher_suites:[\"-ALL:ECDHE-RSA-AES256-GCM-SHA384\"]}}}",
+        self.getTestServerRootUri()
+    ])
+    self.assertNighthawkCounterEqual(parsed_json, "ssl.ciphers.ECDHE-RSA-AES256-GCM-SHA384", 1)
