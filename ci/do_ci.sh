@@ -78,12 +78,14 @@ function do_check_format() {
     echo "check_format..."
     cd "${SRCDIR}"
     ./tools/check_format.sh check
+    ./tools/format_python_tools.sh check
 }
 
 function do_fix_format() {
     echo "fix_format..."
     cd "${SRCDIR}"
     ./tools/check_format.sh fix
+    ./tools/format_python_tools.sh fix
 }
 
 [ -z "${NUM_CPUS}" ] && export NUM_CPUS=`grep -c ^processor /proc/cpuinfo`
