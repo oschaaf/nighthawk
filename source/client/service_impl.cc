@@ -16,8 +16,8 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
   OptionsPtr options;
   try {
     options = std::make_unique<OptionsImpl>(request.start_request().options());
-  } catch (Envoy::EnvoyException exception) {
-    response.mutable_error_detail()->set_message(exception.what());
+  } catch (MalformedArgvException e) {
+    response.mutable_error_detail()->set_message(e.what());
     writeResponseAndFinish(response);
     return;
   }
@@ -58,7 +58,6 @@ void ServiceImpl::waitForRunnerThreadCompletion() {
 
 // TODO(oschaaf): implement a way to cancel test runs, and update rps config on the fly.
 // TODO(oschaaf): unit-test Process, create MockProcess & use in service_test.cc / client_test.cc
-// TODO(oschaaf): should we merge incoming request options with defaults?
 // TODO(oschaaf): aggregate the client's logs and forward them in the grpc response.
 ::grpc::Status ServiceImpl::ExecutionStream(
     ::grpc::ServerContext* /*context*/,

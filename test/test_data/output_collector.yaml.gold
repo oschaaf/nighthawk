@@ -1,17 +1,5 @@
 options:
-  requests_per_second: 0
   connections: 0
-  h2: false
-  concurrency: ""
-  verbosity: ""
-  output_format: ""
-  prefetch_connections: false
-  burst_size: 0
-  address_family: ""
-  max_pending_requests: 0
-  max_active_requests: 0
-  max_requests_per_connection: 0
-  uri: ""
   duration: 1s
 results:
   - name: worker_0
