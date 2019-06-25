@@ -94,7 +94,7 @@ if [ -n "$CIRCLECI" ]; then
     if [[ -f "${HOME:-/root}/.gitconfig" ]]; then
         mv "${HOME:-/root}/.gitconfig" "${HOME:-/root}/.gitconfig_save"
         echo 1
-     fi
+    fi
 
     NUM_CPUS=8
     if [ "$1" == "coverage" ]; then
