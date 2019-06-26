@@ -6,10 +6,10 @@ import sys
 import unittest
 
 from common import IpVersion
-from integration_test_base import (HttpIntegrationTestBase, HttpsIntegrationTestBase,
+from integration_test_fixtures import (HttpIntegrationTestBase, HttpsIntegrationTestBase,
                                    IntegrationTestBase)
 
-# TODO(oschaaf): rewrite the tests so we can just had a map of expected key values to it.
+# TODO(oschaaf): rewrite the tests so we can just hand a map of expected key values to it.
 
 
 class TestHttp(HttpIntegrationTestBase):

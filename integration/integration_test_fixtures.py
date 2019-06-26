@@ -1,4 +1,4 @@
-"""@package integration_test_base
+"""@package integration_test_fixtures
 Base classes for Nighthawk integration tests
 """
 

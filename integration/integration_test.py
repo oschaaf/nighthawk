@@ -9,22 +9,20 @@ import unittest
 
 import test_integration_basics
 from common import IpVersion, NighthawkException
-from integration_test_base import IntegrationTestBase
+from integration_test_fixtures import IntegrationTestBase
 
 
 def determineIpVersionsFromEnvironment():
-  supported = []
-  versions = os.environ.get("ENVOY_IP_TEST_VERSIONS", "all")
-  if versions == "v4only":
-    supported.append(IpVersion.IPV4)
-  elif versions == "v6only":
-    supported.append(IpVersion.IPV6)
-  elif versions == "all":
-    supported.append(IpVersion.IPV4)
-    supported.append(IpVersion.IPV6)
+  env_versions = os.environ.get("ENVOY_IP_TEST_VERSIONS", "all")
+  if env_versions == "v4only":
+    versions = [IpVersion.IPV4]
+  elif env_versions == "v6only":
+    versions = [IpVersion.IPV6]
+  elif env_versions == "all":
+    versions = [IpVersion.IPV4, IpVersion.IPV6]
   else:
     raise NighthawkException("Unknown ip version: '%s'" % versions)
-  return supported
+  return versions
 
 
 def runTests(ip_version):
