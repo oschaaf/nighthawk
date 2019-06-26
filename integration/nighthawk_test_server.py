@@ -25,7 +25,7 @@ class TestServerBase(object):
     self.server_thread = threading.Thread(target=self.serverThreadRunner)
     self.server_process = None
     self.server_ip = server_ip
-    self.socket_type = socket.AF_INET6 if ip_version == IpVersion.ipv6 else socket.AF_INET
+    self.socket_type = socket.AF_INET6 if ip_version == IpVersion.IPV6 else socket.AF_INET
     self.server_port = server_port
     self.parameters = parameters
     self.server_binary_config_path_arg = server_binary_config_path_arg

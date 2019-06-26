@@ -9,6 +9,8 @@ from common import IpVersion
 from integration_test_base import (HttpIntegrationTestBase, HttpsIntegrationTestBase,
                                    IntegrationTestBase)
 
+# TODO(oschaaf): rewrite the tests so we can just had a map of expected key values to it.
+
 
 class TestHttp(HttpIntegrationTestBase):
 
@@ -22,7 +24,7 @@ class TestHttp(HttpIntegrationTestBase):
     self.assertEqual(counters["upstream_cx_rx_bytes_total"], 3400)
     self.assertEqual(counters["upstream_cx_total"], 1)
     self.assertEqual(counters["upstream_cx_tx_bytes_total"],
-                     1400 if IntegrationTestBase.ip_version == IpVersion.ipv6 else 1500)
+                     1400 if IntegrationTestBase.ip_version == IpVersion.IPV6 else 1500)
     self.assertEqual(counters["upstream_rq_pending_total"], 1)
     self.assertEqual(counters["upstream_rq_total"], 25)
     self.assertEqual(len(counters), 9)
@@ -54,7 +56,7 @@ class TestHttps(HttpsIntegrationTestBase):
     self.assertEqual(counters["upstream_cx_rx_bytes_total"], 3400)
     self.assertEqual(counters["upstream_cx_total"], 1)
     self.assertEqual(counters["upstream_cx_tx_bytes_total"],
-                     1400 if IntegrationTestBase.ip_version == IpVersion.ipv6 else 1500)
+                     1400 if IntegrationTestBase.ip_version == IpVersion.IPV6 else 1500)
     self.assertEqual(counters["upstream_rq_pending_total"], 1)
     self.assertEqual(counters["upstream_rq_total"], 25)
     self.assertEqual(counters["ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256"], 1)

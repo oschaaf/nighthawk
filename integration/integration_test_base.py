@@ -18,8 +18,7 @@ from nighthawk_test_server import NighthawkTestServer
 
 class IntegrationTestBase(unittest.TestCase):
   """
-    IntegrationTestBase facilitates testing against the Nighthawk test server, by running
-    determining a free port, and starting it up in a separate process in setUp().
+    IntegrationTestBase facilitates testing against the Nighthawk test server, by determining a free port, and starting it up in a separate process in setUp().
     """
 
   def __init__(self, *args, **kwargs):
@@ -29,19 +28,22 @@ class IntegrationTestBase(unittest.TestCase):
     self.nighthawk_test_server_path = os.path.join(self.test_rundir, "nighthawk_test_server")
     self.nighthawk_test_config_path = None
     self.nighthawk_client_path = os.path.join(self.test_rundir, "nighthawk_client")
-    self.server_ip = "::1" if IntegrationTestBase.ip_version == IpVersion.ipv6 else "127.0.0.1"
-    self.socket_type = socket.AF_INET6 if IntegrationTestBase.ip_version == IpVersion.ipv6 else socket.AF_INET
+    self.server_ip = "::1" if IntegrationTestBase.ip_version == IpVersion.IPV6 else "127.0.0.1"
+    self.socket_type = socket.AF_INET6 if IntegrationTestBase.ip_version == IpVersion.IPV6 else socket.AF_INET
     self.test_server = None
     self.server_port = -1
     self.parameters = dict()
 
+  # TODO(oschaaf): For the NH test server, add a way to let it determine a port by itself and pull that
+  # out.
   def getFreeListenerPortForAddress(self, address):
     """
-        Determines a free port and returns that. Theoretically it is possible that another process
-        will steal the port before our caller is able to leverage it, but we take that chance.
-        The upside is that we can push the port upon the server we are about to start through configuration
-        which is compatible accross servers.
-        """
+    Determines a free port and returns that. Theoretically it is possible that another process
+    will steal the port before our caller is able to leverage it, but we take that chance.
+    The upside is that we can push the port upon the server we are about to start through configuration
+    which is compatible accross servers.
+    """
+    # TODO(oschaaf): When we are on python 3 use RAII here.
     sock = socket.socket(self.socket_type, socket.SOCK_STREAM)
     sock.bind((address, 0))
     port = sock.getsockname()[1]
@@ -50,8 +52,8 @@ class IntegrationTestBase(unittest.TestCase):
 
   def setUp(self):
     """
-        Performs sanity checks and starts up the server. Upon exit the server is ready to accept connections.
-        """
+    Performs sanity checks and starts up the server. Upon exit the server is ready to accept connections.
+    """
     self.assertTrue(os.path.exists(self.nighthawk_test_server_path))
     self.assertTrue(os.path.exists(self.nighthawk_client_path))
     self.server_port = self.getFreeListenerPortForAddress(self.server_ip)
@@ -62,28 +64,26 @@ class IntegrationTestBase(unittest.TestCase):
 
   def tearDown(self):
     """
-        Stops the server.
-        """
+    Stops the server.
+    """
     self.assertEqual(0, self.test_server.stop())
 
   def getNighthawkCounterMapFromJson(self, parsed_json):
     """
-        Utility method to get the counters from the json indexed by name.
-        Note:the `client.` prefix will be stripped from the index.
-        """
-    counter_map = {}
-    counters = parsed_json["results"][0]["counters"]
-    for counter in counters:
-      counter_qualified_name = counter["name"]
-      counter_map[counter_qualified_name[len("client."):]] = int(counter["value"])
-    return counter_map
+    Utility method to get the counters from the json indexed by name.
+    Note:the `client.` prefix will be stripped from the index.
+    """
+    return {
+        counter["name"][len("client."):]: int(counter["value"])
+        for counter in parsed_json["results"][0]["counters"]
+    }
 
   def getTestServerRootUri(self, https=False):
     """
-        Utility for getting the http://host:port/ that can be used to query the server we started in setUp()
-        """
+    Utility for getting the http://host:port/ that can be used to query the server we started in setUp()
+    """
     uri_host = self.server_ip
-    if IntegrationTestBase.ip_version == IpVersion.ipv6:
+    if IntegrationTestBase.ip_version == IpVersion.IPV6:
       uri_host = "[%s]" % self.server_ip
 
     uri = "%s://%s:%s/" % ("https" if https else "http", uri_host, self.test_server.server_port)
@@ -91,10 +91,10 @@ class IntegrationTestBase(unittest.TestCase):
 
   def runNighthawk(self, args, expect_failure=False, timeout=30):
     """
-        Runs Nighthawk against the test server, returning a json-formatted result.
-        If the timeout is exceeded an exception will be raised.
-        """
-    if IntegrationTestBase.ip_version == IpVersion.ipv6:
+    Runs Nighthawk against the test server, returning a json-formatted result.
+    If the timeout is exceeded an exception will be raised.
+    """
+    if IntegrationTestBase.ip_version == IpVersion.IPV6:
       args.insert(0, "--address-family v6")
     args.insert(0, "--output-format json")
     args.insert(0, self.nighthawk_client_path)
@@ -112,13 +112,13 @@ class IntegrationTestBase(unittest.TestCase):
 
 # We don't have a straightforward way to do parameterized tests yet.
 # But the tests can be run twice if desired so, and setting this to true will enable ipv6 mode.
-IntegrationTestBase.ip_version = IpVersion.Unknown
+IntegrationTestBase.ip_version = IpVersion.UNKNOWN
 
 
 class HttpIntegrationTestBase(IntegrationTestBase):
   """
-    Base for running plain http tests against the Nighthawk test server
-    """
+  Base for running plain http tests against the Nighthawk test server
+  """
 
   def __init__(self, *args, **kwargs):
     super(HttpIntegrationTestBase, self).__init__(*args, **kwargs)
@@ -131,8 +131,8 @@ class HttpIntegrationTestBase(IntegrationTestBase):
 
 class HttpsIntegrationTestBase(IntegrationTestBase):
   """
-    Base for https tests against the Nighthawk test server
-    """
+  Base for https tests against the Nighthawk test server
+  """
 
   def __init__(self, *args, **kwargs):
     super(HttpsIntegrationTestBase, self).__init__(*args, **kwargs)
