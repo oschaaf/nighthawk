@@ -6,9 +6,9 @@ import logging
 import os
 import sys
 import unittest
-from integration_test_base import IntegrationTestBase
 
 import test_integration_basics
+from integration_test_base import IntegrationTestBase
 
 
 def determineIpVersionsFromEnvironment():

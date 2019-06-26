@@ -4,14 +4,15 @@ Base classes for Nighthawk integration tests
 
 import json
 import logging
-from nighthawk_test_server import NighthawkTestServer
 import os
-import threading
-import time
+import socket
 import subprocess
 import sys
-import socket
+import threading
+import time
 import unittest
+
+from nighthawk_test_server import NighthawkTestServer
 
 
 class IntegrationTestBase(unittest.TestCase):

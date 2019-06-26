@@ -5,9 +5,9 @@ import os
 import sys
 import unittest
 
-from integration_test_base import IntegrationTestBase
-from integration_test_base import HttpIntegrationTestBase
-from integration_test_base import HttpsIntegrationTestBase
+from integration_test_base import (HttpIntegrationTestBase,
+                                   HttpsIntegrationTestBase,
+                                   IntegrationTestBase)
 
 
 class TestHttp(HttpIntegrationTestBase):

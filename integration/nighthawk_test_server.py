@@ -1,13 +1,13 @@
-import os
-import time
-import sys
-import subprocess
-import threading
-import socket
 import json
-from string import Template
-import tempfile
 import logging
+import os
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from string import Template
 
 
 class TestServerBase(object):
