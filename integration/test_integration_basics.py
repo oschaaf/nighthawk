@@ -5,8 +5,8 @@ import os
 import sys
 import unittest
 
-from integration_test_base import (HttpIntegrationTestBase,
-                                   HttpsIntegrationTestBase,
+from common import IpVersion
+from integration_test_base import (HttpIntegrationTestBase, HttpsIntegrationTestBase,
                                    IntegrationTestBase)
 
 
@@ -20,8 +20,9 @@ class TestHttp(HttpIntegrationTestBase):
     self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_http1_total", 1)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_rx_bytes_total", 3400)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
-    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_tx_bytes_total",
-                                     1400 if IntegrationTestBase.ipv6 else 1500)
+    self.assertNighthawkCounterEqual(
+        parsed_json, "upstream_cx_tx_bytes_total",
+        1400 if IntegrationTestBase.ip_version == IpVersion.ipv6 else 1500)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_pending_total", 1)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
     self.assertNumberOfCountersEqual(parsed_json, 9)
@@ -52,8 +53,9 @@ class TestHttps(HttpsIntegrationTestBase):
     self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_http1_total", 1)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_rx_bytes_total", 3400)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_total", 1)
-    self.assertNighthawkCounterEqual(parsed_json, "upstream_cx_tx_bytes_total",
-                                     1400 if IntegrationTestBase.ipv6 else 1500)
+    self.assertNighthawkCounterEqual(
+        parsed_json, "upstream_cx_tx_bytes_total",
+        1400 if IntegrationTestBase.ip_version == IpVersion.ipv6 else 1500)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_pending_total", 1)
     self.assertNighthawkCounterEqual(parsed_json, "upstream_rq_total", 25)
     self.assertNighthawkCounterEqual(parsed_json, "ssl.ciphers.ECDHE-RSA-AES128-GCM-SHA256", 1)

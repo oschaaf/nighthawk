@@ -12,6 +12,7 @@ import threading
 import time
 import unittest
 
+from common import IpVersion
 from nighthawk_test_server import NighthawkTestServer
 
 
@@ -28,8 +29,8 @@ class IntegrationTestBase(unittest.TestCase):
     self.nighthawk_test_server_path = os.path.join(self.test_rundir, "nighthawk_test_server")
     self.nighthawk_test_config_path = None
     self.nighthawk_client_path = os.path.join(self.test_rundir, "nighthawk_client")
-    self.server_ip = "::1" if IntegrationTestBase.ipv6 else "127.0.0.1"
-    self.socket_type = socket.AF_INET6 if IntegrationTestBase.ipv6 else socket.AF_INET
+    self.server_ip = "::1" if IntegrationTestBase.ip_version == IpVersion.ipv6 else "127.0.0.1"
+    self.socket_type = socket.AF_INET6 if IntegrationTestBase.ip_version == IpVersion.ipv6 else socket.AF_INET
     self.test_server = None
     self.server_port = -1
     self.parameters = dict()
@@ -56,7 +57,7 @@ class IntegrationTestBase(unittest.TestCase):
     self.server_port = self.getFreeListenerPortForAddress(self.server_ip)
     self.test_server = NighthawkTestServer(
         self.nighthawk_test_server_path, self.nighthawk_test_config_path, self.server_ip,
-        self.server_port, IntegrationTestBase.ipv6, self.parameters)
+        self.server_port, IntegrationTestBase.ip_version, self.parameters)
     self.assertTrue(self.test_server.start())
 
   def tearDown(self):
@@ -88,7 +89,7 @@ class IntegrationTestBase(unittest.TestCase):
         Utility for getting the http://host:port/ that can be used to query the server we started in setUp()
         """
     uri_host = self.server_ip
-    if IntegrationTestBase.ipv6:
+    if IntegrationTestBase.ip_version == IpVersion.ipv6:
       uri_host = "[%s]" % self.server_ip
 
     uri = "%s://%s:%s/" % ("https" if https else "http", uri_host, self.test_server.server_port)
@@ -99,7 +100,7 @@ class IntegrationTestBase(unittest.TestCase):
         Runs Nighthawk against the test server, returning a json-formatted result.
         If the timeout is exceeded an exception will be raised.
         """
-    if IntegrationTestBase.ipv6:
+    if IntegrationTestBase.ip_version == IpVersion.ipv6:
       args.insert(0, "--address-family v6")
     args.insert(0, "--output-format json")
     args.insert(0, self.nighthawk_client_path)
@@ -117,7 +118,7 @@ class IntegrationTestBase(unittest.TestCase):
 
 # We don't have a straightforward way to do parameterized tests yet.
 # But the tests can be run twice if desired so, and setting this to true will enable ipv6 mode.
-IntegrationTestBase.ipv6 = False
+IntegrationTestBase.ip_version = IpVersion.Unknown
 
 
 class HttpIntegrationTestBase(IntegrationTestBase):
