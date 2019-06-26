@@ -14,7 +14,7 @@ from integration_test_base import IntegrationTestBase
 
 def determineIpVersionsFromEnvironment():
   supported = []
-  versions = "all"  # os.environ.get("ENVOY_IP_TEST_VERSIONS", "all")
+  versions = os.environ.get("ENVOY_IP_TEST_VERSIONS", "all")
   if versions == "v4only":
     supported.append(IpVersion.ipv4)
   elif versions == "v6only":

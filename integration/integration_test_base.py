@@ -66,23 +66,17 @@ class IntegrationTestBase(unittest.TestCase):
         """
     self.assertEqual(0, self.test_server.stop())
 
-  def getNighthawkCounter(self, parsed_json, name):
+  def getNighthawkCounterMapFromJson(self, parsed_json):
     """
-        Utility method to get a counter from a nighthawk json result. Requesting a non-existing
-        counter will trigger an assert.
+        Utility method to get the counters from the json indexed by name.
+        Note:the `client.` prefix will be stripped from the index.
         """
+    counter_map = {}
     counters = parsed_json["results"][0]["counters"]
     for counter in counters:
-      if counter["name"] == "client.%s" % name:
-        return int(counter["value"])
-    self.assertTrue(False)
-
-  def assertNighthawkCounterEqual(self, parsed_json, name, value):
-    self.assertEqual(int(value), self.getNighthawkCounter(parsed_json, name))
-
-  def assertNumberOfCountersEqual(self, parsed_json, count):
-    counters = parsed_json["results"][0]["counters"]
-    self.assertEqual(len(counters), count)
+      counter_qualified_name = counter["name"]
+      counter_map[counter_qualified_name[len("client."):]] = int(counter["value"])
+    return counter_map
 
   def getTestServerRootUri(self, https=False):
     """
