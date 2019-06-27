@@ -9,7 +9,6 @@ namespace Nighthawk {
 namespace Client {
 
 void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionRequest& request) {
-  ASSERT(running_, "running_ ought to be set");
   nighthawk::client::ExecutionResponse response;
   response.mutable_error_detail()->set_code(grpc::StatusCode::INTERNAL);
 
@@ -22,16 +21,20 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
     return;
   }
 
-  ProcessImpl process(*options, time_system_);
-  OutputCollectorFactoryImpl output_format_factory(time_system_, *options);
-  auto logging_context = std::make_unique<Envoy::Logger::Context>(
-      spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock_);
-  auto formatter = output_format_factory.create();
-  if (process.run(*formatter)) {
-    response.clear_error_detail();
-    *(response.mutable_output()) = formatter->toProto();
-  } else {
-    response.mutable_error_detail()->set_message("Unknown failure");
+  // We scope here because the ProcessImpl instance must be destructed before we write the response
+  // and set running to false.
+  {
+    ProcessImpl process(*options, time_system_);
+    OutputCollectorFactoryImpl output_format_factory(time_system_, *options);
+    auto logging_context = std::make_unique<Envoy::Logger::Context>(
+        spdlog::level::from_str(options->verbosity()), "[%T.%f][%t][%L] %v", log_lock_);
+    auto formatter = output_format_factory.create();
+    if (process.run(*formatter)) {
+      response.clear_error_detail();
+      *(response.mutable_output()) = formatter->toProto();
+    } else {
+      response.mutable_error_detail()->set_message("Unknown failure");
+    }
   }
   writeResponseAndFinish(response);
 }
@@ -40,24 +43,19 @@ void ServiceImpl::writeResponseAndFinish(const nighthawk::client::ExecutionRespo
   if (!stream_->Write(response)) {
     ENVOY_LOG(warn, "Stream write failed");
   }
-  running_ = false;
-}
-
-void ServiceImpl::waitForRunnerThreadCompletion() {
-  if (runner_thread_.joinable()) {
-    runner_thread_.join();
-  }
-  ASSERT(!running_, "running_ ought to be unset");
 }
 
 ::grpc::Status ServiceImpl::finishGrpcStream(const bool success, absl::string_view description) {
-  waitForRunnerThreadCompletion();
+  if (future_.valid()) {
+    future_.wait();
+  }
   return success ? grpc::Status::OK
                  : grpc::Status(grpc::StatusCode::INTERNAL, std::string(description));
 }
 
 // TODO(oschaaf): implement a way to cancel test runs, and update rps config on the fly.
 // TODO(oschaaf): unit-test Process, create MockProcess & use in service_test.cc / client_test.cc
+// TODO(oschaaf): should we merge incoming request options with defaults?
 // TODO(oschaaf): aggregate the client's logs and forward them in the grpc response.
 ::grpc::Status ServiceImpl::ExecutionStream(
     ::grpc::ServerContext* /*context*/,
@@ -68,12 +66,12 @@ void ServiceImpl::waitForRunnerThreadCompletion() {
   while (stream->Read(&request)) {
     ENVOY_LOG(debug, "Read ExecutionRequest data: {}", request.DebugString());
     if (request.has_start_request()) {
-      if (running_) {
+      if (future_.valid() &&
+          future_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
         return finishGrpcStream(false, "Only a single benchmark session is allowed at a time.");
       } else {
-        waitForRunnerThreadCompletion();
-        running_ = true;
-        runner_thread_ = std::thread(&ServiceImpl::handleExecutionRequest, this, request);
+        future_ =
+            std::future<void>(std::async(&ServiceImpl::handleExecutionRequest, this, request));
       }
     } else if (request.has_update_request() || request.has_cancellation_request()) {
       return finishGrpcStream(false, "Request is not supported yet.");

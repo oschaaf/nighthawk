@@ -22,11 +22,11 @@ py_test(
     ],
     # We enforce python 2, but I we may be able to stop doing that when we update
     # bazel in CI. (Or we add python3 explicitly as a build dependency somehow).
-    python_version = "PY2",
-    srcs_version = "PY2ONLY",
+    python_version = "PY3",
+    srcs_version = "PY3ONLY",
     deps = [
         requirement("requests"),
-        # I think the following are implied by 'request'.
+        # The following are implied by 'request'.
         requirement("urllib3"),
         requirement("chardet"),
         requirement("certifi"),
