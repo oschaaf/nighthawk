@@ -13,120 +13,59 @@
 // limitations under the License.
 #pragma once
 
-#include <stdint.h> // int64_t
-#include <stdio.h>  // printf
+#include "common/common/assert.h"
+#include "envoy/common/pure.h"
+#include "envoy/common/time.h"
+#include <functional>
+#include <memory>
+#include <stack>
+#include <vector>
 
 namespace Nighthawk {
 
-// A time duration, measured in some implementation-dependent units.
-//
-// Using a struct to wrap int64_t yields a unique type that we can't
-// accidentally use as a type-synonym of other int64_t types.
-struct Ticks {
-  int64_t value_;
-  static Ticks Now();
-};
-
-// A time duration, measured in microseconds.
-//
-// Using a struct to wrap int64_t yields a unique type that we can't
-// accidentally use as a type-synonym of other int64_t types.
-struct Duration {
-  int64_t micros_;
-  static Duration FromTicks(const Ticks ticks);
-};
-
-// Accumulates statistics about a function or some C++ scope.
-//
-// Usage: see ScopedTask.
-//
-// Records the number of times the scope was entered (the function called) and
-// the total time spent in there. Prints the statistics in the destructor.
-class Task {
-  const char* name_;
-  uint64_t calls_;
-  Ticks total_;
-
+class Tracer {
 public:
-  Task(const char* name) : name_(name), calls_(0), total_({0}) {}
-  ~Task();
-  void AddCall() { calls_++; }
-  void AddTicks(const Ticks t) { total_.value_ += t.value_; }
-  uint64_t GetCalls() const { return calls_; }
-  Duration GetDuration() const { return Duration::FromTicks(total_); }
+  virtual ~Tracer() = default;
+  virtual void traceTime() PURE;
 };
 
-// Measures elapsed time.
-//
-// Example:
-//   void foo() {
-//     StopWatch s;
-//     ...
-//     s.PrintAndReset("marker 1");  // prints elapsed time since creation
-//     ...
-//     s.PrintAndReset("marker 2");  // prints elapsed time since "marker 1"
-//     ...
-//     s.Reset();
-//     ...
-//     Ticks t1 = s.Elapsed();  // time since Reset
-//     ...
-//     Ticks t2 = s.Elapsed();  // time since Reset, not since t1
-//   }
-//
-class StopWatch {
-  Ticks start_;
-
+class TracerImpl : public Tracer {
 public:
-  // Constructor -- it also resets this StopWatch.
-  StopWatch() { start_ = Ticks::Now(); }
-
-  // Prints elapsed time since last reset, then resets.
-  //
-  // Args:
-  //   name: a descriptive name, will be printed in the output
-  void PrintAndReset(const char* name);
-
-  // Returns the elapsed time since the last reset as `Ticks`.
-  Ticks Elapsed() const {
-    Ticks now = Ticks::Now();
-    return {now.value_ - start_.value_};
-  }
-
-  // Returns the elapsed time since the last reset as `Duration`.
-  Duration ElapsedTime() const { return Duration::FromTicks(Elapsed()); }
-
-  // Resets this StopWatch to the current time.
-  void Reset() { start_ = Ticks::Now(); }
-};
-
-// Measures the execution duration of a given C++ scope.
-//
-// The constructor records one call of the scope in a `Task` object, and the
-// destructor records the time spent in the scope in that `Task` object.
-//
-// Usage:
-//   create one Task that accumulates the statistics for a given function
-//   or scope, and create one ScopedTask in the beginning of the scope you want
-//   to measure. Every time the scope is entered (the function is called), a
-//   ScopedTask is created, then destructed when the execution leaves the scope.
-//   The destructor then records the statistics in the Task.
-//
-// Example:
-//   Task slow_function_stats("slow function");  // d'tor prints stats
-//
-//   void slow_function() {
-//     ScopedTask prof(&slow_function_stats);
-//     ...
-//   }
-//
-class ScopedTask {
-public:
-  ScopedTask(Task* s) : stat_(s) { stat_->AddCall(); }
-  ~ScopedTask() { stat_->AddTicks(prof_.Elapsed()); }
+  TracerImpl(Envoy::TimeSource& time_source) : time_source_(time_source) {}
+  void traceTime() override { trace_points_.push_back(time_source_.monotonicTime()); }
 
 private:
-  Task* stat_;
-  StopWatch prof_;
+  Envoy::TimeSource& time_source_;
+  std::vector<Envoy::MonotonicTime> trace_points_;
+};
+
+typedef std::unique_ptr<Tracer, std::function<void(Tracer*)>> TracerPtr;
+
+class TracerPool {
+public:
+  virtual ~TracerPool() = default;
+  virtual TracerPtr get() PURE;
+  virtual bool isEmpty() const PURE;
+  virtual size_t size() const PURE;
+};
+
+class TracerPoolImpl : public TracerPool {
+public:
+  TracerPtr get() override {
+    ASSERT(!pool_.empty());
+    TracerPtr tmp(pool_.top().release(),
+                  [this](Tracer* tracer) { recycleElement(std::unique_ptr<Tracer>(tracer)); });
+    pool_.pop();
+    return tmp;
+  }
+
+  bool isEmpty() const override { return pool_.empty(); }
+
+  size_t size() const override { return pool_.size(); }
+
+private:
+  void recycleElement(std::unique_ptr<Tracer> tracer) { pool_.push(std::move(tracer)); }
+  std::stack<std::unique_ptr<Tracer>> pool_;
 };
 
 } // namespace Nighthawk
