@@ -19,16 +19,12 @@ TEST_F(TracerTest, Happy) {
   TracerPoolPtr pool = std::make_unique<TracerPoolImpl>(time_system_);
   auto tracer = pool->get();
   tracer.reset();
-
-  // tracer.reset();
-  // pool.reset();
 }
 
 TEST_F(TracerTest, Dangling) {
   TracerPoolPtr pool = std::make_unique<TracerPoolImpl>(time_system_);
   auto tracer = pool->get();
   pool.reset();
-  // tracer.reset();
 }
 
 } // namespace Nighthawk

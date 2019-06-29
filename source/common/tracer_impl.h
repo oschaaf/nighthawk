@@ -26,7 +26,6 @@ public:
   bool orphaned() const override { return orphaned_; };
 
 private:
-  friend class TracerPoolImpl;
   Envoy::TimeSource& time_source_;
   std::vector<Envoy::MonotonicTime> trace_points_;
   bool in_flight_{false};
@@ -36,47 +35,13 @@ private:
 class TracerPoolImpl : public TracerPool {
 public:
   TracerPoolImpl(Envoy::TimeSource& time_source) : time_source_(time_source) {}
-  ~TracerPoolImpl() override {
-    // Clear the pool.
-    while (!pool_.empty()) {
-      Tracer* tracer = pool_.top().get();
-      ASSERT(!tracer->in_flight());
-      all_.erase(std::remove(all_.begin(), all_.end(), tracer), all_.end());
-      pool_.pop();
-    }
-    // Mark the in-flight tracers as orphaned.
-    for (auto tracer : all_) {
-      ASSERT(tracer->in_flight());
-      tracer->orphan();
-    }
-  }
-
-  TracerPtr get() override {
-    if (pool_.empty()) {
-      growPool();
-    }
-    TracerPtr tracer(pool_.top().release(), [this](Tracer* tracer) {
-      if (!tracer->orphaned()) {
-        recycleElement(std::unique_ptr<Tracer>(tracer));
-      } else {
-        delete tracer;
-      }
-    });
-    pool_.pop();
-    tracer->set_in_flight(true);
-    return tracer;
-  }
+  ~TracerPoolImpl() override;
+  TracerPtr get() override;
 
 private:
-  void growPool() {
-    pool_.emplace(std::make_unique<TracerImpl>(time_source_));
-    all_.push_back(pool_.top().get());
-  }
+  void growPool();
+  void recycleElement(std::unique_ptr<Tracer> tracer);
 
-  void recycleElement(std::unique_ptr<Tracer> tracer) {
-    tracer->set_in_flight(false);
-    pool_.push(std::move(tracer));
-  }
   std::stack<std::unique_ptr<Tracer>> pool_;
   std::vector<Tracer*> all_;
   Envoy::TimeSource& time_source_;
