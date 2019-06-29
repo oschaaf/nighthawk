@@ -1,20 +1,20 @@
-licenses(["notice"])  # Apache 2
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
     "envoy_package",
 )
 
+licenses(["notice"])  # Apache 2
+
 envoy_package()
 
 envoy_cc_library(
     name = "nighthawk_common_lib",
     srcs = [
-        "profiler_impl.cc",
         "rate_limiter_impl.cc",
         "sequencer_impl.cc",
         "statistic_impl.cc",
+        "tracer_impl.cc",
         "uri_impl.cc",
         "utility.cc",
         "worker_impl.cc",
@@ -22,11 +22,11 @@ envoy_cc_library(
     hdrs = [
         "frequency.h",
         "platform_util_impl.h",
-        "profiler_impl.h",
         "rate_limiter_impl.h",
         "sequencer_impl.h",
         "ssl.h",
         "statistic_impl.h",
+        "tracer_impl.h",
         "uri_impl.h",
         "utility.h",
         "worker_impl.h",

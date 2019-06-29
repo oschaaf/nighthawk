@@ -1,6 +1,6 @@
 #include <chrono>
 
-#include "common/profiler_impl.h"
+#include "common/tracer_impl.h"
 
 #include "gtest/gtest.h"
 
