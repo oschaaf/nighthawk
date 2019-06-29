@@ -5,6 +5,7 @@
 
 namespace Nighthawk {
 
+// TODO(oschaaf): consider extracting a poolable mix-in interface.
 class Tracer {
 public:
   virtual ~Tracer() = default;

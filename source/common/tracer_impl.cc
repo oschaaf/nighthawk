@@ -21,6 +21,8 @@ TracerPtr TracerPoolImpl::get() {
   if (pool_.empty()) {
     growPool();
   }
+  // We pass a custom deleter, which will recycle the tracer or delete
+  // it when it is orphaned.
   TracerPtr tracer(pool_.top().release(), [this](Tracer* tracer) {
     if (!tracer->orphaned()) {
       recycleElement(std::unique_ptr<Tracer>(tracer));
@@ -34,6 +36,8 @@ TracerPtr TracerPoolImpl::get() {
 }
 
 void TracerPoolImpl::growPool() {
+  // Probably want to allocate more in one go, but this now is more about interface
+  // and using a pool in general than the details.
   pool_.emplace(std::make_unique<TracerImpl>(time_source_));
   all_.push_back(pool_.top().get());
 }
