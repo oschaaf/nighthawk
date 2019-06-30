@@ -35,8 +35,6 @@ private:
 class TracerPoolImpl : public TracerPool {
 public:
   TracerPoolImpl(Envoy::TimeSource& time_source) : time_source_(time_source) {}
-  ~TracerPoolImpl() override;
-  TracerPtr get() override;
 
 private:
   void growPool();
