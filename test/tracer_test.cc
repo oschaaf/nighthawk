@@ -18,12 +18,7 @@ public:
   Envoy::Event::SimulatedTimeSystem time_system_;
 };
 
-class TracerPoolImpl : public PoolImpl {
-public:
-  std::shared_ptr<TracerImpl> getTracer() {
-    return std::static_pointer_cast<TracerImpl>(PoolImpl::get());
-  }
-};
+class TracerPoolImpl : public PoolImpl<TracerImpl> {};
 
 TEST_F(TracerTest, HappyPoolImpl) {
   auto pool = std::make_unique<TracerPoolImpl>();
@@ -31,7 +26,7 @@ TEST_F(TracerTest, HappyPoolImpl) {
   pool->addPoolable(std::make_unique<TracerImpl>(time_system_));
   EXPECT_EQ(1, pool->allocated());
   EXPECT_EQ(1, pool->available());
-  auto tracer = pool->getTracer();
+  auto tracer = pool->get();
   tracer->traceTime();
   EXPECT_EQ(1, pool->allocated());
   EXPECT_EQ(0, pool->available());
@@ -41,7 +36,7 @@ TEST_F(TracerTest, HappyPoolImpl) {
 }
 
 TEST_F(TracerTest, DanglingPoolImpl) {
-  PoolPtr pool = std::make_unique<PoolImpl>();
+  auto pool = std::make_unique<TracerPoolImpl>();
   pool->addPoolable(std::make_unique<TracerImpl>(time_system_));
   auto tracer = pool->get();
   pool.reset();

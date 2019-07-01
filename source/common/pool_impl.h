@@ -1,13 +1,15 @@
 #pragma once
 
-#include "nighthawk/common/pool.h"
 #include "nighthawk/common/poolable.h"
 
 namespace Nighthawk {
 
-class PoolImpl : public Pool {
+template <typename Poolable> class PoolImpl {
 public:
-  virtual ~PoolImpl() override {
+  using poolDeletionDelegate = std::function<void(Poolable*)>;
+  using PoolablePtr = std::unique_ptr<Poolable, poolDeletionDelegate>;
+
+  ~PoolImpl() {
     while (!pool_.empty()) {
       Poolable* poolable = pool_.top().get();
       all_.erase(std::remove(all_.begin(), all_.end(), poolable), all_.end());
@@ -19,12 +21,12 @@ public:
     }
   }
 
-  void addPoolable(std::unique_ptr<Poolable> poolable) override {
+  void addPoolable(std::unique_ptr<Poolable> poolable) {
     all_.push_back(poolable.get());
     pool_.push(std::move(poolable));
   }
 
-  PoolablePtr get() override {
+  PoolablePtr get() {
     if (pool_.empty()) {
       throw;
     }
@@ -34,8 +36,8 @@ public:
     return poolable;
   }
 
-  size_t available() const override { return pool_.size(); }
-  size_t allocated() const override { return all_.size(); }
+  size_t available() const { return pool_.size(); }
+  size_t allocated() const { return all_.size(); }
 
 private:
   void recyclePoolable(Poolable* poolable) {
