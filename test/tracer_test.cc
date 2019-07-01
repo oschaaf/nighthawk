@@ -25,12 +25,13 @@ public:
 
 TEST_F(TracerTest, HappyPoolImpl) {
   PoolPtr pool = std::make_unique<PoolImpl>();
-
   EXPECT_EQ(0, pool->allocated());
   pool->addPoolable(std::make_unique<PoolableTracerImpl>(time_system_));
   EXPECT_EQ(1, pool->allocated());
   EXPECT_EQ(1, pool->available());
   auto tracer = pool->get();
+  PoolableTracerImpl* pt = static_cast<PoolableTracerImpl*>(tracer.get());
+  pt->traceTime();
   EXPECT_EQ(1, pool->allocated());
   EXPECT_EQ(0, pool->available());
   tracer.reset();
