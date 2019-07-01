@@ -19,9 +19,17 @@ public:
   }
   void traceTime() override { trace_points_.push_back(time_source_.monotonicTime()); }
 
+  // Poolable
+  void orphan() override {
+    ASSERT(!orphaned_);
+    orphaned_ = true;
+  };
+  bool orphaned() const override { return orphaned_; };
+
 private:
   Envoy::TimeSource& time_source_;
   std::vector<Envoy::MonotonicTime> trace_points_;
+  bool orphaned_{false};
 };
 
 } // namespace Nighthawk

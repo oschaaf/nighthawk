@@ -11,7 +11,6 @@ envoy_package()
 envoy_cc_library(
     name = "nighthawk_common_lib",
     srcs = [
-        "poolable_impl.cc",
         "rate_limiter_impl.cc",
         "sequencer_impl.cc",
         "statistic_impl.cc",

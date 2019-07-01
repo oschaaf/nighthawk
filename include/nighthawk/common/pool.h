@@ -8,7 +8,7 @@ using poolDeletionDelegate = std::function<void(Poolable*)>;
 
 class Pool {
 public:
-  using PoolablePtr = std::unique_ptr<Poolable, poolDeletionDelegate>;
+  using PoolablePtr = std::shared_ptr<Poolable>;
   virtual ~Pool() = default;
   virtual void addPoolable(std::unique_ptr<Poolable> poolable) PURE;
   virtual PoolablePtr get() PURE;

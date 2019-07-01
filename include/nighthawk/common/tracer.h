@@ -3,9 +3,11 @@
 #include "envoy/common/pure.h"
 #include "envoy/common/time.h"
 
+#include "nighthawk/common/poolable.h"
+
 namespace Nighthawk {
 
-class Tracer {
+class Tracer : public Poolable {
 public:
   virtual ~Tracer() = default;
   virtual void traceTime() PURE;

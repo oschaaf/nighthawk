@@ -10,19 +10,16 @@ public:
   virtual ~PoolImpl() override {
     while (!pool_.empty()) {
       Poolable* poolable = pool_.top().get();
-      ASSERT(!poolable->in_flight());
       all_.erase(std::remove(all_.begin(), all_.end(), poolable), all_.end());
       pool_.pop();
     }
     // Inform the in-flight poolables that they are own their own now.
     for (auto poolable : all_) {
-      ASSERT(poolable->in_flight());
       poolable->orphan();
     }
   }
 
   void addPoolable(std::unique_ptr<Poolable> poolable) override {
-    poolable->set_in_flight(false);
     all_.push_back(poolable.get());
     pool_.push(std::move(poolable));
   }
@@ -34,8 +31,6 @@ public:
     PoolablePtr poolable(pool_.top().release(),
                          [this](Poolable* poolable) { recyclePoolable(poolable); });
     pool_.pop();
-    ASSERT(!poolable->in_flight());
-    poolable->set_in_flight(true);
     return poolable;
   }
 
@@ -45,7 +40,6 @@ public:
 private:
   void recyclePoolable(Poolable* poolable) {
     if (!poolable->orphaned()) {
-      poolable->set_in_flight(false);
       pool_.push(std::unique_ptr<Poolable>(poolable));
     } else {
       // The pool is gone, we must self-destruct.

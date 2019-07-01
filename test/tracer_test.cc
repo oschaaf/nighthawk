@@ -13,25 +13,26 @@ using namespace testing;
 
 namespace Nighthawk {
 
-class PoolableTracerImpl : public PoolableImpl, public TracerImpl {
-public:
-  PoolableTracerImpl(Envoy::TimeSource& time_source) : TracerImpl(time_source) {}
-};
-
 class TracerTest : public testing::Test {
 public:
   Envoy::Event::SimulatedTimeSystem time_system_;
 };
 
+class TracerPoolImpl : public PoolImpl {
+public:
+  std::shared_ptr<TracerImpl> getTracer() {
+    return std::static_pointer_cast<TracerImpl>(PoolImpl::get());
+  }
+};
+
 TEST_F(TracerTest, HappyPoolImpl) {
-  PoolPtr pool = std::make_unique<PoolImpl>();
+  PoolPtr pool = std::make_unique<TracerPoolImpl>();
   EXPECT_EQ(0, pool->allocated());
-  pool->addPoolable(std::make_unique<PoolableTracerImpl>(time_system_));
+  pool->addPoolable(std::make_unique<TracerImpl>(time_system_));
   EXPECT_EQ(1, pool->allocated());
   EXPECT_EQ(1, pool->available());
-  auto tracer = pool->get();
-  PoolableTracerImpl* pt = static_cast<PoolableTracerImpl*>(tracer.get());
-  pt->traceTime();
+  auto tracer = pool->getTracer();
+  tracer->traceTime();
   EXPECT_EQ(1, pool->allocated());
   EXPECT_EQ(0, pool->available());
   tracer.reset();
@@ -41,7 +42,7 @@ TEST_F(TracerTest, HappyPoolImpl) {
 
 TEST_F(TracerTest, DanglingPoolImpl) {
   PoolPtr pool = std::make_unique<PoolImpl>();
-  pool->addPoolable(std::make_unique<PoolableTracerImpl>(time_system_));
+  pool->addPoolable(std::make_unique<TracerImpl>(time_system_));
   auto tracer = pool->get();
   pool.reset();
 }
