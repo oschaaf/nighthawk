@@ -23,7 +23,7 @@ envoy_cc_library(
     hdrs = [
         "frequency.h",
         "platform_util_impl.h",
-        "pool_base.h",
+        "pool_impl.h",
         "poolable_impl.h",
         "rate_limiter_impl.h",
         "sequencer_impl.h",

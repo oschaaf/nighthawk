@@ -11,11 +11,4 @@ public:
   virtual void traceTime() PURE;
 };
 
-class PoolableTracer : public Tracer, public Poolable {
-public:
-  virtual ~PoolableTracer() = default;
-};
-
-typedef std::unique_ptr<Tracer, std::function<void(Tracer*)>> TracerPtr;
-
 } // namespace Nighthawk
