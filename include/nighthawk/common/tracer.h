@@ -7,7 +7,7 @@
 
 namespace Nighthawk {
 
-class Tracer : public Poolable {
+class Tracer {
 public:
   virtual ~Tracer() = default;
   virtual void traceTime() PURE;
