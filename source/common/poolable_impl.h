@@ -1,12 +1,5 @@
 #pragma once
 
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <stack>
-#include <vector>
-
-#include "common/common/assert.h"
 #include "nighthawk/common/poolable.h"
 
 namespace Nighthawk {

@@ -1,14 +1,12 @@
 #pragma once
 
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <stack>
 #include <vector>
 
-#include "common/common/assert.h"
 #include "envoy/common/time.h"
+
 #include "nighthawk/common/tracer.h"
+
+#include "common/common/assert.h"
 
 namespace Nighthawk {
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "envoy/common/pure.h"
-#include "envoy/common/time.h"
 
 #include "nighthawk/common/poolable.h"
 
