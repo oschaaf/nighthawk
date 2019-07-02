@@ -26,6 +26,7 @@ envoy_cc_test(
     srcs = [
         #"benchmark_http_client_test.cc",
         "tracer_test.cc",
+        "pool_test.cc",
         #"client_test.cc",
         #"client_worker_test.cc",
         #"factories_test.cc",

@@ -18,28 +18,8 @@ public:
   Envoy::Event::SimulatedTimeSystem time_system_;
 };
 
-class TracerPoolImpl : public PoolImpl<TracerImpl> {};
+TEST_F(TracerTest, HappyPoolImpl) {}
 
-TEST_F(TracerTest, HappyPoolImpl) {
-  auto pool = std::make_unique<TracerPoolImpl>();
-  EXPECT_EQ(0, pool->allocated());
-  pool->addPoolable(std::make_unique<TracerImpl>(time_system_));
-  EXPECT_EQ(1, pool->allocated());
-  EXPECT_EQ(1, pool->available());
-  auto tracer = pool->get();
-  tracer->traceTime();
-  EXPECT_EQ(1, pool->allocated());
-  EXPECT_EQ(0, pool->available());
-  tracer.reset();
-  EXPECT_EQ(1, pool->allocated());
-  EXPECT_EQ(1, pool->available());
-}
-
-TEST_F(TracerTest, DanglingPoolImpl) {
-  auto pool = std::make_unique<TracerPoolImpl>();
-  pool->addPoolable(std::make_unique<TracerImpl>(time_system_));
-  auto tracer = pool->get();
-  pool.reset();
-}
+TEST_F(TracerTest, DanglingPoolImpl) {}
 
 } // namespace Nighthawk
