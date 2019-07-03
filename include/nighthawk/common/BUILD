@@ -17,7 +17,7 @@ envoy_basic_cc_library(
         "rate_limiter.h",
         "sequencer.h",
         "statistic.h",
-        "tracer.h",
+        "stopwatch.h",
         "uri.h",
         "worker.h",
     ],

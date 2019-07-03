@@ -2,7 +2,7 @@
 
 #include "common/pool_impl.h"
 #include "common/poolable_impl.h"
-#include "common/tracer_impl.h"
+#include "common/stopwatch_impl.h"
 
 #include "test/test_common/simulated_time_system.h"
 
@@ -12,7 +12,7 @@ using namespace testing;
 
 namespace Nighthawk {
 
-class TracerTest : public testing::Test {
+class StopwatchTest : public testing::Test {
 public:
   Envoy::Event::SimulatedTimeSystem time_system_;
 };

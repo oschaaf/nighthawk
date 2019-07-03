@@ -2,7 +2,7 @@
 
 #include "common/pool_impl.h"
 #include "common/poolable_impl.h"
-#include "common/tracer_impl.h"
+#include "common/stopwatch_impl.h"
 
 #include "test/mocks.h"
 #include "test/test_common/simulated_time_system.h"
@@ -13,7 +13,7 @@ using namespace testing;
 
 namespace Nighthawk {
 
-// Declare a pool for the poolable tracer
+// Declare a pool for the poolable stopwatch
 class MockPoolablePoolImpl : public PoolImpl<MockPoolable> {};
 class PoolTest : public testing::Test {};
 
@@ -54,26 +54,26 @@ TEST_F(PoolTest, DestructPoolWithInFlightPoolables) {
   EXPECT_CALL(*poolable, orphaned()).WillOnce(Return(true));
 }
 
-// Compose a poolable tracer
-class PoolableTracerImpl : public TracerImpl, public PoolableImpl {
+// Compose a poolable stopwatch
+class PoolableStopwatchImpl : public StopwatchImpl, public PoolableImpl {
 public:
-  PoolableTracerImpl(Envoy::TimeSource& time_source) : TracerImpl(time_source) {}
+  PoolableStopwatchImpl(Envoy::TimeSource& time_source) : StopwatchImpl(time_source) {}
 };
 
-// Declare a pool for the poolable tracer
-class TracerPoolImpl : public PoolImpl<PoolableTracerImpl> {};
+// Declare a pool for the poolable stopwatch
+class StopwatchPoolImpl : public PoolImpl<PoolableStopwatchImpl> {};
 
-class TracerPoolTest : public testing::Test {
+class StopwatchPoolTest : public testing::Test {
 public:
   Envoy::Event::SimulatedTimeSystem time_system_;
 };
 
 // Hello world test with a concrete poolable implementing object.
-TEST_F(TracerPoolTest, HappyPoolImpl) {
-  TracerPoolImpl pool;
-  pool.addPoolable(std::make_unique<PoolableTracerImpl>(time_system_));
-  auto tracer = pool.get();
-  tracer->traceTime();
+TEST_F(StopwatchPoolTest, HappyPoolImpl) {
+  StopwatchPoolImpl pool;
+  pool.addPoolable(std::make_unique<PoolableStopwatchImpl>(time_system_));
+  auto stopwatch = pool.get();
+  stopwatch->start();
 }
 
 } // namespace Nighthawk

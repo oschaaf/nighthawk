@@ -39,7 +39,7 @@ envoy_cc_test(
         "service_test.cc",
         "statistic_test.cc",
         "stream_decoder_test.cc",
-        "tracer_test.cc",
+        "stopwatch_test.cc",
         "utility_test.cc",
         "worker_test.cc",
     ],
