@@ -145,7 +145,11 @@ TEST_F(SequencerTestWithTimerEmulation, RateLimiterInteraction) {
                           std::make_unique<StreamingStatistic>(),
                           std::make_unique<StreamingStatistic>(),
                           test_number_of_intervals_ * interval_ /* Sequencer run time.*/,
+<<<<<<< HEAD
                           1ms /* Sequencer timeout. */, true);
+=======
+                          1ms /* Sequencer timeout. */, IdleStrategy::Spin);
+>>>>>>> upstream/master
   // Have the mock rate limiter gate two calls, and block everything else.
   EXPECT_CALL(rate_limiter_unsafe_ref_, tryAcquireOne())
       .Times(AtLeast(3))
@@ -167,7 +171,11 @@ TEST_F(SequencerTestWithTimerEmulation, StartingLate) {
                           std::make_unique<StreamingStatistic>(),
                           std::make_unique<StreamingStatistic>(),
                           test_number_of_intervals_ * interval_ /* Sequencer run time.*/,
+<<<<<<< HEAD
                           1ms /* Sequencer timeout. */, true);
+=======
+                          1ms /* Sequencer timeout. */, IdleStrategy::Spin);
+>>>>>>> upstream/master
 
   time_system_.setMonotonicTime(time_system_.monotonicTime() + 100s);
   sequencer.start();
@@ -183,7 +191,11 @@ TEST_F(SequencerTestWithTimerEmulation, RateLimiterSaturatedTargetInteraction) {
                           std::make_unique<StreamingStatistic>(),
                           std::make_unique<StreamingStatistic>(),
                           test_number_of_intervals_ * interval_ /* Sequencer run time.*/,
+<<<<<<< HEAD
                           0ms /* Sequencer timeout. */, true);
+=======
+                          0ms /* Sequencer timeout. */, IdleStrategy::Spin);
+>>>>>>> upstream/master
 
   EXPECT_CALL(rate_limiter_unsafe_ref_, tryAcquireOne())
       .Times(AtLeast(3))
@@ -219,11 +231,16 @@ public:
 
   std::unique_ptr<LinearRateLimiter> rate_limiter_;
 
+<<<<<<< HEAD
   void testRegularFlow(bool use_spin_loop) {
+=======
+  void testRegularFlow(IdleStrategy idle_strategy) {
+>>>>>>> upstream/master
     SequencerImpl sequencer(platform_util_, *dispatcher_, time_system_,
                             time_system_.monotonicTime(), std::move(rate_limiter_),
                             sequencer_target_, std::make_unique<StreamingStatistic>(),
                             std::make_unique<StreamingStatistic>(),
+<<<<<<< HEAD
                             test_number_of_intervals_ * interval_, 1s, use_spin_loop);
 
     if (use_spin_loop) {
@@ -231,6 +248,9 @@ public:
     } else {
       EXPECT_CALL(platform_util_, yieldCurrentThread()).Times(0);
     }
+=======
+                            test_number_of_intervals_ * interval_, 1s, idle_strategy);
+>>>>>>> upstream/master
     EXPECT_EQ(0, callback_test_count_);
     EXPECT_EQ(0, sequencer.latencyStatistic().count());
     sequencer.start();
@@ -240,11 +260,33 @@ public:
     EXPECT_EQ(0, sequencer.blockedStatistic().count());
     EXPECT_EQ(2, sequencer.statistics().size());
   }
+<<<<<<< HEAD
 };
 
 TEST_F(SequencerIntegrationTest, TheHappyFlow) { testRegularFlow(true); }
 
 TEST_F(SequencerIntegrationTest, TheHappyFlowNoSpinning) { testRegularFlow(false); }
+=======
+}; // namespace Nighthawk
+
+TEST_F(SequencerIntegrationTest, IdleStrategySpin) {
+  EXPECT_CALL(platform_util_, yieldCurrentThread()).Times(AtLeast(1));
+  EXPECT_CALL(platform_util_, sleep(_)).Times(0);
+  testRegularFlow(IdleStrategy::Spin);
+}
+
+TEST_F(SequencerIntegrationTest, IdleStrategyPoll) {
+  EXPECT_CALL(platform_util_, yieldCurrentThread()).Times(0);
+  EXPECT_CALL(platform_util_, sleep(_)).Times(0);
+  testRegularFlow(IdleStrategy::Poll);
+}
+
+TEST_F(SequencerIntegrationTest, IdleStrategySleep) {
+  EXPECT_CALL(platform_util_, yieldCurrentThread()).Times(0);
+  EXPECT_CALL(platform_util_, sleep(_)).Times(AtLeast(1));
+  testRegularFlow(IdleStrategy::Sleep);
+}
+>>>>>>> upstream/master
 
 // Test an always saturated sequencer target. A concrete example would be a http benchmark client
 // not being able to start any requests, for example due to misconfiguration or system conditions.
@@ -256,7 +298,11 @@ TEST_F(SequencerIntegrationTest, AlwaysSaturatedTargetTest) {
                           std::make_unique<StreamingStatistic>(),
                           std::make_unique<StreamingStatistic>(),
                           test_number_of_intervals_ * interval_ /* Sequencer run time.*/,
+<<<<<<< HEAD
                           1ms /* Sequencer timeout. */, true);
+=======
+                          1ms /* Sequencer timeout. */, IdleStrategy::Spin);
+>>>>>>> upstream/master
 
   sequencer.start();
   sequencer.waitForCompletion();
@@ -274,11 +320,20 @@ TEST_F(SequencerIntegrationTest, GraceTimeoutTest) {
 
   SequencerTarget callback =
       std::bind(&SequencerIntegrationTest::timeout_test, this, std::placeholders::_1);
+<<<<<<< HEAD
   SequencerImpl sequencer(
       platform_util_, *dispatcher_, time_system_, time_system_.monotonicTime(),
       std::move(rate_limiter_), callback, std::make_unique<StreamingStatistic>(),
       std::make_unique<StreamingStatistic>(),
       test_number_of_intervals_ * interval_ /* Sequencer run time.*/, grace_timeout, true);
+=======
+  SequencerImpl sequencer(platform_util_, *dispatcher_, time_system_, time_system_.monotonicTime(),
+                          std::move(rate_limiter_), callback,
+                          std::make_unique<StreamingStatistic>(),
+                          std::make_unique<StreamingStatistic>(),
+                          test_number_of_intervals_ * interval_ /* Sequencer run time.*/,
+                          grace_timeout, IdleStrategy::Spin);
+>>>>>>> upstream/master
 
   auto pre_timeout = time_system_.monotonicTime();
   sequencer.start();

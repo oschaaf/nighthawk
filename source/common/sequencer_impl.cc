@@ -14,12 +14,20 @@ SequencerImpl::SequencerImpl(const PlatformUtil& platform_util,
                              Envoy::MonotonicTime start_time, RateLimiterPtr&& rate_limiter,
                              SequencerTarget target, StatisticPtr&& latency_statistic,
                              StatisticPtr&& blocked_statistic, std::chrono::microseconds duration,
+<<<<<<< HEAD
                              std::chrono::microseconds grace_timeout, bool use_spin_loop)
+=======
+                             std::chrono::microseconds grace_timeout, IdleStrategy idle_strategy)
+>>>>>>> upstream/master
     : target_(std::move(target)), platform_util_(platform_util), dispatcher_(dispatcher),
       time_source_(time_source), rate_limiter_(std::move(rate_limiter)),
       latency_statistic_(std::move(latency_statistic)),
       blocked_statistic_(std::move(blocked_statistic)), duration_(duration),
+<<<<<<< HEAD
       grace_timeout_(grace_timeout), start_time_(start_time), use_spin_loop_(use_spin_loop) {
+=======
+      grace_timeout_(grace_timeout), start_time_(start_time), idle_strategy_(idle_strategy) {
+>>>>>>> upstream/master
   ASSERT(target_ != nullptr, "No SequencerTarget");
   periodic_timer_ = dispatcher_.createTimer([this]() { run(true); });
   spin_timer_ = dispatcher_.createTimer([this]() { run(false); });
@@ -135,7 +143,11 @@ void SequencerImpl::run(bool from_periodic_timer) {
     // Re-schedule the periodic timer if it was responsible for waking up this code.
     scheduleRun();
   } else {
+<<<<<<< HEAD
     if (use_spin_loop_ && (targets_initiated_ == targets_completed_)) {
+=======
+    if (idle_strategy_ == IdleStrategy::Spin && (targets_initiated_ == targets_completed_)) {
+>>>>>>> upstream/master
       // We saturated the rate limiter, and there's no outstanding work.
       // That means it looks like we are idle. Spin this event to improve
       // accuracy. As a side-effect, this may help prevent CPU frequency scaling
@@ -144,7 +156,11 @@ void SequencerImpl::run(bool from_periodic_timer) {
       // TODO(oschaaf): Optionize performing this spin loop.
       platform_util_.yieldCurrentThread();
       spin_timer_->enableTimer(0ms);
-    }
+    } else if (idle_strategy_ == IdleStrategy::Sleep) {
+      // optionize sleep duration.
+      platform_util_.sleep(50us);
+      spin_timer_->enableTimer(0ms);
+    } // .. else we poll, the periodic timer will be active
   }
 }
 

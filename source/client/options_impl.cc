@@ -142,6 +142,7 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       fmt::format("Max requests per connection (default: {}).", max_requests_per_connection_),
       false, 0, "uint32_t", cmd);
 
+<<<<<<< HEAD
   std::vector<std::string> sequencer_idle_strategies = {"spin", "sleep"};
   TCLAP::ValuesConstraint<std::string> sequencer_idle_strategies_allowed(sequencer_idle_strategies);
   TCLAP::ValueArg<std::string> sequencer_idle_strategy(
@@ -149,6 +150,16 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       fmt::format("Choose between using a busy spin/yield loop or have the thread sleep while "
                   "waiting for the next scheduled request (default: {}).",
                   sequencer_idle_strategy_),
+=======
+  std::vector<std::string> sequencer_idle_strategies = {"spin", "poll", "sleep"};
+  TCLAP::ValuesConstraint<std::string> sequencer_idle_strategies_allowed(sequencer_idle_strategies);
+  TCLAP::ValueArg<std::string> sequencer_idle_strategy(
+      "", "sequencer-idle-strategy",
+      fmt::format(
+          "Choose between using a busy spin/yield loop or have the thread poll or sleep while "
+          "waiting for the next scheduled request (default: {}).",
+          sequencer_idle_strategy_),
+>>>>>>> upstream/master
       false, "", &sequencer_idle_strategies_allowed, cmd);
 
   TCLAP::UnlabeledValueArg<std::string> uri("uri",
