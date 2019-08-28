@@ -71,13 +71,13 @@ void ServiceImpl::writeResponse(const nighthawk::client::ExecutionResponse& resp
     ::grpc::ServerContext* /*context*/,
     ::grpc::ServerReaderWriter<::nighthawk::client::ExecutionResponse,
                                ::nighthawk::client::ExecutionRequest>* stream) {
-
+  nighthawk::client::ExecutionRequest request;
   Envoy::Thread::TryLockGuard service_lock(global_lock_);
   if (!service_lock.tryLock()) {
+    stream->Read(&request);
     return finishGrpcStream(false, "Another client is performing a benchmark.");
   }
 
-  nighthawk::client::ExecutionRequest request;
   stream_ = stream;
 
   while (stream->Read(&request)) {
