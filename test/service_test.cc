@@ -43,8 +43,8 @@ public:
     stub_ = std::make_unique<nighthawk::client::NighthawkService::Stub>(channel_);
   }
 
-  void singleStreamBackToBackExecution() {
-    grpc::ClientContext context;
+  void singleStreamBackToBackExecution(grpc::ClientContext& context,
+                                       nighthawk::client::NighthawkService::Stub&) {
     auto r = stub_->ExecutionStream(&context);
     EXPECT_TRUE(r->Write(request_, {}));
     EXPECT_TRUE(r->Read(&response_));
@@ -128,10 +128,35 @@ TEST_P(ServiceTest, NoConcurrentStart) {
 
 // Test we are able to perform serialized executions.
 TEST_P(ServiceTest, BackToBackExecution) {
-  singleStreamBackToBackExecution();
+  grpc::ClientContext context1;
+  singleStreamBackToBackExecution(context1, *stub_);
   // create a new client to connect to the same server, and do it one more time.
   setupGrpcClient();
-  singleStreamBackToBackExecution();
+  grpc::ClientContext context2;
+  singleStreamBackToBackExecution(context2, *stub_);
+}
+
+// Test we decline concurrent streams
+TEST_P(ServiceTest, ConcurrentStreamHandling) {
+  auto channel1 = grpc::CreateChannel(fmt::format("{}:{}", loopback_address_, grpc_server_port_),
+                                      grpc::InsecureChannelCredentials());
+  auto stub1 = std::make_unique<nighthawk::client::NighthawkService::Stub>(channel1);
+  grpc::ClientContext context1;
+  auto channel2 = grpc::CreateChannel(fmt::format("{}:{}", loopback_address_, grpc_server_port_),
+                                      grpc::InsecureChannelCredentials());
+  auto stub2 = std::make_unique<nighthawk::client::NighthawkService::Stub>(channel2);
+  grpc::ClientContext context2;
+
+  auto r1 = stub1->ExecutionStream(&context1);
+  auto r2 = stub2->ExecutionStream(&context2);
+  EXPECT_TRUE(r1->Write(request_, {}));
+  EXPECT_TRUE(r2->Write(request_, {}));
+  EXPECT_TRUE(r1->Read(&response_));
+  EXPECT_FALSE(r2->Read(&response_));
+  auto status1 = r1->Finish();
+  EXPECT_TRUE(status1.ok());
+  auto status2 = r2->Finish();
+  EXPECT_FALSE(status2.ok());
 }
 
 // Test that proto validation is wired up and works.

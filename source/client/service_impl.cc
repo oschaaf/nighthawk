@@ -8,22 +8,16 @@
 namespace Nighthawk {
 namespace Client {
 
-class Notifier {
-public:
-  Notifier(Envoy::Thread::CondVar& event) : event_(event) {}
-  ~Notifier() { event_.notifyOne(); }
-
-private:
-  Envoy::Thread::CondVar& event_;
-};
+Envoy::Thread::MutexBasicLockable ServiceImpl::global_lock_;
 
 void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionRequest& request) {
-  auto finished_notifier = std::make_unique<Notifier>(finished_event_);
+  auto accepted_lock = std::make_unique<Envoy::Thread::LockGuard>(accepted_lock_);
+  auto busy_lock = std::make_unique<Envoy::Thread::LockGuard>(busy_lock_);
   accepted_event_.notifyOne();
+  accepted_lock.reset();
 
   nighthawk::client::ExecutionResponse response;
   response.mutable_error_detail()->set_code(grpc::StatusCode::INTERNAL);
-
   OptionsPtr options;
   try {
     options = std::make_unique<OptionsImpl>(request.start_request().options());
@@ -50,7 +44,7 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
       response.mutable_error_detail()->set_message("Unknown failure");
     }
   }
-  finished_notifier.reset();
+  busy_lock.reset();
   writeResponse(response);
 }
 
@@ -77,23 +71,27 @@ void ServiceImpl::writeResponse(const nighthawk::client::ExecutionResponse& resp
     ::grpc::ServerContext* /*context*/,
     ::grpc::ServerReaderWriter<::nighthawk::client::ExecutionResponse,
                                ::nighthawk::client::ExecutionRequest>* stream) {
+
+  Envoy::Thread::TryLockGuard service_lock(global_lock_);
+  if (!service_lock.tryLock()) {
+    return finishGrpcStream(false, "Another client is performing a benchmark.");
+  }
+
   nighthawk::client::ExecutionRequest request;
   stream_ = stream;
 
   while (stream->Read(&request)) {
-    ENVOY_LOG(error, "Read ExecutionRequest data: {}", request.DebugString());
+    ENVOY_LOG(debug, "Read ExecutionRequest data");
     if (request.has_start_request()) {
-      Envoy::Thread::LockGuard lock(busy_lock_);
-      if (finished_event_.waitFor(busy_lock_, std::chrono::seconds(1)) ==
-          Envoy::Thread::CondVar::WaitStatus::NoTimeout) {
+      if (busy_lock_.tryLock()) {
+        busy_lock_.unlock();
         // We pass in std::launch::async to avoid lazy evaluation, as we want this to run
         // asap. See: https://en.cppreference.com/w/cpp/thread/async
-        ENVOY_LOG(error, "starting benchmark request");
+        Envoy::Thread::LockGuard accepted_lock(accepted_lock_);
         future_ = std::future<void>(
             std::async(std::launch::async, &ServiceImpl::handleExecutionRequest, this, request));
-        accepted_event_.wait(busy_lock_);
+        accepted_event_.wait(accepted_lock_);
       } else {
-        ENVOY_LOG(error, "Too many benchmark requests");
         return finishGrpcStream(false, "Only a single benchmark session is allowed at a time.");
       }
     } else if (request.has_update_request() || request.has_cancellation_request()) {
