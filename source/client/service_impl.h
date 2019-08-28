@@ -39,6 +39,9 @@ private:
   ::grpc::ServerReaderWriter<::nighthawk::client::ExecutionResponse,
                              ::nighthawk::client::ExecutionRequest>* stream_;
   std::future<void> future_;
+  Envoy::Thread::MutexBasicLockable busy_lock_;
+  Envoy::Thread::CondVar accepted_event_;
+  Envoy::Thread::CondVar finished_event_;
   std::atomic<bool> busy_{};
 };
 

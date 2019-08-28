@@ -8,7 +8,19 @@
 namespace Nighthawk {
 namespace Client {
 
+class Notifier {
+public:
+  Notifier(Envoy::Thread::CondVar& event) : event_(event) {}
+  ~Notifier() { event_.notifyOne(); }
+
+private:
+  Envoy::Thread::CondVar& event_;
+};
+
 void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionRequest& request) {
+  auto finished_notifier = std::make_unique<Notifier>(finished_event_);
+  accepted_event_.notifyOne();
+
   nighthawk::client::ExecutionResponse response;
   response.mutable_error_detail()->set_code(grpc::StatusCode::INTERNAL);
 
@@ -38,6 +50,7 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
       response.mutable_error_detail()->set_message("Unknown failure");
     }
   }
+  finished_notifier.reset();
   writeResponse(response);
 }
 
@@ -66,22 +79,22 @@ void ServiceImpl::writeResponse(const nighthawk::client::ExecutionResponse& resp
                                ::nighthawk::client::ExecutionRequest>* stream) {
   nighthawk::client::ExecutionRequest request;
   stream_ = stream;
+
   while (stream->Read(&request)) {
-    ENVOY_LOG(debug, "Read ExecutionRequest data: {}", request.DebugString());
+    ENVOY_LOG(error, "Read ExecutionRequest data: {}", request.DebugString());
     if (request.has_start_request()) {
-      // It is possible to receive a back-to-back request here, while the future that is associated
-      // to our previous response is still active. We check the running_ flag to see if the previous
-      // future has progressed in a state where we can do another one. This avoids the odd flake in
-      // ServiceTest.BackToBackExecution.
-      if (future_.valid() &&
-          future_.wait_for(std::chrono::seconds(0)) != std::future_status::ready && busy_) {
-        return finishGrpcStream(false, "Only a single benchmark session is allowed at a time.");
-      } else {
-        busy_ = true;
+      Envoy::Thread::LockGuard lock(busy_lock_);
+      if (finished_event_.waitFor(busy_lock_, std::chrono::seconds(1)) ==
+          Envoy::Thread::CondVar::WaitStatus::NoTimeout) {
         // We pass in std::launch::async to avoid lazy evaluation, as we want this to run
         // asap. See: https://en.cppreference.com/w/cpp/thread/async
+        ENVOY_LOG(error, "starting benchmark request");
         future_ = std::future<void>(
             std::async(std::launch::async, &ServiceImpl::handleExecutionRequest, this, request));
+        accepted_event_.wait(busy_lock_);
+      } else {
+        ENVOY_LOG(error, "Too many benchmark requests");
+        return finishGrpcStream(false, "Only a single benchmark session is allowed at a time.");
       }
     } else if (request.has_update_request() || request.has_cancellation_request()) {
       return finishGrpcStream(false, "Request is not supported yet.");
