@@ -2,6 +2,7 @@
 
 #include "external/envoy/source/common/stats/symbol_table_impl.h"
 
+#include "common/controller_grpc_client_impl.h"
 #include "common/header_source_impl.h"
 #include "common/utility.h"
 

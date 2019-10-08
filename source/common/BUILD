@@ -67,6 +67,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        ":controller_grpc_client_lib",
         "//api/client:base_cc",
         "//include/nighthawk/client:client_includes",
         "//include/nighthawk/common:base_includes",
@@ -80,5 +81,25 @@ envoy_cc_library(
         "@envoy//source/common/stats:stats_lib_with_external_headers",
         "@envoy//source/exe:envoy_common_lib_with_external_headers",
         "@envoy//source/server/config_validation:server_lib_with_external_headers",
+    ],
+)
+
+envoy_cc_library(
+    name = "controller_grpc_client_lib",
+    srcs = ["controller_grpc_client_impl.cc"],
+    hdrs = ["controller_grpc_client_impl.h"],
+    repository = "@envoy",
+    deps = [
+        "//api/client:base_cc",
+        "//api/client:grpc_service_lib",
+        "//include/nighthawk/common:base_includes",
+        "@envoy//include/envoy/grpc:async_client_interface_with_external_headers",
+        "@envoy//include/envoy/grpc:async_client_manager_interface_with_external_headers",
+        "@envoy//include/envoy/upstream:cluster_manager_interface_with_external_headers",
+        "@envoy//source/common/common:assert_lib_with_external_headers",
+        "@envoy//source/common/common:minimal_logger_lib_with_external_headers",
+        "@envoy//source/common/grpc:typed_async_client_lib_with_external_headers",
+        "@envoy//source/common/http:header_map_lib_with_external_headers",
+        "@envoy//source/common/http:headers_lib_with_external_headers",
     ],
 )

@@ -9,6 +9,7 @@
 #include "nighthawk/client/benchmark_client.h"
 #include "nighthawk/client/client_worker.h"
 #include "nighthawk/client/factories.h"
+#include "nighthawk/common/controller_grpc_client.h"
 #include "nighthawk/common/header_source.h"
 #include "nighthawk/common/sequencer.h"
 
@@ -50,7 +51,7 @@ private:
   Envoy::LocalInfo::LocalInfoPtr local_info_;
   const bool prefetch_connections_;
   std::map<std::string, uint64_t> thread_local_counter_values_;
-  Envoy::Event::TimerPtr timer_;
+  ControllerGrpcClientPtr controller_grpc_client_;
 };
 
 using ClientWorkerImplPtr = std::unique_ptr<ClientWorkerImpl>;

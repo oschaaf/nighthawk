@@ -162,5 +162,21 @@ HeaderSourcePtr ServiceImpl::createHeaderSource(const uint32_t amount) {
   return ok ? grpc::Status::OK : grpc::Status(grpc::StatusCode::INTERNAL, std::string("error"));
 }
 
+::grpc::Status ServiceImpl::Controller(
+    ::grpc::ServerContext* /*context*/,
+    ::grpc::ServerReaderWriter<::nighthawk::client::ControllerResponse,
+                               ::nighthawk::client::ControllerRequest>* stream) {
+  nighthawk::client::ControllerRequest request;
+  bool ok = true;
+
+  while (stream->Read(&request) && ok) {
+    ENVOY_LOG(trace, "Inbound ControllerRequest {}", request.DebugString());
+    nighthawk::client::ControllerResponse response;
+    ok = stream->Write(response);
+  }
+  ENVOY_LOG(trace, "Finishing stream");
+  return ok ? grpc::Status::OK : grpc::Status(grpc::StatusCode::INTERNAL, std::string("error"));
+}
+
 } // namespace Client
 } // namespace Nighthawk

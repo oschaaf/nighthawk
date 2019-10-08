@@ -11,6 +11,7 @@ envoy_package()
 envoy_basic_cc_library(
     name = "base_includes",
     hdrs = [
+        "controller_grpc_client.h",
         "exception.h",
         "header_source.h",
         "header_stream_grpc_client.h",

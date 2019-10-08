@@ -34,6 +34,11 @@ public:
       ::grpc::ServerReaderWriter<::nighthawk::client::HeaderStreamResponse,
                                  ::nighthawk::client::HeaderStreamRequest>* stream) override;
 
+  ::grpc::Status
+  Controller(::grpc::ServerContext* context,
+             ::grpc::ServerReaderWriter<::nighthawk::client::ControllerResponse,
+                                        ::nighthawk::client::ControllerRequest>* stream) override;
+
 private:
   void handleExecutionRequest(const nighthawk::client::ExecutionRequest& request);
   void writeResponse(const nighthawk::client::ExecutionResponse& response);
