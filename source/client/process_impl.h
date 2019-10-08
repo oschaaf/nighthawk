@@ -51,6 +51,7 @@ public:
   bool run(OutputCollector& collector) override;
   void addHeaderSourceCluster(const Uri& uri,
                               envoy::config::bootstrap::v2::Bootstrap& config) const;
+  void addControllerCluster(const Uri& uri, envoy::config::bootstrap::v2::Bootstrap& config) const;
   void addTracingCluster(envoy::config::bootstrap::v2::Bootstrap& bootstrap, const Uri& uri) const;
   void setupTracingImplementation(envoy::config::bootstrap::v2::Bootstrap& bootstrap,
                                   const Uri& uri) const;

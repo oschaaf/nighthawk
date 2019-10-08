@@ -327,6 +327,19 @@ void ProcessImpl::addHeaderSourceCluster(const Uri& uri,
   socket_address->set_port_value(uri.port());
 }
 
+void ProcessImpl::addControllerCluster(const Uri& uri,
+                                       envoy::config::bootstrap::v2::Bootstrap& bootstrap) const {
+  auto* cluster = bootstrap.mutable_static_resources()->add_clusters();
+  cluster->mutable_http2_protocol_options();
+  cluster->set_name("controller");
+  cluster->set_type(envoy::api::v2::Cluster::DiscoveryType::Cluster_DiscoveryType_STATIC);
+  cluster->mutable_connect_timeout()->set_seconds(options_.timeout().count());
+  auto* host = cluster->add_hosts();
+  auto* socket_address = host->mutable_socket_address();
+  socket_address->set_address(uri.address()->ip()->addressAsString());
+  socket_address->set_port_value(uri.port());
+}
+
 bool ProcessImpl::run(OutputCollector& collector) {
   UriImpl uri(options_.uri());
   UriPtr header_source_uri;
@@ -370,6 +383,7 @@ bool ProcessImpl::run(OutputCollector& collector) {
   createBootstrapConfiguration(bootstrap, uri, number_of_workers);
   if (header_source_uri != nullptr) {
     addHeaderSourceCluster(*header_source_uri, bootstrap);
+    addControllerCluster(*header_source_uri, bootstrap);
   }
   if (tracing_uri != nullptr) {
     setupTracingImplementation(bootstrap, *tracing_uri);

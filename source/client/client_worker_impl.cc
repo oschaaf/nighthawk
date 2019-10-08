@@ -28,7 +28,7 @@ ClientWorkerImpl::ClientWorkerImpl(Envoy::Api::Api& api, Envoy::ThreadLocal::Ins
           fmt::format("{}", worker_number), *header_generator_)),
       sequencer_(
           sequencer_factory.create(time_source_, *dispatcher_, starting_time, *benchmark_client_)),
-      prefetch_connections_(prefetch_connections) {}
+      prefetch_connections_(prefetch_connections), cluster_manager_(cluster_manager) {}
 
 void ClientWorkerImpl::simpleWarmup() {
   ENVOY_LOG(debug, "> worker {}: warmup start.", worker_number_);
@@ -44,6 +44,13 @@ void ClientWorkerImpl::simpleWarmup() {
 }
 
 void ClientWorkerImpl::work() {
+  envoy::api::v2::core::GrpcService grpc_service;
+  grpc_service.mutable_envoy_grpc()->set_cluster_name("controller");
+  auto cm = cluster_manager_->grpcAsyncClientManager().factoryForGrpcService(grpc_service,
+                                                                             *worker_scope_, true);
+  controller_grpc_client_ = std::make_unique<ControllerGrpcClientImpl>(cm->create(), *dispatcher_);
+  controller_grpc_client_->start();
+
   header_generator_->initOnThread();
   simpleWarmup();
   benchmark_client_->setMeasureLatencies(true);
@@ -51,6 +58,7 @@ void ClientWorkerImpl::work() {
   sequencer_->waitForCompletion();
   benchmark_client_->terminate();
   success_ = true;
+  controller_grpc_client_.reset();
   dispatcher_->exit();
   // Save a final snapshot of the worker-specific counter accumulations before
   // we exit the thread.

@@ -52,6 +52,7 @@ private:
   const bool prefetch_connections_;
   std::map<std::string, uint64_t> thread_local_counter_values_;
   ControllerGrpcClientPtr controller_grpc_client_;
+  Envoy::Upstream::ClusterManagerPtr& cluster_manager_;
 };
 
 using ClientWorkerImplPtr = std::unique_ptr<ClientWorkerImpl>;

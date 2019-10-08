@@ -169,11 +169,12 @@ HeaderSourcePtr ServiceImpl::createStaticEmptyHeaderSource(const uint32_t amount
     ::grpc::ServerReaderWriter<::nighthawk::client::ControllerResponse,
                                ::nighthawk::client::ControllerRequest>* stream) {
   nighthawk::client::ControllerRequest request;
+  nighthawk::client::ControllerResponse response;
+  stream->Write(response);
   bool ok = true;
 
   while (stream->Read(&request) && ok) {
     ENVOY_LOG(trace, "Inbound ControllerRequest {}", request.DebugString());
-    nighthawk::client::ControllerResponse response;
     ok = stream->Write(response);
   }
   ENVOY_LOG(trace, "Finishing stream");
