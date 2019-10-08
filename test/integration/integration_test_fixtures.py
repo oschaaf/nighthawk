@@ -15,6 +15,7 @@ import pytest
 
 from common import IpVersion, NighthawkException
 from nighthawk_test_server import NighthawkTestServer
+from nighthawk_grpc_service import NighthawkGrpcService
 
 
 def determineIpVersionsFromEnvironment():
@@ -45,10 +46,9 @@ class IntegrationTestBase():
     self.server_ip = "::1" if ip_version == IpVersion.IPV6 else "127.0.0.1"
     self.socket_type = socket.AF_INET6 if ip_version == IpVersion.IPV6 else socket.AF_INET
     self.test_server = None
-    self.server_port = -1
-    self.admin_port = -1
     self.parameters = {}
     self.ip_version = ip_version
+    self.grpc_service = None
 
   # TODO(oschaaf): For the NH test server, add a way to let it determine a port by itself and pull that
   # out.
@@ -70,12 +70,9 @@ class IntegrationTestBase():
     """
     assert (os.path.exists(self.nighthawk_test_server_path))
     assert (os.path.exists(self.nighthawk_client_path))
-    self.server_port = self.getFreeListenerPortForAddress(self.server_ip)
-    self.admin_port = self.getFreeListenerPortForAddress(self.server_ip)
-    self.parameters["admin_port"] = self.admin_port
     self.test_server = NighthawkTestServer(self.nighthawk_test_server_path,
                                            self.nighthawk_test_config_path, self.server_ip,
-                                           self.server_port, self.ip_version, self.parameters)
+                                           self.ip_version, self.parameters)
     assert (self.test_server.start())
 
   def tearDown(self):
@@ -83,6 +80,8 @@ class IntegrationTestBase():
     Stops the server.
     """
     assert (self.test_server.stop() == 0)
+    if not self.grpc_service is None:
+      assert (self.grpc_service.stop() == 0)
 
   def getNighthawkCounterMapFromJson(self, parsed_json):
     """
@@ -113,15 +112,9 @@ class IntegrationTestBase():
 
   def getTestServerStatisticsJson(self):
     """
-        Uri to grab a server stats snapshot over http from the admin interface.
-        """
-    uri_host = self.server_ip
-    if self.ip_version == IpVersion.IPV6:
-      uri_host = "[%s]" % self.server_ip
-    uri = "http://%s:%s/stats?format=json" % (uri_host, self.admin_port)
-    r = requests.get(uri)
-    assert (r.status_code == 200)
-    return r.json()
+    Utility to grab a statistics snapshot from the test server.
+    """
+    return self.test_server.fetchJsonFromAdminInterface("/stats?format=json")
 
   def getServerStatFromJson(self, server_stats_json, name):
     counters = server_stats_json["stats"]
@@ -152,6 +145,12 @@ class IntegrationTestBase():
 
   def assertIsSubset(self, subset, superset):
     self.assertLessEqual(subset.items(), superset.items())
+
+  def startNighthawkGrpcService(self):
+    host = self.server_ip if self.ip_version == IpVersion.IPV4 else "[%s]" % self.server_ip
+    self.grpc_service = NighthawkGrpcService(
+        os.path.join(self.test_rundir, "nighthawk_service"), host, self.ip_version)
+    assert (self.grpc_service.start())
 
 
 class HttpIntegrationTestBase(IntegrationTestBase):

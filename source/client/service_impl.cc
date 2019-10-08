@@ -116,14 +116,9 @@ void addHeader(envoy::api::v2::core::HeaderMap* map, absl::string_view key,
 }
 } // namespace
 
-HeaderSourcePtr ServiceImpl::createHeaderSource(const uint32_t amount) {
-  // XXX(oschaaf):
+HeaderSourcePtr ServiceImpl::createStaticEmptyHeaderSource(const uint32_t amount) {
   Envoy::Http::HeaderMapPtr header = std::make_unique<Envoy::Http::HeaderMapImpl>();
-  header->insertMethod().value(envoy::api::v2::core::RequestMethod::GET);
-  header->insertPath().value(std::string("/foopath"));
-  header->insertHost().value(std::string("127.0.0.1:80"));
-
-  header->insertScheme().value(Envoy::Http::Headers::get().SchemeValues.Http);
+  header->addCopy(Envoy::Http::LowerCaseString("x-from-remote-header-source"), "1");
   return std::make_unique<StaticHeaderSourceImpl>(std::move(header), amount);
 }
 
@@ -135,10 +130,18 @@ HeaderSourcePtr ServiceImpl::createHeaderSource(const uint32_t amount) {
   bool ok = true;
   while (stream->Read(&request)) {
     ENVOY_LOG(trace, "Inbound HeaderStreamRequest {}", request.DebugString());
-    auto header_source = createHeaderSource(request.amount());
+
+    // TODO(oschaaf): this is useful for integration testing purposes, but sending
+    // these nearly empty headers will basically be a near no-op (note that the client will merge
+    // headers we send here into into own header configuration). The client can be configured to
+    // connect to a custom grpc service as a remote data source instead of this one, and its workers
+    // will comply. That in itself may be useful. But we could offer the following features here:
+    // 1. Yet another remote header source, so we balance to-be-replayed headers over workers
+    //    and only have a single stream to a remote service here.
+    // 2. Read a and dispatch a header stream from disk.
+    auto header_source = createStaticEmptyHeaderSource(request.amount());
     auto header_generator = header_source->get();
     HeaderMapPtr headers;
-
     while (ok && (headers = header_generator()) != nullptr) {
       nighthawk::client::HeaderStreamResponse response;
       auto* request_headers = response.mutable_request_headers();
@@ -152,7 +155,6 @@ HeaderSourcePtr ServiceImpl::createHeaderSource(const uint32_t amount) {
           request_headers);
       ok = ok && stream->Write(response);
     }
-
     if (!ok) {
       ENVOY_LOG(error, "Failed to send the complete set of replay data.");
       break;
