@@ -31,7 +31,7 @@ public:
                             Envoy::Upstream::ClusterManagerPtr& cluster_manager,
                             Envoy::Tracing::HttpTracerPtr& http_tracer,
                             absl::string_view cluster_name,
-                            HeaderSource& header_generator) const override;
+                            RequestSource& request_generator) const override;
 };
 
 class SequencerFactoryImpl : public OptionBasedFactoryImpl, public SequencerFactory {
@@ -54,21 +54,18 @@ public:
   StatisticPtr create() const override;
 };
 
-class OutputCollectorFactoryImpl : public OptionBasedFactoryImpl, public OutputCollectorFactory {
+class OutputFormatterFactoryImpl : public OutputFormatterFactory {
 public:
-  OutputCollectorFactoryImpl(Envoy::TimeSource& time_source, const Options& options);
-  OutputCollectorPtr create() const override;
-
-private:
-  Envoy::TimeSource& time_source_;
+  OutputFormatterPtr
+  create(const nighthawk::client::OutputFormat_OutputFormatOptions output_format) const override;
 };
 
-class HeaderSourceFactoryImpl : public OptionBasedFactoryImpl, public HeaderSourceFactory {
+class RequestSourceFactoryImpl : public OptionBasedFactoryImpl, public RequestSourceFactory {
 public:
-  HeaderSourceFactoryImpl(const Options& options);
-  HeaderSourcePtr create(Envoy::Upstream::ClusterManagerPtr& cluster_manager,
-                         Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Scope& scope,
-                         absl::string_view service_cluster_name) const override;
+  RequestSourceFactoryImpl(const Options& options);
+  RequestSourcePtr create(Envoy::Upstream::ClusterManagerPtr& cluster_manager,
+                          Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Scope& scope,
+                          absl::string_view service_cluster_name) const override;
 
 private:
   void setRequestHeader(Envoy::Http::HeaderMap& header, absl::string_view key,

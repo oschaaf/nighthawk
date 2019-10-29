@@ -5,32 +5,13 @@ import os
 import sys
 import pytest
 
-from common import IpVersion
-from integration_test_fixtures import (http_test_server_fixture, https_test_server_fixture)
-from utility import *
+from test.integration.common import IpVersion
+from test.integration.integration_test_fixtures import (http_test_server_fixture,
+                                                        https_test_server_fixture)
+from test.integration.utility import *
 
 # TODO(oschaaf): we mostly verify stats observed from the client-side. Add expectations
 # for the server side as well.
-
-
-def assertCounterEqual(counters, name, value):
-  assertIn(name, counters)
-  assertEqual(counters[name], value)
-
-
-def assertCounterGreater(counters, name, value):
-  assertIn(name, counters)
-  assertGreater(counters[name], value)
-
-
-def assertCounterGreaterEqual(counters, name, value):
-  assertIn(name, counters)
-  assertGreaterEqual(counters[name], value)
-
-
-def assertCounterLessEqual(counters, name, value):
-  assertIn(name, counters)
-  assertLessEqual(counters[name], value)
 
 
 def test_http_h1(http_test_server_fixture):
@@ -42,8 +23,6 @@ def test_http_h1(http_test_server_fixture):
       [http_test_server_fixture.getTestServerRootUri()])
   counters = http_test_server_fixture.getNighthawkCounterMapFromJson(parsed_json)
   assertCounterEqual(counters, "benchmark.http_2xx", 25)
-  assertCounterEqual(counters, "upstream_cx_destroy", 1)
-  assertCounterEqual(counters, "upstream_cx_destroy_local", 1)
   assertCounterEqual(counters, "upstream_cx_http1_total", 1)
   assertCounterEqual(counters, "upstream_cx_rx_bytes_total", 3400)
   assertCounterEqual(counters, "upstream_cx_total", 1)
@@ -51,7 +30,8 @@ def test_http_h1(http_test_server_fixture):
                      1400 if http_test_server_fixture.ip_version == IpVersion.IPV6 else 1500)
   assertCounterEqual(counters, "upstream_rq_pending_total", 1)
   assertCounterEqual(counters, "upstream_rq_total", 25)
-  assertEqual(len(counters), 13)
+  assertCounterEqual(counters, "default.total_match_count", 1)
+  assertEqual(len(counters), 12)
 
 
 def mini_stress_test_h1(fixture, args):
@@ -82,7 +62,7 @@ def test_http_h1_mini_stress_test_with_client_side_queueing(http_test_server_fix
   """
   counters = mini_stress_test_h1(http_test_server_fixture, [
       http_test_server_fixture.getTestServerRootUri(), "--rps", "999999", "--max-pending-requests",
-      "10", "--duration 2"
+      "10", "--duration 10"
   ])
   assertCounterGreater(counters, "upstream_rq_pending_total", 100)
   assertCounterGreater(counters, "upstream_cx_overflow", 0)
@@ -112,15 +92,14 @@ def test_http_h2(http_test_server_fixture):
       ["--h2", http_test_server_fixture.getTestServerRootUri()])
   counters = http_test_server_fixture.getNighthawkCounterMapFromJson(parsed_json)
   assertCounterEqual(counters, "benchmark.http_2xx", 25)
-  assertCounterEqual(counters, "upstream_cx_destroy", 1)
-  assertCounterEqual(counters, "upstream_cx_destroy_local", 1)
   assertCounterEqual(counters, "upstream_cx_http2_total", 1)
   assertCounterGreaterEqual(counters, "upstream_cx_rx_bytes_total", 1145)
   assertCounterEqual(counters, "upstream_cx_total", 1)
   assertCounterGreaterEqual(counters, "upstream_cx_tx_bytes_total", 403)
   assertCounterEqual(counters, "upstream_rq_pending_total", 1)
   assertCounterEqual(counters, "upstream_rq_total", 25)
-  assertEqual(len(counters), 13)
+  assertCounterEqual(counters, "default.total_match_count", 1)
+  assertEqual(len(counters), 12)
 
 
 def test_http_concurrency(http_test_server_fixture):
@@ -149,8 +128,6 @@ def test_https_h1(https_test_server_fixture):
       [https_test_server_fixture.getTestServerRootUri()])
   counters = https_test_server_fixture.getNighthawkCounterMapFromJson(parsed_json)
   assertCounterEqual(counters, "benchmark.http_2xx", 25)
-  assertCounterEqual(counters, "upstream_cx_destroy", 1)
-  assertCounterEqual(counters, "upstream_cx_destroy_local", 1)
   assertCounterEqual(counters, "upstream_cx_http1_total", 1)
   assertCounterEqual(counters, "upstream_cx_rx_bytes_total", 3400)
   assertCounterEqual(counters, "upstream_cx_total", 1)
@@ -163,7 +140,8 @@ def test_https_h1(https_test_server_fixture):
   assertCounterEqual(counters, "ssl.handshake", 1)
   assertCounterEqual(counters, "ssl.sigalgs.rsa_pss_rsae_sha256", 1)
   assertCounterEqual(counters, "ssl.versions.TLSv1.2", 1)
-  assertEqual(len(counters), 18)
+  assertCounterEqual(counters, "default.total_match_count", 1)
+  assertEqual(len(counters), 17)
 
   server_stats = https_test_server_fixture.getTestServerStatisticsJson()
   assertEqual(
@@ -181,8 +159,6 @@ def test_https_h2(https_test_server_fixture):
       ["--h2", https_test_server_fixture.getTestServerRootUri()])
   counters = https_test_server_fixture.getNighthawkCounterMapFromJson(parsed_json)
   assertCounterEqual(counters, "benchmark.http_2xx", 25)
-  assertCounterEqual(counters, "upstream_cx_destroy", 1)
-  assertCounterEqual(counters, "upstream_cx_destroy_local", 1)
   assertCounterEqual(counters, "upstream_cx_http2_total", 1)
   assertCounterGreaterEqual(counters, "upstream_cx_rx_bytes_total", 1145)
   assertCounterEqual(counters, "upstream_cx_total", 1)
@@ -194,7 +170,8 @@ def test_https_h2(https_test_server_fixture):
   assertCounterEqual(counters, "ssl.handshake", 1)
   assertCounterEqual(counters, "ssl.sigalgs.rsa_pss_rsae_sha256", 1)
   assertCounterEqual(counters, "ssl.versions.TLSv1.2", 1)
-  assertEqual(len(counters), 18)
+  assertCounterEqual(counters, "default.total_match_count", 1)
+  assertEqual(len(counters), 17)
 
 
 def test_https_h1_tls_context_configuration(https_test_server_fixture):
@@ -271,3 +248,16 @@ def test_https_log_verbosity(https_test_server_fixture):
       ["--duration 1", "--rps 1", "-v trace",
        https_test_server_fixture.getTestServerRootUri()])
   assertIn(trace_level_sentinel, logs)
+
+
+def test_dotted_output_format(http_test_server_fixture):
+  """
+  Ensure we get the dotted string output format when requested.
+  and ensure we get latency percentiles.
+  """
+  output, _ = http_test_server_fixture.runNighthawkClient([
+      "--duration 1", "--rps 10", "--output-format dotted",
+      http_test_server_fixture.getTestServerRootUri()
+  ],
+                                                          as_json=False)
+  assertIn("global.benchmark_http_client.request_to_response.permilles-500.microseconds", output)

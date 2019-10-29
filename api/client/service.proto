@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package nighthawk.client;
 
+import "google/protobuf/wrappers.proto";
 import "google/rpc/status.proto";
 import "validate/validate.proto";
 import "envoy/api/v2/core/base.proto";
@@ -38,12 +39,48 @@ message ExecutionResponse {
   }
 }
 
-message HeaderStreamRequest {
+// Used to request a RequestStreamResponse.
+message RequestStreamRequest {
+  // Amount of RequestStreamResponses that should be yielded.
+  // Used to implement basic flow control by the client. Once AsyncClientImpl gets
+  // a way to apply backpressure this could probably be dropped.
   uint64 amount = 1;
 }
 
-message HeaderStreamResponse {
-  envoy.api.v2.core.HeaderMap request_headers = 1 [(validate.rules).message.required = true];
+message RequestStreamResponse {
+  // Specifies what the requests look like. Will be merged with the client's configuration.
+  RequestSpecifier request_specifier = 1;
+  // Response-level expectations associated to the above request specification.
+  Expectations expectations = 2;
+}
+
+message RequestSpecifier {
+  // method/path/uri/authority/content_length can all be expressed in request headers.
+  // so technically they are redundant. In case of ambiguity headers may end up being duplicated.
+  // Note that as of today, the target upstream/cluster that will be used to replay traffic to
+  // fixes the destination address/port
+  // Request method
+  google.protobuf.StringValue method = 1;
+  // Request URI
+  google.protobuf.StringValue uri = 2;
+  // Request authority
+  google.protobuf.StringValue authority = 3;
+  // Request headers
+  envoy.api.v2.core.HeaderMap headers = 4;
+  // Request content length. The client will transfer the number of bytes specified here in
+  // for the request body.
+  google.protobuf.UInt32Value content_length = 5;
+  // TODO(oschaaf): nice to have
+  // google.protobuf.StringValue sni_hostname = 10;
+}
+
+// Response-level expectations. If set, any unmet expectations will result in stats counter
+// increases in the future.
+message Expectations {
+  // Expected response status code
+  google.protobuf.UInt32Value response_code = 1;
+  // Expected response body content length
+  google.protobuf.UInt32Value content_length = 2;
 }
 
 message ControllerRequest {
@@ -59,7 +96,9 @@ service NighthawkService {
   //  Nighthawk runs.
   rpc ExecutionStream(stream ExecutionRequest) returns (stream ExecutionResponse) {
   }
-  rpc HeaderStream(stream HeaderStreamRequest) returns (stream HeaderStreamResponse) {
+
+  // For obtaining a stream of request specifications and expecatations for replay purposes.
+  rpc RequestStream(stream RequestStreamRequest) returns (stream RequestStreamResponse) {
   }
   rpc Controller(stream ControllerRequest) returns (stream ControllerResponse) {
   }

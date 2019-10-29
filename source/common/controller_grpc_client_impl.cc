@@ -13,14 +13,14 @@ namespace Nighthawk {
 const std::string ControllerGrpcClientImpl::METHOD_NAME =
     "nighthawk.client.NighthawkService.Controller";
 
-ControllerGrpcClientImpl::ControllerGrpcClientImpl(
-    Envoy::Grpc::RawAsyncClientPtr async_client, Envoy::Event::Dispatcher&)
+ControllerGrpcClientImpl::ControllerGrpcClientImpl(Envoy::Grpc::RawAsyncClientPtr async_client,
+                                                   Envoy::Event::Dispatcher&)
     : async_client_(std::move(async_client)),
       service_method_(
           *Envoy::Protobuf::DescriptorPool::generated_pool()->FindMethodByName(METHOD_NAME)) {}
 
 void ControllerGrpcClientImpl::start() {
-  stream_ = async_client_->start(service_method_, *this);
+  stream_ = async_client_->start(service_method_, *this, Envoy::Http::AsyncClient::StreamOptions());
   ENVOY_LOG(trace, "stream establishment status ok: {}", stream_ != nullptr);
 }
 

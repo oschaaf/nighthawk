@@ -2,10 +2,11 @@
 
 #include <grpc++/grpc++.h>
 
-#include "common/header_source_impl.h"
+#include "common/request_source_impl.h"
 
 #include "client/client.h"
 #include "client/options_impl.h"
+#include "client/output_collector_impl.h"
 
 namespace Nighthawk {
 namespace Client {
@@ -26,22 +27,21 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
   OptionsPtr options;
   try {
     options = std::make_unique<OptionsImpl>(request.start_request().options());
-  } catch (MalformedArgvException e) {
+  } catch (const MalformedArgvException& e) {
     response.mutable_error_detail()->set_message(e.what());
     writeResponse(response);
     return;
   }
 
   ProcessImpl process(*options, time_system_);
-  OutputCollectorFactoryImpl output_format_factory(time_system_, *options);
   auto logging_context = std::make_unique<Envoy::Logger::Context>(
       spdlog::level::from_str(
           nighthawk::client::Verbosity::VerbosityOptions_Name(options->verbosity())),
       "[%T.%f][%t][%L] %v", log_lock_);
-  auto formatter = output_format_factory.create();
-  if (process.run(*formatter)) {
+  OutputCollectorImpl output_collector(time_system_, *options);
+  if (process.run(output_collector)) {
     response.clear_error_detail();
-    *(response.mutable_output()) = formatter->toProto();
+    *(response.mutable_output()) = output_collector.toProto();
   } else {
     response.mutable_error_detail()->set_message("Unknown failure");
   }
@@ -116,20 +116,20 @@ void addHeader(envoy::api::v2::core::HeaderMap* map, absl::string_view key,
 }
 } // namespace
 
-HeaderSourcePtr ServiceImpl::createStaticEmptyHeaderSource(const uint32_t amount) {
+RequestSourcePtr ServiceImpl::createStaticEmptyRequestSource(const uint32_t amount) {
   Envoy::Http::HeaderMapPtr header = std::make_unique<Envoy::Http::HeaderMapImpl>();
-  header->addCopy(Envoy::Http::LowerCaseString("x-from-remote-header-source"), "1");
-  return std::make_unique<StaticHeaderSourceImpl>(std::move(header), amount);
+  header->addCopy(Envoy::Http::LowerCaseString("x-from-remote-request-source"), "1");
+  return std::make_unique<StaticRequestSourceImpl>(std::move(header), amount);
 }
 
-::grpc::Status ServiceImpl::HeaderStream(
+::grpc::Status ServiceImpl::RequestStream(
     ::grpc::ServerContext* /*context*/,
-    ::grpc::ServerReaderWriter<::nighthawk::client::HeaderStreamResponse,
-                               ::nighthawk::client::HeaderStreamRequest>* stream) {
-  nighthawk::client::HeaderStreamRequest request;
+    ::grpc::ServerReaderWriter<::nighthawk::client::RequestStreamResponse,
+                               ::nighthawk::client::RequestStreamRequest>* stream) {
+  nighthawk::client::RequestStreamRequest request;
   bool ok = true;
   while (stream->Read(&request)) {
-    ENVOY_LOG(trace, "Inbound HeaderStreamRequest {}", request.DebugString());
+    ENVOY_LOG(trace, "Inbound RequestStreamRequest {}", request.DebugString());
 
     // TODO(oschaaf): this is useful for integration testing purposes, but sending
     // these nearly empty headers will basically be a near no-op (note that the client will merge
@@ -139,12 +139,14 @@ HeaderSourcePtr ServiceImpl::createStaticEmptyHeaderSource(const uint32_t amount
     // 1. Yet another remote header source, so we balance to-be-replayed headers over workers
     //    and only have a single stream to a remote service here.
     // 2. Read a and dispatch a header stream from disk.
-    auto header_source = createStaticEmptyHeaderSource(request.amount());
-    auto header_generator = header_source->get();
-    HeaderMapPtr headers;
-    while (ok && (headers = header_generator()) != nullptr) {
-      nighthawk::client::HeaderStreamResponse response;
-      auto* request_headers = response.mutable_request_headers();
+    auto request_source = createStaticEmptyRequestSource(request.amount());
+    auto request_generator = request_source->get();
+    RequestPtr request;
+    while (ok && (request = request_generator()) != nullptr) {
+      HeaderMapPtr headers = request->header();
+      nighthawk::client::RequestStreamResponse response;
+      auto* request_specifier = response.mutable_request_specifier();
+      auto* request_headers = request_specifier->mutable_headers();
       headers->iterate(
           [](const Envoy::Http::HeaderEntry& header,
              void* context) -> Envoy::Http::HeaderMap::Iterate {
@@ -153,6 +155,7 @@ HeaderSourcePtr ServiceImpl::createStaticEmptyHeaderSource(const uint32_t amount
             return Envoy::Http::HeaderMap::Iterate::Continue;
           },
           request_headers);
+      // TODO(oschaaf): add static configuration for other fields plus expectations
       ok = ok && stream->Write(response);
     }
     if (!ok) {

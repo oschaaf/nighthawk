@@ -6,7 +6,7 @@
 #include "external/envoy/test/test_common/simulated_time_system.h"
 #include "external/envoy/test/test_common/utility.h"
 
-#include "common/header_source_impl.h"
+#include "common/request_source_impl.h"
 #include "common/uri_impl.h"
 
 #include "client/factories_impl.h"
@@ -44,13 +44,13 @@ TEST_F(FactoriesTest, CreateBenchmarkClient) {
   EXPECT_CALL(options_, maxRequestsPerConnection()).Times(1);
   auto cmd = std::make_unique<nighthawk::client::CommandLineOptions>();
   EXPECT_CALL(options_, toCommandLineOptions()).Times(1).WillOnce(Return(ByMove(std::move(cmd))));
-  StaticHeaderSourceImpl header_generator(std::make_unique<Envoy::Http::TestHeaderMapImpl>());
+  StaticRequestSourceImpl request_generator(std::make_unique<Envoy::Http::TestHeaderMapImpl>());
   auto benchmark_client = factory.create(*api_, dispatcher_, stats_store_, cluster_manager,
-                                         http_tracer_, "foocluster", header_generator);
+                                         http_tracer_, "foocluster", request_generator);
   EXPECT_NE(nullptr, benchmark_client.get());
 }
 
-TEST_F(FactoriesTest, CreateHeaderSource) {
+TEST_F(FactoriesTest, CreateRequestSource) {
   EXPECT_CALL(options_, requestMethod()).Times(1);
   EXPECT_CALL(options_, requestBodySize()).Times(1).WillOnce(Return(10));
   EXPECT_CALL(options_, uri()).Times(1).WillOnce(Return("http://foo/"));
@@ -60,11 +60,11 @@ TEST_F(FactoriesTest, CreateHeaderSource) {
   request_headers->mutable_header()->set_key("foo");
   request_headers->mutable_header()->set_value("bar");
   EXPECT_CALL(options_, toCommandLineOptions()).Times(1).WillOnce(Return(ByMove(std::move(cmd))));
-  HeaderSourceFactoryImpl factory(options_);
+  RequestSourceFactoryImpl factory(options_);
   Envoy::Upstream::ClusterManagerPtr cluster_manager;
-  auto header_generator = factory.create(cluster_manager, dispatcher_,
-                                         *stats_store_.createScope("foo."), "headersource");
-  EXPECT_NE(nullptr, header_generator.get());
+  auto request_generator = factory.create(cluster_manager, dispatcher_,
+                                          *stats_store_.createScope("foo."), "headersource");
+  EXPECT_NE(nullptr, request_generator.get());
 }
 
 TEST_F(FactoriesTest, CreateSequencer) {}
@@ -110,25 +110,24 @@ TEST_F(FactoriesTest, CreateStatistic) {
   EXPECT_NE(nullptr, factory.create().get());
 }
 
-class OutputCollectorFactoryTest
+class OutputFormatterFactoryTest
     : public FactoriesTest,
       public WithParamInterface<nighthawk::client::OutputFormat::OutputFormatOptions> {
 public:
   void testOutputCollector(nighthawk::client::OutputFormat::OutputFormatOptions type) {
     Envoy::Event::SimulatedTimeSystem time_source;
-    EXPECT_CALL(options_, toCommandLineOptions());
     EXPECT_CALL(options_, outputFormat()).WillOnce(Return(type));
-    OutputCollectorFactoryImpl factory(time_source, options_);
-    EXPECT_NE(nullptr, factory.create().get());
+    OutputFormatterFactoryImpl factory;
+    EXPECT_NE(nullptr, factory.create(options_.outputFormat()).get());
   }
 };
 
-TEST_P(OutputCollectorFactoryTest, TestCreation) { testOutputCollector(GetParam()); }
+TEST_P(OutputFormatterFactoryTest, TestCreation) { testOutputCollector(GetParam()); }
 
-INSTANTIATE_TEST_SUITE_P(OutputFormats, OutputCollectorFactoryTest,
-                         ValuesIn({nighthawk::client::OutputFormat::HUMAN,
-                                   nighthawk::client::OutputFormat::JSON,
-                                   nighthawk::client::OutputFormat::YAML}));
+INSTANTIATE_TEST_SUITE_P(
+    OutputFormats, OutputFormatterFactoryTest,
+    ValuesIn({nighthawk::client::OutputFormat::HUMAN, nighthawk::client::OutputFormat::JSON,
+              nighthawk::client::OutputFormat::YAML, nighthawk::client::OutputFormat::DOTTED}));
 
 } // namespace Client
 } // namespace Nighthawk

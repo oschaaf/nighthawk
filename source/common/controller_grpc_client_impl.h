@@ -9,7 +9,7 @@
 #include "envoy/upstream/cluster_manager.h"
 
 #include "nighthawk/common/controller_grpc_client.h"
-#include "nighthawk/common/header_source.h"
+//#include "nighthawk/common/request_source.h"
 
 #include "external/envoy/source/common/common/logger.h"
 #include "external/envoy/source/common/grpc/typed_async_client.h"

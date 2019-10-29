@@ -12,8 +12,9 @@
 #include "nighthawk/client/benchmark_client.h"
 #include "nighthawk/client/options.h"
 #include "nighthawk/client/output_collector.h"
-#include "nighthawk/common/header_source.h"
+#include "nighthawk/client/output_formatter.h"
 #include "nighthawk/common/platform_util.h"
+#include "nighthawk/common/request_source.h"
 #include "nighthawk/common/sequencer.h"
 #include "nighthawk/common/statistic.h"
 #include "nighthawk/common/uri.h"
@@ -29,7 +30,7 @@ public:
                                     Envoy::Upstream::ClusterManagerPtr& cluster_manager,
                                     Envoy::Tracing::HttpTracerPtr& http_tracer,
                                     absl::string_view cluster_name,
-                                    HeaderSource& header_generator) const PURE;
+                                    RequestSource& request_source) const PURE;
 };
 
 class SequencerFactory {
@@ -52,20 +53,21 @@ public:
   virtual StatisticPtr create() const PURE;
 };
 
-class OutputCollectorFactory {
+class OutputFormatterFactory {
 public:
-  virtual ~OutputCollectorFactory() = default;
-  virtual OutputCollectorPtr create() const PURE;
+  virtual ~OutputFormatterFactory() = default;
+  virtual OutputFormatterPtr
+  create(const nighthawk::client::OutputFormat_OutputFormatOptions) const PURE;
 };
 
 } // namespace Client
 
-class HeaderSourceFactory {
+class RequestSourceFactory {
 public:
-  virtual ~HeaderSourceFactory() = default;
-  virtual HeaderSourcePtr create(Envoy::Upstream::ClusterManagerPtr& cluster_manager,
-                                 Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Scope& scope,
-                                 absl::string_view service_cluster_name) const PURE;
+  virtual ~RequestSourceFactory() = default;
+  virtual RequestSourcePtr create(Envoy::Upstream::ClusterManagerPtr& cluster_manager,
+                                  Envoy::Event::Dispatcher& dispatcher, Envoy::Stats::Scope& scope,
+                                  absl::string_view service_cluster_name) const PURE;
 };
 
 } // namespace Nighthawk

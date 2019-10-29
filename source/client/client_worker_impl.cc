@@ -3,7 +3,7 @@
 #include "external/envoy/source/common/stats/symbol_table_impl.h"
 
 #include "common/controller_grpc_client_impl.h"
-#include "common/header_source_impl.h"
+#include "common/request_source_impl.h"
 #include "common/utility.h"
 
 namespace Nighthawk {
@@ -13,7 +13,7 @@ ClientWorkerImpl::ClientWorkerImpl(Envoy::Api::Api& api, Envoy::ThreadLocal::Ins
                                    Envoy::Upstream::ClusterManagerPtr& cluster_manager,
                                    const BenchmarkClientFactory& benchmark_client_factory,
                                    const SequencerFactory& sequencer_factory,
-                                   const HeaderSourceFactory& header_generator_factory,
+                                   const RequestSourceFactory& request_generator_factory,
                                    Envoy::Stats::Store& store, const int worker_number,
                                    const Envoy::MonotonicTime starting_time,
                                    Envoy::Tracing::HttpTracerPtr& http_tracer,
@@ -21,11 +21,11 @@ ClientWorkerImpl::ClientWorkerImpl(Envoy::Api::Api& api, Envoy::ThreadLocal::Ins
     : WorkerImpl(api, tls, store), worker_scope_(store_.createScope("worker.")),
       worker_number_scope_(worker_scope_->createScope(fmt::format("{}.", worker_number))),
       worker_number_(worker_number), starting_time_(starting_time), http_tracer_(http_tracer),
-      header_generator_(header_generator_factory.create(cluster_manager, *dispatcher_,
-                                                        *worker_number_scope_, "headersource")),
+      request_generator_(request_generator_factory.create(cluster_manager, *dispatcher_,
+                                                          *worker_number_scope_, "headersource")),
       benchmark_client_(benchmark_client_factory.create(
           api, *dispatcher_, *worker_number_scope_, cluster_manager, http_tracer_,
-          fmt::format("{}", worker_number), *header_generator_)),
+          fmt::format("{}", worker_number), *request_generator_)),
       sequencer_(
           sequencer_factory.create(time_source_, *dispatcher_, starting_time, *benchmark_client_)),
       prefetch_connections_(prefetch_connections), cluster_manager_(cluster_manager) {}
@@ -51,12 +51,12 @@ void ClientWorkerImpl::work() {
   controller_grpc_client_ = std::make_unique<ControllerGrpcClientImpl>(cm->create(), *dispatcher_);
   controller_grpc_client_->start();
 
-  header_generator_->initOnThread();
+  request_generator_->initOnThread();
   simpleWarmup();
   benchmark_client_->setMeasureLatencies(true);
   sequencer_->start();
   sequencer_->waitForCompletion();
-  benchmark_client_->terminate();
+
   success_ = true;
   controller_grpc_client_.reset();
   dispatcher_->exit();
@@ -72,7 +72,13 @@ void ClientWorkerImpl::work() {
           stat->value();
     }
   }
+  // Note that benchmark_client_ is not terminated here, but in shutdownThread() below. This is to
+  // to prevent the shutdown artifacts from influencing the test result counters. The main thread
+  // still needs to be able to read the counters for reporting the global numbers, and those
+  // should be consistent.
 }
+
+void ClientWorkerImpl::shutdownThread() { benchmark_client_->terminate(); }
 
 StatisticPtrMap ClientWorkerImpl::statistics() const {
   StatisticPtrMap statistics;

@@ -8,7 +8,10 @@
 #include "common/uri_impl.h"
 #include "common/utility.h"
 
+#include "client/output_formatter_impl.h"
+
 #include "absl/strings/str_split.h"
+#include "fmt/ranges.h"
 #include "tclap/CmdLine.h"
 
 namespace Nighthawk {
@@ -73,14 +76,15 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
                   verbosity_),
       false, "", &verbosities_allowed, cmd);
 
-  std::vector<std::string> output_formats = {"human", "yaml", "json"};
+  std::vector<std::string> output_formats = OutputFormatterImpl::getLowerCaseOutputFormats();
   TCLAP::ValuesConstraint<std::string> output_formats_allowed(output_formats);
-
   TCLAP::ValueArg<std::string> output_format(
       "", "output-format",
-      fmt::format("Verbosity of the output. Possible values: [human, yaml, json]. The "
+      fmt::format("Output format. Possible values: {}. The "
                   "default output format is '{}'.",
-                  output_format_),
+                  output_formats,
+                  absl::AsciiStrToLower(
+                      nighthawk::client::OutputFormat_OutputFormatOptions_Name(output_format_))),
       false, "", &output_formats_allowed, cmd);
 
   TCLAP::SwitchArg prefetch_connections(                         // NOLINT
@@ -163,8 +167,8 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
                                             "but in case of https no certificates are validated.",
                                             true, "", "uri format", cmd);
 
-  TCLAP::ValueArg<std::string> header_source(
-      "", "header-source", fmt::format("replay source description"), false, "", "string", cmd);
+  TCLAP::ValueArg<std::string> request_source(
+      "", "request-source", fmt::format("replay source description"), false, "", "string", cmd);
 
   Utility::parseCommand(cmd, argc, argv);
 
@@ -216,7 +220,7 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
                        upper_cased, &sequencer_idle_strategy_),
                    "Failed to parse sequencer idle strategy");
   }
-  TCLAP_SET_IF_SPECIFIED(header_source, header_source_);
+  TCLAP_SET_IF_SPECIFIED(request_source, request_source_);
   TCLAP_SET_IF_SPECIFIED(trace, trace_);
 
   // CLI-specific tests.
@@ -254,7 +258,7 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
     try {
       Envoy::MessageUtil::loadFromJson(tls_context.getValue(), tls_context_,
                                        Envoy::ProtobufMessage::getStrictValidationVisitor());
-    } catch (Envoy::EnvoyException e) {
+    } catch (const Envoy::EnvoyException& e) {
       throw MalformedArgvException(e.what());
     }
   }
@@ -295,9 +299,9 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options) {
     }
     request_body_size_ =
         PROTOBUF_GET_WRAPPED_OR_DEFAULT(request_options, request_body_size, request_body_size_);
-  } else if (options.has_header_source()) {
-    const auto& header_source_options = options.header_source();
-    header_source_ = PROTOBUF_GET_WRAPPED_OR_DEFAULT(header_source_options, uri, header_source_);
+  } else if (options.has_request_source()) {
+    const auto& request_source_options = options.request_source();
+    request_source_ = PROTOBUF_GET_WRAPPED_OR_DEFAULT(request_source_options, uri, request_source_);
   }
 
   max_pending_requests_ =
@@ -334,13 +338,13 @@ void OptionsImpl::validate() const {
   }
   try {
     UriImpl uri(uri_);
-  } catch (const UriException) {
+  } catch (const UriException&) {
     throw MalformedArgvException("Invalid target URI");
   }
 
-  if (header_source_ != "") {
+  if (request_source_ != "") {
     try {
-      UriImpl uri(header_source_);
+      UriImpl uri(request_source_);
     } catch (const UriException) {
       throw MalformedArgvException("Invalid replay source URI");
     }
@@ -372,8 +376,8 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptions() const {
   command_line_options->mutable_address_family()->set_value(
       static_cast<nighthawk::client::AddressFamily_AddressFamilyOptions>(addressFamily()));
   if (headerSource() != "") {
-    auto header_source = command_line_options->mutable_header_source();
-    header_source->mutable_uri()->set_value(headerSource());
+    auto request_source = command_line_options->mutable_request_source();
+    request_source->mutable_uri()->set_value(headerSource());
   } else {
     auto request_options = command_line_options->mutable_request_options();
     request_options->set_request_method(requestMethod());
