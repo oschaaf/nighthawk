@@ -43,7 +43,13 @@ bazel build -c opt //:nighthawk
 ```
 USAGE:
 
+<<<<<<< HEAD
 bazel-bin/nighthawk_client  [--open-loop] [--trace <uri format>]
+=======
+bazel-bin/nighthawk_client  [--failure-predicate <<string, uint32_t>>]
+... [--termination-predicate <<string,
+uint32_t>>] ... [--trace <uri format>]
+>>>>>>> optionize-termination-predicates
 [--sequencer-idle-strategy <spin|poll
 |sleep>] [--max-requests-per-connection
 <uint32_t>] [--max-active-requests
@@ -65,9 +71,19 @@ bazel-bin/nighthawk_client  [--open-loop] [--trace <uri format>]
 
 Where:
 
+<<<<<<< HEAD
 --open-loop
 Enable open loop mode. When enabled, the benchmark client will not
 provide backpressurewhen resource limits are hit.
+=======
+--failure-predicate <<string, uint32_t>>  (accepted multiple times)
+Failure predicate. Allows specifying a counter name plus threshold
+value for failing execution.
+
+--termination-predicate <<string, uint32_t>>  (accepted multiple times)
+Termination predicate. Allows specifying a counter name plus threshold
+value for terminating execution.
+>>>>>>> optionize-termination-predicates
 
 --trace <uri format>
 Trace uri. Example: zipkin://localhost:9411/api/v1/spans. Default is
@@ -135,9 +151,7 @@ values. Default: 1.
 Use HTTP/2
 
 --timeout <uint32_t>
-Timeout period in seconds used for both connection timeout and grace
-period waiting for lagging responses to come in after the test run is
-done. Default: 30.
+Connection connect timeout period in seconds. Default: 30.
 
 --duration <uint32_t>
 The number of seconds that the test should run. Default: 5.

@@ -106,7 +106,7 @@ public:
     dispatcher_->run(Envoy::Event::Dispatcher::RunType::Block);
     // If max pending is set > 0, we expect in_flight to be equal to max_pending.
     EXPECT_EQ(max_pending == 0 ? 1 : max_pending, inflight_response_count);
-
+    // We test feature functionality like max-pending-requests in the integration tests.
     for (Envoy::Http::StreamDecoder* decoder : decoders_) {
       Envoy::Http::HeaderMapPtr response_headers{
           new Envoy::Http::TestHeaderMapImpl{{":status", response_code_}}};

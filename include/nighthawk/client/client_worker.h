@@ -6,6 +6,7 @@
 #include "envoy/stats/store.h"
 
 #include "nighthawk/client/benchmark_client.h"
+#include "nighthawk/common/sequencer.h"
 #include "nighthawk/common/statistic.h"
 #include "nighthawk/common/worker.h"
 
@@ -24,15 +25,15 @@ public:
   virtual StatisticPtrMap statistics() const PURE;
 
   /**
-   * @return bool True iff the worker ran and completed successfully.
-   */
-  virtual bool success() const PURE;
-
-  /**
    * @return const std::map<std::string, uint64_t>& The worker-specific counter values.
    * Gets filled when the worker has completed its task, empty before that.
    */
   virtual const std::map<std::string, uint64_t>& thread_local_counter_values() PURE;
+
+  /**
+   * @return const Sequencer&
+   */
+  virtual const Sequencer& sequencer() const PURE;
 };
 
 using ClientWorkerPtr = std::unique_ptr<ClientWorker>;
