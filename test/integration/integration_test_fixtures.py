@@ -137,6 +137,12 @@ class IntegrationTestBase():
     stdout, stderr = client_process.communicate()
     logs = stderr.decode('utf-8')
     output = stdout.decode('utf-8')
+
+    with open("/tmp/%s" % self.parameters["test_id"] + ".log", "w") as f:
+      f.write(logs)
+    with open("/tmp/%s" % self.parameters["test_id"] + ".json", "w") as f:
+      f.write(output)
+    
     if expect_failure:
       assert (client_process.returncode == 0)
     else:

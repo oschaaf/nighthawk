@@ -11,20 +11,19 @@ from test.integration.integration_test_fixtures import (http_test_server_fixture
 from test.integration.utility import *
 
 
-def test_http_h1_maxrps_no_client_side_queueing(http_test_server_fixture):
+def test_new_h1_redline_30(http_test_server_fixture):
   assert (http_test_server_fixture.test_server.enableCpuProfiler())
-  MIN_EXPECTED_REQUESTS = 100
   parsed_json, _ = http_test_server_fixture.runNighthawkClient(
-      [http_test_server_fixture.getTestServerRootUri(), "--rps", "999999", "--duration", "30"])
+      [http_test_server_fixture.getTestServerRootUri(), "--rps", "50000", "--duration", "60", "--concurrency 120", "--connections", "100", "--max-pending-requests", "100"])
   counters = http_test_server_fixture.getNighthawkCounterMapFromJson(parsed_json)
-  # We expect to have executed a certain amount of requests
-  assertCounterGreater(counters, "benchmark.http_2xx", MIN_EXPECTED_REQUESTS)
-  # We expect to have created only a single connection
-  assertCounterEqual(counters, "upstream_cx_http1_total", 1)
   global_histograms = http_test_server_fixture.getNighthawkGlobalHistogramsbyIdFromJson(parsed_json)
-  assertGreater(int(global_histograms["sequencer.blocking"]["count"]), MIN_EXPECTED_REQUESTS)
-  assertGreater(
-      int(global_histograms["benchmark_http_client.request_to_response"]["count"]),
-      MIN_EXPECTED_REQUESTS)
-  # dump output
   logging.info(str(parsed_json))
+
+def test_new_h2_redline_30(http_test_server_fixture):
+  assert (http_test_server_fixture.test_server.enableCpuProfiler())
+  parsed_json, _ = http_test_server_fixture.runNighthawkClient(
+      [http_test_server_fixture.getTestServerRootUri(), "--rps", "50000", "--duration", "60", "--concurrency 120", "--max-active-requests", "100", "--h2", "--max-pending-requests", "100"])
+  counters = http_test_server_fixture.getNighthawkCounterMapFromJson(parsed_json)
+  global_histograms = http_test_server_fixture.getNighthawkGlobalHistogramsbyIdFromJson(parsed_json)
+  logging.info(str(parsed_json))
+

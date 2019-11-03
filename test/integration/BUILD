@@ -21,6 +21,7 @@ py_library(
         "configurations/nighthawk_https_origin.yaml",
         "//:nighthawk_client",
         "//:nighthawk_test_server",
+        "//:nighthawk_output_transform",
         "@envoy//test/config/integration/certs",
     ],
     deps = [
@@ -35,6 +36,7 @@ py_library(
         # The following are implied by pytest & co.
         requirement("attrs"),
         requirement("pluggy"),
+        
         requirement("zipp"),
         requirement("six"),
         requirement("atomicwrites"),
