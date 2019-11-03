@@ -223,15 +223,14 @@ Nighthawk comes with a tool to transform its json output to its other supported 
 USAGE:
 
 bazel-bin/nighthawk_output_transform  --output-format <json|human|yaml
-|dotted|fortio> [--] [--version]
-[-h]
+|dotted> [--] [--version] [-h]
 
 
 Where:
 
---output-format <json|human|yaml|dotted|fortio>
+--output-format <json|human|yaml|dotted>
 (required)  Output format. Possible values: {"json", "human", "yaml",
-"dotted", "fortio"}.
+"dotted"}.
 
 --,  --ignore_rest
 Ignores the rest of the labeled arguments following this flag.
