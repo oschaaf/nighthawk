@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
 licenses(["notice"])  # Apache 2
 
 load(
@@ -20,6 +22,7 @@ py_library(
         "configurations/nighthawk_http_origin.yaml",
         "configurations/nighthawk_https_origin.yaml",
         "//:nighthawk_client",
+        "//:nighthawk_output_transform",
         "//:nighthawk_test_server",
         "@envoy//test/config/integration/certs",
     ],
