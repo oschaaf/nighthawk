@@ -1,0 +1,140 @@
+<head>
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <!-- Plotly chart will be drawn inside this DIV -->
+    <div id="myDiv"></div>
+    <input type="file" multiple=true id="json" />
+    <input type="button" id="clear" value="clear" onclick="resetPlot()" />
+    <script>
+        function readFiles(e) {
+            var files = e.target.files;
+            for (var i = 0; i < files.length; i++) {
+                file = files[i];
+                var reader = new FileReader();
+                reader.label = file.name.replace("json-", "").replace(".json", "");
+                reader.onload = function (e) {
+                    update(e, this.label);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function clearGraph() {
+            data = [];
+            Plotly.newPlot("myDiv", data, layout);
+        }
+
+        document.getElementById('json').addEventListener('change', readFiles, false);
+        document.getElementById('clear').addEventListener('click', clearGraph, false);
+
+        function findGlobalResult(data) {
+            var results = data["results"];
+            for (var i = 0; i < results.length; i++) {
+                if (results[i].name == "global") {
+                    return results[i];
+                }
+            }
+            return null;
+        }
+        function findWorkersResults(data) {
+            var results = data["results"];
+            var a = []
+            for (var i = 0; i < results.length; i++) {
+                if (results[i].name != "global") {
+                    a.push(results[i]);
+                }
+            }
+            return a;
+        }
+
+        function findStatisticsById(data, id) {
+            var statistics = data["statistics"];
+            for (var i = 0; i < statistics.length; i++) {
+                if (statistics[i].id == id) {
+                    return statistics[i];
+                }
+            }
+            return null;
+        }
+        function getPoints(percentiles) {
+            var r = [[], []];
+            x = r[0];
+            y = r[1];
+
+            //r.push
+            for (var i = 0; i < percentiles.length; i++) {
+                var p = percentiles[i];
+                x.push(p["percentile"] * 100);
+                y.push(Math.round(parseFloat(p["duration"]) * 1000.0 * 1000.0)); // rounded to microseconds
+            }
+            return r;
+        }
+        function getTraces(results, name, stat) {
+            var a = [];
+            for (var i = 0; i < results.length; i++) {
+                var result = results[i];
+                var statistic = findStatisticsById(result, stat);
+                var percentiles = statistic["percentiles"];
+                var points = getPoints(percentiles);
+                //var samples = statistic["count"]
+                a.push({
+                    y: points[0],
+                    x: points[1],
+                    name: name,
+                    showlegend: true,
+                    type: "scatter",
+                    mode: 'lines+markers',
+                    //line: { shape: 'spline' },
+                });
+            }
+            return a;
+        }
+
+        function update(e, name) {
+            var contents = e.target.result;
+            eval("nhdata = " + contents);
+            var global_result = findGlobalResult(nhdata);
+            var worker_result = findWorkersResults(nhdata);
+            data = data.concat(getTraces([global_result], "request-response duration", "benchmark_http_client.request_to_response"));
+            data = data.concat(getTraces([global_result], "blocking duration", "sequencer.blocking"));
+            data = data.concat(getTraces([global_result], "blocking duration", "sequencer.callback"));
+            Plotly.newPlot("myDiv", data, layout);
+
+        }
+
+        var data = [];
+        var layout = {
+            yaxis: {
+                range: [0, 100],
+                label: "percentile",
+                title: {
+                    text: 'percentile',
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                },
+            },
+            xaxis: {
+                type: "log",
+                autorange: true,
+                title: {
+                    text: 'microseconds',
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                },
+            }
+        };
+        Plotly.newPlot("myDiv", data, layout);
+
+
+    </script>
+
+</body>
