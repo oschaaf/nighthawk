@@ -13,13 +13,15 @@ SequencerImpl::SequencerImpl(
     const PlatformUtil& platform_util, Envoy::Event::Dispatcher& dispatcher,
     Envoy::TimeSource& time_source, Envoy::MonotonicTime start_time, RateLimiterPtr&& rate_limiter,
     SequencerTarget target, StatisticPtr&& latency_statistic, StatisticPtr&& blocked_statistic,
+    StatisticPtr&& loop_statistic,
     nighthawk::client::SequencerIdleStrategy::SequencerIdleStrategyOptions idle_strategy,
     TerminationPredicate& termination_predicate, Envoy::Stats::Scope& scope)
     : target_(std::move(target)), platform_util_(platform_util), dispatcher_(dispatcher),
       time_source_(time_source), rate_limiter_(std::move(rate_limiter)),
       latency_statistic_(std::move(latency_statistic)),
-      blocked_statistic_(std::move(blocked_statistic)), start_time_(start_time),
-      idle_strategy_(idle_strategy), termination_predicate_(termination_predicate),
+      blocked_statistic_(std::move(blocked_statistic)), loop_statistic_(std::move(loop_statistic)),
+      start_time_(start_time), idle_strategy_(idle_strategy),
+      termination_predicate_(termination_predicate),
       last_termination_status_(TerminationPredicate::Status::PROCEED),
       scope_(scope.createScope("sequencer.")),
       sequencer_stats_({ALL_SEQUENCER_STATS(POOL_COUNTER(*scope_))}) {
@@ -28,6 +30,7 @@ SequencerImpl::SequencerImpl(
   spin_timer_ = dispatcher_.createTimer([this]() { run(false); });
   latency_statistic_->setId("sequencer.callback");
   blocked_statistic_->setId("sequencer.blocking");
+  loop_statistic_->setId("loop.intervals");
 }
 
 void SequencerImpl::start() {
@@ -36,7 +39,9 @@ void SequencerImpl::start() {
   if (start_time_ < time_source_.monotonicTime()) {
     ENVOY_LOG(error, "Sequencer start called too late");
   }
-  run(true);
+  last_event_time_ = time_source_.monotonicTime();
+  scheduleRun();
+  run(false);
 }
 
 void SequencerImpl::scheduleRun() { periodic_timer_->enableTimer(EnvoyTimerMinResolution); }
@@ -57,6 +62,9 @@ void SequencerImpl::stop(bool failed) {
   unblockAndUpdateStatisticIfNeeded(time_source_.monotonicTime());
   const auto ran_for =
       std::chrono::duration_cast<std::chrono::milliseconds>(last_event_time_ - start_time_);
+
+  // TODO(oschaaf): determine if we should consider the system noisy & warn
+  ENVOY_LOG(info, "Loop interval statistics: {}", loop_statistic_->toString());
   ENVOY_LOG(info,
             "Stopping after {} ms. Initiated: {} / Completed: {}. "
             "(Completion rate was {} per second.)",
@@ -79,11 +87,13 @@ void SequencerImpl::updateStartBlockingTimeIfNeeded() {
 
 void SequencerImpl::run(bool from_periodic_timer) {
   ASSERT(running_);
-  const auto now = last_event_time_ = time_source_.monotonicTime();
+  const auto now = time_source_.monotonicTime();
   const auto running_duration = now - start_time_;
-
+  const auto loop_delta = now - last_event_time_;
+  last_event_time_ = now;
   // The running_duration we compute will be negative until it is time to start.
   if (running_duration >= 0ns) {
+    loop_statistic_->addValue(loop_delta.count());
     last_termination_status_ = last_termination_status_ == TerminationPredicate::Status::PROCEED
                                    ? termination_predicate_.evaluateChain()
                                    : last_termination_status_;

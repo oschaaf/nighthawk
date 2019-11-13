@@ -29,6 +29,19 @@ Utility::mapCountersFromStore(const Envoy::Stats::Store& store,
       results[stat_name] += stat->value();
     }
   }
+  for (const auto& stat : store.gauges()) {
+    if (filter(stat->name(), stat->value())) {
+      std::string stat_name = stat->name();
+      // Strip off cluster.[x]. & worker.[x]. prefixes.
+      std::vector<std::string> v = absl::StrSplit(stat_name, '.');
+      if ((v[0] == "cluster" || v[0] == "worker") && v.size() > 1) {
+        v.erase(v.begin(), v.begin() + 2);
+        stat_name = absl::StrJoin(v, ".");
+      }
+      results[stat_name] += stat->value();
+    }
+  }
+
   return results;
 }
 

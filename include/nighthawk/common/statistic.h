@@ -36,6 +36,8 @@ public:
   virtual double mean() const PURE;
   virtual double pvariance() const PURE;
   virtual double pstdev() const PURE;
+  virtual uint64_t min() const PURE;
+  virtual uint64_t max() const PURE;
 
   /**
    * Only used in tests to match expectations to the right precision level.

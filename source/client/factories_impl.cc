@@ -65,7 +65,8 @@ SequencerPtr SequencerFactoryImpl::create(Envoy::TimeSource& time_source,
   return std::make_unique<SequencerImpl>(
       platform_util_, dispatcher, time_source, start_time, std::move(rate_limiter),
       sequencer_target, statistic_factory.create(), statistic_factory.create(),
-      options_.sequencerIdleStrategy(), termination_predicate, scope);
+      std::make_unique<StreamingStatistic>(), options_.sequencerIdleStrategy(),
+      termination_predicate, scope);
 }
 
 StoreFactoryImpl::StoreFactoryImpl(const Options& options) : OptionBasedFactoryImpl(options) {}

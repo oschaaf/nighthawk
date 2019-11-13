@@ -54,7 +54,7 @@ class TestServerBase(object):
     args = [
         self.server_binary_path, self.server_binary_config_path_arg, self.parameterized_config_path,
         "-l", "error", "--base-id", self.instance_id, "--admin-address-path", 
-        self.admin_address_path, "--concurrency", "60"
+        self.admin_address_path, "--concurrency", "1"
     ]
     logging.info("Test server popen() args: [%s]" % args)
     self.server_process = subprocess.Popen(args)

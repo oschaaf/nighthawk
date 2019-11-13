@@ -16,9 +16,16 @@ class StatisticImpl : public Statistic, public Envoy::Logger::Loggable<Envoy::Lo
 public:
   std::string toString() const override;
   nighthawk::client::Statistic toProto() override;
+  void addValue(uint64_t value) override;
   std::string id() const override;
   void setId(absl::string_view id) override;
   std::string id_;
+  uint64_t min() const override { return min_; };
+  uint64_t max() const override { return max_; };
+
+private:
+  uint64_t min_{UINT64_MAX};
+  uint64_t max_{0};
 };
 
 /**
