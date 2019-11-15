@@ -50,7 +50,7 @@ public:
       const PlatformUtil& platform_util, Envoy::Event::Dispatcher& dispatcher,
       Envoy::TimeSource& time_source, Envoy::MonotonicTime start_time,
       RateLimiterPtr&& rate_limiter, SequencerTarget target, StatisticPtr&& latency_statistic,
-      StatisticPtr&& blocked_statistic,
+      StatisticPtr&& blocked_statistic, StatisticPtr&& loop_statistic,
       nighthawk::client::SequencerIdleStrategy::SequencerIdleStrategyOptions idle_strategy,
       TerminationPredicate& termination_predicate, Envoy::Stats::Scope& scope);
 
@@ -122,6 +122,7 @@ private:
   std::unique_ptr<RateLimiter> rate_limiter_;
   StatisticPtr latency_statistic_;
   StatisticPtr blocked_statistic_;
+  StatisticPtr loop_statistic_;
   Envoy::Event::TimerPtr periodic_timer_;
   Envoy::Event::TimerPtr spin_timer_;
   Envoy::MonotonicTime start_time_;

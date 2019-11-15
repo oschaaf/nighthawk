@@ -9,8 +9,18 @@
 namespace Nighthawk {
 
 std::string StatisticImpl::toString() const {
-  return fmt::format("Count: {}. Mean: {:.{}f} μs. pstdev: {:.{}f} μs.\n", count(), mean() / 1000,
-                     2, pstdev() / 1000, 2);
+  return fmt::format(
+      "Count: {}. Mean: {:.{}f} μs. pstdev: {:.{}f} μs. Min: {:.{}f} us. Max: {:.{}f} us.", count(),
+      mean() / 1000, 2, pstdev() / 1000, 2, min() / 1e3, 2, max() / 1e3, 2);
+}
+
+void StatisticImpl::addValue(uint64_t value) {
+  if (value < min_) {
+    min_ = value;
+  }
+  if (value > max_) {
+    max_ = value;
+  }
 }
 
 nighthawk::client::Statistic StatisticImpl::toProto() {
@@ -37,6 +47,7 @@ void StatisticImpl::setId(absl::string_view id) { id_ = std::string(id); };
 SimpleStatistic::SimpleStatistic() : count_(0), sum_x_(0), sum_x2_(0) {}
 
 void SimpleStatistic::addValue(uint64_t value) {
+  StatisticImpl::addValue(value);
   count_++;
   sum_x_ += value;
   sum_x2_ += 1.0 * value * value;
@@ -66,6 +77,7 @@ StatisticPtr SimpleStatistic::combine(const Statistic& statistic) const {
 StreamingStatistic::StreamingStatistic() : count_(0), mean_(0), accumulated_variance_(0) {}
 
 void StreamingStatistic::addValue(uint64_t value) {
+  StatisticImpl::addValue(value);
   double delta, delta_n;
   count_++;
   delta = value - mean_;
@@ -177,7 +189,7 @@ std::string HdrStatistic::toString() const {
   stream << StatisticImpl::toString();
   stream << fmt::format("{:>12} {:>14} (usec)", "Percentile", "Value") << std::endl;
 
-  std::vector<double> percentiles{50.0, 75.0, 90.0, 99.0, 99.9, 99.99, 99.999, 100.0};
+  std::vector<double> percentiles{50.0, 75.0, 90.0, 99.0, 99.9, 99.99, 99.999, 99.9999, 100.0};
   for (double p : percentiles) {
     const int64_t n = hdr_value_at_percentile(histogram_, p);
 

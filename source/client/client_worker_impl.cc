@@ -63,6 +63,19 @@ void ClientWorkerImpl::work() {
           stat->value();
     }
   }
+
+  for (const auto& stat : store_.gauges()) {
+    // First, we strip the cluster prefix
+    std::string stat_name = std::string(absl::StripPrefix(stat->name(), "cluster."));
+    stat_name = std::string(absl::StripPrefix(stat_name, "worker."));
+    // Second, we strip our own prefix if it's there, else we skip.
+    const std::string worker_prefix = fmt::format("{}.", worker_number_);
+    if (stat->value() && absl::StartsWith(stat_name, worker_prefix)) {
+      thread_local_counter_values_[std::string(absl::StripPrefix(stat_name, worker_prefix))] =
+          stat->value();
+    }
+  }
+
   // Note that benchmark_client_ is not terminated here, but in shutdownThread() below. This is to
   // to prevent the shutdown artifacts from influencing the test result counters. The main thread
   // still needs to be able to read the counters for reporting the global numbers, and those should
