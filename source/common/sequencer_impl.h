@@ -66,14 +66,12 @@ public:
   void waitForCompletion() override;
 
   std::chrono::nanoseconds executionDuration() const override {
-    return last_event_time_ - start_time_;
+    return last_event_time_ - start_time_.value_or(last_event_time_);
   }
 
   double completionsPerSecond() const override {
     const double usec =
-        std::chrono::duration_cast<std::chrono::microseconds>(last_event_time_ - start_time_)
-            .count();
-
+        std::chrono::duration_cast<std::chrono::microseconds>(executionDuration()).count();
     return usec == 0 ? 0 : ((targets_completed_ / usec) * 1000000);
   }
 
@@ -124,7 +122,7 @@ private:
   StatisticPtr blocked_statistic_;
   Envoy::Event::TimerPtr periodic_timer_;
   Envoy::Event::TimerPtr spin_timer_;
-  Envoy::MonotonicTime start_time_;
+  absl::optional<Envoy::MonotonicTime> start_time_;
   Envoy::MonotonicTime last_event_time_;
   uint64_t targets_initiated_{0};
   uint64_t targets_completed_{0};

@@ -46,6 +46,7 @@ protected:
   void work() override;
 
 private:
+  std::unique_ptr<Envoy::TimeSource> cached_time_source_;
   void simpleWarmup();
   const TerminationPredicateFactory& termination_predicate_factory_;
   const SequencerFactory& sequencer_factory_;

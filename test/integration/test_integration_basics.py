@@ -523,3 +523,35 @@ def test_multiple_backends_https_h1(multi_https_test_server_fixture):
     assertBetweenInclusive(single_2xx, 8, 9)
     total_2xx += single_2xx
   assertBetweenInclusive(total_2xx, 24, 25)
+
+
+def release_timing_test_helper(http_test_server_fixture, qps):
+  '''
+  Verify measurement-, query- and reply- counts.
+  We expect qps == #measurements, as we run a 1s test.
+  Note: request 1ms delayed replies. The reply of the last query to be emitted after execution.
+  '''
+  parsed_json, _ = http_test_server_fixture.runNighthawkClient([
+      http_test_server_fixture.getTestServerRootUri(), "--request-header", "x-envoy-fault-delay-request:1", "--duration", "1", "--rps", str(qps)])
+  global_histograms = http_test_server_fixture.getNighthawkGlobalHistogramsbyIdFromJson(parsed_json)
+  counters = http_test_server_fixture.getNighthawkCounterMapFromJson(parsed_json)
+  assertEqual(
+      int(global_histograms["benchmark_http_client.request_to_response"]["count"]),
+      qps)
+  assertEqual(
+      int(global_histograms["benchmark_http_client.queue_to_connect"]["count"]),
+      qps + 1)
+
+  # qps +1 replies observed, we need to consider the warmup call.
+  assertCounterEqual(counters, "benchmark.http_2xx", qps + 1)
+  # qps +2 replies observed: warmup + a query for which the reply doesn't make it in time before execution ends.
+  assertCounterEqual(counters, "upstream_rq_total", qps + 2)
+
+@pytest.mark.skipif(isSanitizerRun(), reason="Unstable in sanitizer runs")
+def test_http_request_release_timing_qps_7(http_test_server_fixture):
+  release_timing_test_helper(http_test_server_fixture , 7)
+
+@pytest.mark.skipif(isSanitizerRun(), reason="Unstable in sanitizer runs")
+def test_http_request_release_timing_qps_79(http_test_server_fixture):
+  release_timing_test_helper(http_test_server_fixture, 79)
+

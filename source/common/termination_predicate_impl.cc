@@ -20,8 +20,8 @@ TerminationPredicate::Status DurationTerminationPredicateImpl::evaluate() {
   if (!start_.has_value()) {
     start_ = now;
   }
-  return now - start_.value() > duration_ ? TerminationPredicate::Status::TERMINATE
-                                          : TerminationPredicate::Status::PROCEED;
+  return now - start_.value() >= duration_ ? TerminationPredicate::Status::TERMINATE
+                                           : TerminationPredicate::Status::PROCEED;
 }
 
 TerminationPredicate::Status StatsCounterAbsoluteThresholdTerminationPredicateImpl::evaluate() {

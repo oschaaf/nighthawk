@@ -34,7 +34,6 @@ SequencerImpl::SequencerImpl(
 void SequencerImpl::start() {
   ASSERT(!running_);
   running_ = true;
-  start_time_ = time_source_.monotonicTime();
   // Initiate the periodic timer loop.
   scheduleRun();
   // Immediately run.
@@ -57,12 +56,11 @@ void SequencerImpl::stop(bool failed) {
   spin_timer_.reset();
   dispatcher_.exit();
   unblockAndUpdateStatisticIfNeeded(time_source_.monotonicTime());
-  const auto ran_for =
-      std::chrono::duration_cast<std::chrono::milliseconds>(last_event_time_ - start_time_);
   ENVOY_LOG(info,
-            "Stopping after {} ms. Initiated: {} / Completed: {}. "
+            "Stopping after {} us. Initiated: {} / Completed: {}. "
             "(Completion rate was {} per second.)",
-            ran_for.count(), targets_initiated_, targets_completed_, rate);
+            std::chrono::duration_cast<std::chrono::microseconds>(executionDuration()).count(),
+            targets_initiated_, targets_completed_, rate);
 }
 
 void SequencerImpl::unblockAndUpdateStatisticIfNeeded(const Envoy::MonotonicTime& now) {
@@ -81,20 +79,34 @@ void SequencerImpl::updateStartBlockingTimeIfNeeded() {
 
 void SequencerImpl::run(bool from_periodic_timer) {
   ASSERT(running_);
+  // Cached time is used to make sure components agree on time passage as well as save few system
+  // calls. We update any CacheTimeSource's view on "now" once per entry into this function here.
+  dispatcher_.updateApproximateMonotonicTime();
   const auto now = last_event_time_ = time_source_.monotonicTime();
-  last_termination_status_ = last_termination_status_ == TerminationPredicate::Status::PROCEED
-                                 ? termination_predicate_->evaluateChain()
-                                 : last_termination_status_;
-  // If we should stop according to termination conditions.
-  if (last_termination_status_ != TerminationPredicate::Status::PROCEED) {
-    stop(last_termination_status_ == TerminationPredicate::Status::FAIL);
-    return;
+
+  if (start_time_.has_value()) {
+    // If we have started, we start polling the predicates. Any DurationTerminationPredicate will
+    // evaluate the start time on the first call to evaluate().
+    last_termination_status_ = last_termination_status_ == TerminationPredicate::Status::PROCEED
+                                   ? termination_predicate_->evaluateChain()
+                                   : last_termination_status_;
+    // If we should stop according to termination conditions.
+    if (last_termination_status_ != TerminationPredicate::Status::PROCEED) {
+      stop(last_termination_status_ == TerminationPredicate::Status::FAIL);
+      return;
+    }
   }
 
   while (rate_limiter_->tryAcquireOne()) {
-    // The rate limiter says it's OK to proceed and call the target. Let's see if the target is OK
-    // with that as well.
+    // We start tracking start time / execution duration on the first acquisition
+    if (start_time_ == absl::nullopt) {
+      start_time_ = now;
+    }
+
+    // The rate limiter says it's OK to proceed and call the target. Let's see if the target
+    // is OK with that as well.
     const bool target_could_start = target_([this, now](bool, bool) {
+      dispatcher_.updateApproximateMonotonicTime();
       const auto dur = time_source_.monotonicTime() - now;
       latency_statistic_->addValue(dur.count());
       targets_completed_++;
