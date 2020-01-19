@@ -64,6 +64,7 @@ envoy_cc_library(
 envoy_cc_library(
     name = "nighthawk_common_lib",
     srcs = [
+        "phase_impl.cc",
         "rate_limiter_impl.cc",
         "sequencer_impl.cc",
         "statistic_impl.cc",
@@ -74,7 +75,9 @@ envoy_cc_library(
         "worker_impl.cc",
     ],
     hdrs = [
+        "cached_time_source_impl.h",
         "frequency.h",
+        "phase_impl.h",
         "platform_util_impl.h",
         "rate_limiter_impl.h",
         "sequencer_impl.h",
