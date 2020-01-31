@@ -1,10 +1,10 @@
-licenses(["notice"])  # Apache 2
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
     "envoy_package",
 )
+
+licenses(["notice"])  # Apache 2
 
 envoy_package()
 
@@ -56,6 +56,7 @@ envoy_cc_library(
         "@envoy//source/common/http:header_map_lib_with_external_headers",
         "@envoy//source/common/http:headers_lib_with_external_headers",
         "@envoy//source/common/http/http1:codec_lib_with_external_headers",
+        "@envoy//source/common/http/http1:conn_pool_legacy_lib_with_external_headers",
         "@envoy//source/common/http/http1:conn_pool_lib_with_external_headers",
         "@envoy//source/common/http/http2:conn_pool_lib_with_external_headers",
         "@envoy//source/common/init:manager_lib_with_external_headers",

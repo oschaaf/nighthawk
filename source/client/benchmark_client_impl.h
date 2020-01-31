@@ -16,6 +16,7 @@
 
 #include "external/envoy/source/common/common/logger.h"
 #include "external/envoy/source/common/http/http1/conn_pool.h"
+#include "external/envoy/source/common/http/http1/conn_pool_legacy.h"
 #include "external/envoy/source/common/http/http2/conn_pool.h"
 #include "external/envoy/source/common/runtime/runtime_impl.h"
 
@@ -74,7 +75,7 @@ private:
 // --max-requests-per-connection may help as well, as doing periodically initiating new connections
 // may help the benchmark target by giving it an opportunity to rebalance.
 class Http2PoolImpl : public Envoy::Http::ConnectionPool::Instance,
-                      public Envoy::Http::ConnPoolImplBase {
+                      public Envoy::Http::Legacy::ConnPoolImplBase {
 public:
   // For doc comments, see  Envoy::Http::ConnectionPool::Instance & Envoy::Http::ConnPoolImplBase
   Http2PoolImpl(
