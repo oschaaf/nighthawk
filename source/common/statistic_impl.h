@@ -149,5 +149,63 @@ private:
   static const int SignificantDigits;
   struct hdr_histogram* histogram_;
 };
+  
+  
+/**
+ * Per worker CircllhistStatistic uses Circllhist under the hood to compute statistics.
+ * In order to be flushed to Envoy stats Sinks, it takes the singleton Store reference in the constructor and wraps HistogramImplHelper.
+ */
+class CircllhistStatistic : public StatisticImpl, Envoy::Stats::HistogramImplHelper {
+public:
+ CircllhistStatistic(Envoy::Stats::Store& store, const absl::optional<int> worker_id = absl::nullopt)
+     : Envoy::Stats::HistogramImplHelper(store.symbolTable()), store_(store), worker_id_(worker_id) {
+   histogram_ = hist_alloc();
+   ASSERT(histogram_ != nullptr);
+ }
+
+ ~CircllhistStatistic() override {
+   // We must explicitly free the StatName here in order to supply the
+   // SymbolTable reference.
+   MetricImpl::clear(symbolTable());
+   hist_free(histogram_);
+ }
+
+ // Nighthawk::Statistic
+ void addValue(uint64_t value) override { recordValue(value); }
+ double mean() const override { return hist_approx_mean(histogram_); }
+ double pvariance() const override { return pstdev() * pstdev(); }
+ double pstdev() const override { return hist_approx_stddev(histogram_); }
+ StatisticPtr combine(const Statistic& statistic) const override {
+  auto combined = std::make_unique<CircllhistStatistic>(store_);
+  const auto& b = dynamic_cast<const CircllhistStatistic&>(statistic);
+  hist_accumulate(combined->histogram_, &this->histogram_, 1);
+  hist_accumulate(combined->histogram_, &b.histogram_, 1);
+
+  combined->min_ = std::min(this->min(), b.min());
+  combined->max_ = std::max(this->max(), b.max());
+  combined->count_ = this->count() + b.count();
+  return combined;
+}
+ StatisticPtr createNewInstanceOfSameType() const override {
+   return std::make_unique<CircllhistStatistic>(store_);
+ }
+
+  // Envoy::Stats::Histogram
+ void recordValue(uint64_t value) override {
+   store_.deliverHistogramToSinks(*this, value);
+   hist_insert_intscale(histogram_, value, 0, 1);
+   StatisticImpl::addValue(value);
+ }
+  Envoy::Stats::Histogram::Unit unit() const override { return Envoy::Stats::Histogram::Unit::Unspecified; };
+  bool used() const override { return count() > 0; }
+  Envoy::Stats::SymbolTable& symbolTable() override { return store_.symbolTable(); }
+
+private:
+  // This is used for delivering the histogram data to sinks.
+  Envoy::Stats::Store& store_;
+  histogram_t* histogram_;
+  // The worker id may be used in downstream sinks as stats tag.
+  absl::optional<int> worker_id_;
+};
 
 } // namespace Nighthawk
