@@ -20,7 +20,8 @@ using namespace testing;
 
 namespace Nighthawk {
 
-using MyTypes = Types<SimpleStatistic, InMemoryStatistic, HdrStatistic, StreamingStatistic>;
+using MyTypes = Types<SimpleStatistic, InMemoryStatistic, HdrStatistic, StreamingStatistic,
+                      CircllhistStatistic>;
 
 template <typename T> class TypedStatisticTest : public Test {};
 
