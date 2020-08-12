@@ -57,8 +57,6 @@ public:
                                    const Envoy::ScopeTrackedObject*) { timer_set_ = true; }));
     EXPECT_CALL(*timer_, disableTimer()).WillOnce(Invoke([&]() { timer_set_ = false; }));
     EXPECT_CALL(*dispatcher_, exit()).WillOnce(Invoke([&]() {
-      auto guard = std::make_unique<Envoy::Thread::LockGuard>(lock_);
-      stopped_ = true;
     }));
   }
 
@@ -81,23 +79,19 @@ public:
   // is used here to guarantee the while loop runs for at least 100 times before dispatcher->exit()
   // is called.
   void simulateTimerLoop() {
-    int i = 0;
-    while (true) {
-      i++;
-      // At least run the while loop for 100 times.
-      if (i == 100) {
-        signal_dispatcher_to_exit_.set_value();
-      }
-      auto guard = std::make_unique<Envoy::Thread::LockGuard>(lock_);
-      if (stopped_) {
-        break;
-      } else if (timer_set_) {
+    do {
+      if (timer_set_) {
         timer_set_ = false;
         timer_cb_();
       }
-    }
+      if (++loop_iterations_ == 100) {
+        signal_dispatcher_to_exit_.set_value();
+        return;
+      }
+    } while (true);
   }
 
+  int loop_iterations_{0};
   NiceMock<Envoy::Api::MockApi> mock_api_;
   Envoy::Thread::ThreadFactory& thread_factory_;
   Envoy::Stats::IsolatedStoreImpl store_;
@@ -108,9 +102,6 @@ public:
   NiceMock<Envoy::Event::MockTimer>* timer_; // not owned
   Envoy::Event::TimerCb timer_cb_;
   bool timer_set_{};
-  bool stopped_{false};
-  // Protect stopped_.
-  Envoy::Thread::MutexBasicLockable lock_;
   std::promise<void> signal_dispatcher_to_exit_;
 
   Envoy::Stats::MockSink* sink_ = nullptr; // owned by stats_sinks_
@@ -126,18 +117,19 @@ TEST_F(FlushWorkerTest, WorkerFlushStatsPeriodically) {
   FlushWorkerImpl worker(mock_api_, tls_, store_, stats_sinks_, stats_flush_interval);
 
   std::thread thread = std::thread([&worker, this] {
-    // Wait for the while loop run at least 100 times in simulateTimerLoop().
     signal_dispatcher_to_exit_.get_future().wait();
     worker.exitDispatcher();
   });
 
   expectDispatcherRun();
-  // Check flush() is called at least 100 times in simulateTimerLoop().
-  EXPECT_CALL(*sink_, flush(_)).Times(testing::AtLeast(100));
+  EXPECT_CALL(*sink_, flush(_)).Times(100);
 
   worker.start();
   worker.waitForCompletion();
   thread.join();
+  // Stats flush should happen exactly once as the final flush is done in
+  // FlushWorkerImpl::shutdownThread().
+  EXPECT_CALL(*sink_, flush(_)).Times(1);
   worker.shutdown();
 }
 
