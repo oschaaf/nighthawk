@@ -20,6 +20,9 @@ public:
   absl::StatusOr<nighthawk::client::ExecutionResponse> PerformNighthawkBenchmark(
       nighthawk::client::NighthawkService::StubInterface* nighthawk_service_stub,
       const nighthawk::client::CommandLineOptions& command_line_options) const override;
+  absl::Status ForwardExecutionResponse(
+      nighthawk::client::NighthawkService::StubInterface* nighthawk_service_stub,
+      const nighthawk::client::ExecutionResponse& execution_response) const override;
 };
 
 } // namespace Nighthawk
