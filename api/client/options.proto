@@ -4,6 +4,7 @@ package nighthawk.client;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
 import "envoy/config/core/v3/base.proto";
 import "envoy/config/metrics/v3/stats.proto";
 import "envoy/extensions/transport_sockets/tls/v3/cert.proto";
@@ -214,4 +215,40 @@ message CommandLineOptions {
   // "emit_previous_request_delta_in_response_header" to record elapsed time between request
   // arrivals.
   google.protobuf.StringValue latency_response_header_name = 36;
+  // Configuration specifically for the remote gRPC service(s) configured via
+  // nighthawk_service. Effectively any options provided here will only be
+  // effective at the “next hop”. For example, a CLI could configure something
+  // like:
+  // --nighthawk-service=public-address --remote-options=”{nighthawk-service: [
+  // “internal-address-a\”, “internal-address-b\”]}”. In this case, the client
+  // running in the CLI would merge any provided remote_options into the rest
+  // before forwarding them to the address configured for nighthawk_service.
+  CommandLineOptions remote_options = 100;
+
+  // Specify the address of a Nighthawk result sink to have load testing
+  // client(s) emit results to it. This allows users to configure a destination
+  // sink for clients to submit their results to.
+  google.protobuf.StringValue sink_destination = 101;
+
+  // Specify the address of a Nighthawk result sink to query results from.
+  // This allows users to configure a source sink for obtaining (aggregated)
+  // results from. The sink service will expose the pre-existing ExecutionStream
+  // interface for obtaining results, but obviously with a different
+  // implementation backing it, which will pull it from memory, database or
+  // disk.
+  google.protobuf.StringValue sink_source = 102;
+
+  // Set to indicate that one is not interested in results. Allows one to
+  // quickly post a configuration and have the call return fast. To be used in
+  // conjunction with a sink_destination; the sink can be queried to obtain
+  // results.
+  google.protobuf.BoolValue no_wait = 103;
+
+  // Provide a unique id for result lookup purposes. Required when one of the
+  // sink_XXX options is set, as it ensures the key (a CommandlineOptions proto)
+  // is unique in that flow.
+  google.protobuf.StringValue execution_id = 104;
+
+  // Provide an execution starting date and time.
+  google.protobuf.Timestamp schedule = 105;
 }
