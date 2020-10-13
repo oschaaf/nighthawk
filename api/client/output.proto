@@ -44,11 +44,31 @@ message Statistic {
   }
 }
 
+// Represents a stage of the thing we are benchmarking. E.g.
+// the time a request queued, first response byte time, etc.   
+message Milestone {
+  string name = 1;
+  uint64 epoch = ;
+}
+
+message Tag {
+  string name = 1;
+  uint64 value = 2;
+}
+
+// Represents the lifecycle of the thing we are benchmarking from start to end,
+// optionally annotated with tag/value pairs. 
+message MilestoneCollection {
+  repeated Milestone milestones = 1;
+  repeated Tag tags = 2;
+}
+
 message Result {
   string name = 1;
   repeated Statistic statistics = 2;
   repeated Counter counters = 3;
   google.protobuf.Duration execution_duration = 4;
+  repeated MilestoneCollection raw_data = 5;
 }
 
 message Output {
