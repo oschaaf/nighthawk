@@ -1,4 +1,4 @@
-#include "nighthawk/common/nighthawk_service_client.h"
+#include "nighthawk/common/nighthawk_sink_client.h"
 
 #include "external/envoy/source/common/common/statusor.h"
 #include "external/envoy/source/common/protobuf/protobuf.h"
@@ -15,11 +15,11 @@ namespace Nighthawk {
  * This class is stateless and may be called from multiple threads. Furthermore, the same gRPC stub
  * is safe to use from multiple threads simultaneously.
  */
-class NighthawkServiceClientImpl : public NighthawkServiceClient {
+class NighthawkSinkClientImpl : public NighthawkSinkClient {
 public:
-  absl::StatusOr<nighthawk::client::ExecutionResponse> PerformNighthawkBenchmark(
-      nighthawk::client::NighthawkService::StubInterface* nighthawk_service_stub,
-      const nighthawk::client::CommandLineOptions& command_line_options) const override;
+  absl::Status ForwardExecutionResponse(
+      nighthawk::client::NighthawkSink::StubInterface* nighthawk_sink_stub,
+      const nighthawk::client::ExecutionResponse& execution_response) const override;
 };
 
 } // namespace Nighthawk

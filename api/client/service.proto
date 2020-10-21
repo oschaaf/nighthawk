@@ -42,6 +42,9 @@ service NighthawkService {
   rpc ExecutionStream(stream ExecutionRequest) returns (stream ExecutionResponse) {
   }
 
+}
+
+service NighthawkSink {
   // Accepts a stream of execution responses.
   rpc ForwardExecutionResponse(stream ExecutionResponse) returns (google.protobuf.Empty) {
   }

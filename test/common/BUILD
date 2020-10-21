@@ -38,3 +38,13 @@ envoy_cc_test(
         "@com_github_grpc_grpc//:grpc++_test",
     ],
 )
+
+envoy_cc_test(
+    name = "nighthawk_sink_client_test",
+    srcs = ["nighthawk_sink_client_test.cc"],
+    repository = "@envoy",
+    deps = [
+        "//source/common:nighthawk_sink_client_impl",
+        "@com_github_grpc_grpc//:grpc++_test",
+    ],
+)
