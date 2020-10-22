@@ -31,7 +31,10 @@ message ExecutionRequest {
 }
 
 message ExecutionResponse {
-  Output output = 1;
+  oneof execution_response_type {
+    Output output = 1;
+    OutputAppendix appendix = 2;
+  }
   google.rpc.Status error_detail = 7;
 }
 
@@ -41,7 +44,6 @@ service NighthawkService {
   //  Nighthawk runs.
   rpc ExecutionStream(stream ExecutionRequest) returns (stream ExecutionResponse) {
   }
-
 }
 
 service NighthawkSink {

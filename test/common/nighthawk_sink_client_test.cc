@@ -24,7 +24,6 @@ using ::testing::DoAll;
 using ::testing::HasSubstr;
 using ::testing::Return;
 using ::testing::SaveArg;
-using ::testing::SetArgPointee;
 
 TEST(ForwardExecutionResponse, UsesSpecifiedExecutionResponseArguments) {
   ExecutionResponse observed_request_1;
@@ -59,10 +58,8 @@ TEST(ForwardExecutionResponse, UsesSpecifiedExecutionResponseArguments) {
   counter->set_name("test_2");
   counter->set_value(2);
 
-  absl::Status response_1 =
-      client.ForwardExecutionResponse(&mock_nighthawk_sink_stub, request_1);
-  absl::Status response_2 =
-      client.ForwardExecutionResponse(&mock_nighthawk_sink_stub, request_2);
+  absl::Status response_1 = client.ForwardExecutionResponse(&mock_nighthawk_sink_stub, request_1);
+  absl::Status response_2 = client.ForwardExecutionResponse(&mock_nighthawk_sink_stub, request_2);
   EXPECT_EQ(observed_request_1.DebugString(), request_1.DebugString());
   EXPECT_EQ(observed_request_2.DebugString(), request_2.DebugString());
   EXPECT_TRUE(MessageDifferencer::Equivalent(observed_request_1, request_1));

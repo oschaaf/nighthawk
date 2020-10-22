@@ -12,9 +12,9 @@ absl::Status NighthawkSinkClientImpl::ForwardExecutionResponse(
   std::shared_ptr<::grpc::ClientWriterInterface<::nighthawk::client::ExecutionResponse>> stream(
       nighthawk_sink_stub->ForwardExecutionResponse(&context, &response));
   if (!stream->Write(execution_response)) {
-    return absl::UnavailableError("Failed to write request to the Nighthawk Service gRPC channel.");
+    return absl::UnavailableError("Failed to write request to the Nighthawk Sink gRPC channel.");
   } else if (!stream->WritesDone()) {
-    return absl::InternalError("WritesDone() failed on the Nighthawk Service gRPC channel.");
+    return absl::InternalError("WritesDone() failed on the Nighthawk Sink gRPC channel.");
   }
   ::grpc::Status status = stream->Finish();
   if (!status.ok()) {
