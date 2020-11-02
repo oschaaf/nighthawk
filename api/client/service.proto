@@ -10,7 +10,12 @@ import "api/client/options.proto";
 import "api/client/output.proto";
 
 message StartRequest {
-  CommandLineOptions options = 1;
+  oneof start_request_type {
+    // Local execution.
+    CommandLineOptions options = 1;
+    // Remote execution configuration.
+    RemoteExecutionOptions remote_options = 2;
+  }
 }
 
 // TODO(oschaaf): Not implemented yet.
@@ -37,7 +42,7 @@ message ExecutionResponse {
     Output output = 1;
     OutputAppendix appendix = 2;
   }
-  google.rpc.Status error_detail = 7;  
+  google.rpc.Status error_detail = 7;
 }
 
 service NighthawkService {
@@ -49,7 +54,8 @@ service NighthawkService {
 }
 
 service NighthawkSink {
-  // Accepts a stream of execution responses, which is the return value of NighthawkService.ExecutionStream.
+  // Accepts a stream of execution responses, which is the return value of
+  // NighthawkService.ExecutionStream.
   rpc ForwardExecutionResponse(stream ExecutionResponse) returns (google.protobuf.Empty) {
   }
 

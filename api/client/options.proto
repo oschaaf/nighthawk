@@ -192,7 +192,7 @@ message CommandLineOptions {
   // Nighthawk service uri for running CLI in remote host mode. Example: grpc://localhost:8843/.
   // Default is empty.
   // NOTE: not relevant to gRPC service
-  google.protobuf.StringValue nighthawk_service = 31; // [(validate.rules).string.uri = true];
+  google.protobuf.StringValue nighthawk_service = 31 [deprecated = true];
   // Use experimental HTTP/2 pool which will use multiple connections.
   // WARNING: feature may be removed or changed in the future!
   google.protobuf.BoolValue experimental_h2_use_multiple_connections = 30;
@@ -215,28 +215,21 @@ message CommandLineOptions {
   // "emit_previous_request_delta_in_response_header" to record elapsed time between request
   // arrivals.
   google.protobuf.StringValue latency_response_header_name = 36;
-  // Configuration specifically for the remote gRPC service(s) configured via
-  // nighthawk_service. Effectively any options provided here will only be
-  // effective at the “next hop”. For example, a CLI could configure something
-  // like:
-  // --nighthawk-service=public-address --remote-options=”{nighthawk-service: [
-  // “internal-address-a\”, “internal-address-b\”]}”. In this case, the client
-  // running in the CLI would merge any provided remote_options into the rest
-  // before forwarding them to the address configured for nighthawk_service.
-  CommandLineOptions remote_options = 100;
 
-  // Specify the address of a Nighthawk result sink to have load testing
-  // client(s) emit results to it. This allows users to configure a destination
-  // sink for clients to submit their results to.
-  google.protobuf.StringValue sink_destination = 101;
+  oneof sink_usage {
+    // Specify the address of a Nighthawk result sink to have load testing
+    // client(s) emit results to it. This allows users to configure a destination
+    // sink for clients to submit their results to.
+    google.protobuf.StringValue sink_destination = 101;
 
-  // Specify the address of a Nighthawk result sink to query results from.
-  // This allows users to configure a source sink for obtaining (aggregated)
-  // results from. The sink service will expose the pre-existing ExecutionStream
-  // interface for obtaining results, but obviously with a different
-  // implementation backing it, which will pull it from memory, database or
-  // disk.
-  google.protobuf.StringValue sink_source = 102;
+    // Specify the address of a Nighthawk result sink to query results from.
+    // This allows users to configure a source sink for obtaining (aggregated)
+    // results from. The sink service will expose the pre-existing ExecutionStream
+    // interface for obtaining results, but obviously with a different
+    // implementation backing it, which will pull it from memory, database or
+    // disk.
+    google.protobuf.StringValue sink_source = 102;
+  }
 
   // Set to indicate that one is not interested in results. Allows one to
   // quickly post a configuration and have the call return fast. To be used in
@@ -251,4 +244,16 @@ message CommandLineOptions {
 
   // Provide an execution starting date and time.
   google.protobuf.Timestamp schedule = 105;
+}
+
+// Remote execution options.
+message RemoteExecutionOptions {
+  // Optional Nighthawk service that will in turn delegate to one or more other services.
+  // provided via nighthawk_services below.
+  google.protobuf.StringValue via_service = 1;
+  // Point out one or more Nighthawk services that will be performing actual execution.
+  // Must have one or more valid uri strings.
+  repeated string execution_services = 2;
+  // The load test specification options.
+  CommandLineOptions options = 3;
 }

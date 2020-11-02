@@ -61,7 +61,7 @@ message Output {
   envoy.config.core.v3.BuildVersion version = 4;
 }
 
-// Trailing data associated to Output. 
+// Trailing data associated to Output.
 message OutputAppendix {
   // Id of this appendix.
   string id = 1;
