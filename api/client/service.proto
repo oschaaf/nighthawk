@@ -2,13 +2,20 @@ syntax = "proto3";
 
 package nighthawk.client;
 
+import "google/protobuf/empty.proto";
 import "google/rpc/status.proto";
+import "google/protobuf/wrappers.proto";
 import "validate/validate.proto";
+
+import "envoy/config/core/v3/address.proto";
 
 import "api/client/options.proto";
 import "api/client/output.proto";
 
+// Message used to iniate an action on the Nighthawk load test execution gRPC service.
 message StartRequest {
+  // Request local execution.
+  // NOTE: CommandLineOptions is badly named, something like LoadTestSpec would have been better.
   CommandLineOptions options = 1;
 }
 
@@ -29,8 +36,12 @@ message ExecutionRequest {
   }
 }
 
+// Convey results of an ExecutionRequest.
 message ExecutionResponse {
-  Output output = 1;
+  oneof execution_response_type {
+    Output output = 1;
+    OutputAppendix appendix = 2;
+  }
   google.rpc.Status error_detail = 7;
 }
 
@@ -38,6 +49,44 @@ service NighthawkService {
   //  Accepts a stream of ExecutionRequests, which can be used to initiate, update, or cancel a
   //  test. Returns a stream of ExecutionResponse objects which will contain results for all
   //  Nighthawk runs.
+  rpc ExecutionStream(stream ExecutionRequest) returns (stream ExecutionResponse) {
+  }
+}
+
+// Perform an execution request through an intermediate service that will in turn delegate
+// to one or more other services for actual handling.
+message DistributedExecutionRequest {
+  StartRequest execution_request = 1;
+  // The services that StartRequest will be forwarded to for handling.
+  // This may either be a nighthawk gRPC service which performs actual load test execution, or
+  // a nighthawk sink service which will lookup results and return an aggregated result.
+  repeated envoy.config.core.v3.Address services = 2;
+}
+
+service NighthawkDistributor {
+  // Propagate StartRequest wrapped in DistributedExecutionRequest to one or more other services.
+  rpc DistributedExecutionStream(stream DistributedExecutionRequest)
+      returns (stream ExecutionResponse) {
+  }
+}
+
+// Encapsulates an ExecutionResponse.
+message ForwardExecutionResponseRequest {
+  ExecutionResponse execution_response = 1;
+}
+
+message ForwardExecutionResponseReply {
+}
+
+service NighthawkSink {
+  // Accepts a stream of execution responses, which is the return value of
+  // NighthawkService.ExecutionStream. Workers can forward their results using this method.
+  rpc ForwardExecutionResponse(stream ForwardExecutionResponseRequest)
+      returns (ForwardExecutionResponseReply) {
+  }
+
+  // Identical to NighthawkService.ExecutionStream; Nighthawk's clients will not be able to distinct
+  // between an actual execution and obtaining results from this sink.
   rpc ExecutionStream(stream ExecutionRequest) returns (stream ExecutionResponse) {
   }
 }

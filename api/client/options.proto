@@ -4,6 +4,8 @@ package nighthawk.client;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "envoy/config/core/v3/address.proto";
 import "envoy/config/core/v3/base.proto";
 import "envoy/config/metrics/v3/stats.proto";
 import "envoy/extensions/transport_sockets/tls/v3/cert.proto";
@@ -191,7 +193,8 @@ message CommandLineOptions {
   // Nighthawk service uri for running CLI in remote host mode. Example: grpc://localhost:8843/.
   // Default is empty.
   // NOTE: not relevant to gRPC service
-  google.protobuf.StringValue nighthawk_service = 31; // [(validate.rules).string.uri = true];
+  // NOTE: deprecated, favor DistributedExecutionRequest instead.
+  google.protobuf.StringValue nighthawk_service = 31 [deprecated = true];
   // Use experimental HTTP/2 pool which will use multiple connections.
   // WARNING: feature may be removed or changed in the future!
   google.protobuf.BoolValue experimental_h2_use_multiple_connections = 30;
@@ -214,4 +217,13 @@ message CommandLineOptions {
   // "emit_previous_request_delta_in_response_header" to record elapsed time between request
   // arrivals.
   google.protobuf.StringValue latency_response_header_name = 36;
+  // Provide an execution starting date and time.
+  google.protobuf.Timestamp schedule = 37;
+  // Optional unique identifier it this load test. The value given here will be reflected in the
+  // output, and auto-generated when not set.
+  google.protobuf.StringValue execution_id = 38;
+  // Specify the address of a sink to have load testing client(s) submit their results to it.
+  // When specified, an empty result will be returned immediately, and clients are expected to
+  // follow up with a distinct query to the sink later on to obtain results.
+  envoy.config.core.v3.Address sink = 39;
 }
