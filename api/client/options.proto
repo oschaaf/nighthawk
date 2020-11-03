@@ -4,6 +4,7 @@ package nighthawk.client;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
 import "envoy/config/core/v3/base.proto";
 import "envoy/config/metrics/v3/stats.proto";
 import "envoy/extensions/transport_sockets/tls/v3/cert.proto";
@@ -191,7 +192,8 @@ message CommandLineOptions {
   // Nighthawk service uri for running CLI in remote host mode. Example: grpc://localhost:8843/.
   // Default is empty.
   // NOTE: not relevant to gRPC service
-  google.protobuf.StringValue nighthawk_service = 31; // [(validate.rules).string.uri = true];
+  // NOTE: deprecated in favor of using RemoteOptions.
+  google.protobuf.StringValue nighthawk_service = 31 [deprecated = true];
   // Use experimental HTTP/2 pool which will use multiple connections.
   // WARNING: feature may be removed or changed in the future!
   google.protobuf.BoolValue experimental_h2_use_multiple_connections = 30;
@@ -214,4 +216,38 @@ message CommandLineOptions {
   // "emit_previous_request_delta_in_response_header" to record elapsed time between request
   // arrivals.
   google.protobuf.StringValue latency_response_header_name = 36;
+  // Provide an execution starting date and time.
+  google.protobuf.Timestamp schedule = 37;
+  // Optional unique id for lookup purposes.
+  google.protobuf.StringValue execution_id = 38;
+}
+
+// Remote execution options.
+message RemoteOptions {
+  // Optional Nighthawk service that will in turn delegate to one or more other services.
+  // provided via execution_services below.
+  google.protobuf.StringValue via_service = 1;
+  // Point out one or more Nighthawk services that will be performing actual execution.
+  // Must have one or more valid uri strings.
+  repeated string execution_services = 2;
+  // The load test specification options.
+  CommandLineOptions options = 3;
+  // Specify the address of a sink to have load testing client(s) submit their results to it.
+  // When specified, an empty result will be returned
+  google.protobuf.StringValue sink = 4;
+  // Provide a unique id for result lookup purposes. Required when one of the
+  // sink_XXX options is set, as it ensures the key (a CommandlineOptions proto)
+  // is unique in that flow. Will be auto-synthesized when empty.
+  google.protobuf.StringValue execution_id = 5;
+}
+
+message SinkQueryOptions {
+  RemoteOptions remote_options = 1;
+  // Specify the address of a Nighthawk result sink to query results from.
+  // This allows users to configure a source sink for obtaining (aggregated)
+  // results from. The sink service will expose the pre-existing ExecutionStream
+  // interface for obtaining results, but obviously with a different
+  // implementation backing it, which will pull it from memory, database or
+  // disk.
+  google.protobuf.StringValue sink = 2;
 }
