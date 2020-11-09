@@ -105,9 +105,17 @@ message H1ConnectionReuseStrategy {
   H1ConnectionReuseStrategyOptions value = 1;
 }
 
+message SinkConfiguration {
+  envoy.config.core.v3.Address address = 1;
+}
+
+message DistributorConfiguration {
+  envoy.config.core.v3.Address address = 1;
+}
+
 // TODO(oschaaf): Ultimately this will be a load test specification. The fact that it
 // can arrive via CLI is just a concrete detail. Change this to reflect that.
-// highest unused number is 38
+// highest unused number is 41.
 message CommandLineOptions {
   // The target requests-per-second rate. Default: 5.
   google.protobuf.UInt32Value requests_per_second = 1
@@ -198,7 +206,7 @@ message CommandLineOptions {
   // Nighthawk service uri for running CLI in remote host mode. Example: grpc://localhost:8843/.
   // Default is empty.
   // NOTE: not relevant to gRPC service
-  // NOTE: deprecated, favor DistributedExecutionRequest instead.
+  // NOTE: deprecated, favor execution_services below instead.
   google.protobuf.StringValue nighthawk_service = 31 [deprecated = true];
   // Use experimental HTTP/2 pool which will use multiple connections.
   // WARNING: feature may be removed or changed in the future!
@@ -223,12 +231,15 @@ message CommandLineOptions {
   // arrivals.
   google.protobuf.StringValue latency_response_header_name = 36;
   // Provide an execution starting date and time.
-  google.protobuf.Timestamp schedule = 37;
+  google.protobuf.Timestamp schedule = 38;
   // Optional unique identifier it this load test. The value given here will be reflected in the
   // output, and auto-generated when not set.
-  google.protobuf.StringValue execution_id = 38;
+  google.protobuf.StringValue execution_id = 39;
   // Specify the address of a sink to have load testing client(s) submit their results to it.
   // When specified, an empty result will be returned immediately, and clients are expected to
   // follow up with a distinct query to the sink later on to obtain results.
-  envoy.config.core.v3.Address sink = 39;
+  SinkConfiguration sink = 40;
+  // Specify a distributor service that will in turn delegate handlingone or more nighthawk service
+  // gRPC instances.
+  DistributorConfiguration distributor_service = 41;
 }

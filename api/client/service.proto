@@ -3,6 +3,7 @@ syntax = "proto3";
 package nighthawk.client;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 import "google/rpc/status.proto";
 import "google/protobuf/wrappers.proto";
 import "validate/validate.proto";
@@ -55,38 +56,69 @@ service NighthawkService {
 
 // Perform an execution request through an intermediate service that will in turn delegate
 // to one or more other services for actual handling.
-message DistributedExecutionRequest {
-  StartRequest execution_request = 1;
-  // The services that StartRequest will be forwarded to for handling.
-  // This may either be a nighthawk gRPC service which performs actual load test execution, or
-  // a nighthawk sink service which will lookup results and return an aggregated result.
-  repeated envoy.config.core.v3.Address services = 2;
+message DistributedRequest {
+  oneof request_type {
+    ExecutionRequest execution_request = 1;
+    GetExecutionResponseRequest get_execution_response_request = 2;
+  }
+  // Specify one or more services that will handle the request_type message associated to this.
+  repeated envoy.config.core.v3.Address execution_services = 3;
 }
 
+// Carries all responses associated to a DistributedExecutionRequest.
+message DistributedResponse {
+  oneof response_type {
+    ExecutionResponse execution_response = 1;
+    GetExecutionResponseResponse get_execution_response_response = 2;
+  }
+  // For debugging, we include the source of the response.
+  envoy.config.core.v3.Address execution_service = 3;
+}
+
+// Service which proxies message to one or more other services for handling.
 service NighthawkDistributor {
   // Propagate StartRequest wrapped in DistributedExecutionRequest to one or more other services.
-  rpc DistributedExecutionStream(stream DistributedExecutionRequest)
-      returns (stream ExecutionResponse) {
+  rpc DistributedRequestStream(stream DistributedRequest) returns (stream DistributedResponse) {
   }
 }
 
 // Encapsulates an ExecutionResponse.
-message ForwardExecutionResponseRequest {
+message StoreExecutionResponseRequest {
+  // Response contains the effective execution id, which will be used as a lookup key
   ExecutionResponse execution_response = 1;
 }
 
-message ForwardExecutionResponseReply {
+// Empty return value message, that serves as a future extension point.
+message StoreExecutionResponseResponse {
+}
+
+message GetExecutionResponseRequest {
+  // Unique id for lookup purposes.
+  string execution_id = 1;
+  // Indicate the desired timeout that will be used to wait for an in progress execution to
+  // complete. Optional, default 30 seconds.
+  google.protobuf.Duration execution_wait_timeout = 5 [(validate.rules).duration.gt.seconds = 0];
+}
+
+message GetExecutionResponseResponse {
+  // Response associated to the requested execution id.
+  ExecutionResponse execution_response = 1;
+  // Indicate if raw results should be returned. Default false.
+  // If set, the consuming side should be able to handle OutputAppendix messages,
+  // and no aggregation will be performed.
+  // If not set an aggregated result will be returned.
+  bool raw = 2;
 }
 
 service NighthawkSink {
   // Accepts a stream of execution responses, which is the return value of
   // NighthawkService.ExecutionStream. Workers can forward their results using this method.
-  rpc ForwardExecutionResponse(stream ForwardExecutionResponseRequest)
-      returns (ForwardExecutionResponseReply) {
+  rpc StoreExecutionResponse(stream StoreExecutionResponseRequest)
+      returns (StoreExecutionResponseResponse) {
   }
 
-  // Identical to NighthawkService.ExecutionStream; Nighthawk's clients will not be able to distinct
-  // between an actual execution and obtaining results from this sink.
-  rpc ExecutionStream(stream ExecutionRequest) returns (stream ExecutionResponse) {
+  // Gets the stored response of an execution, keyed by execution id.
+  rpc GetExecutionResponse(stream GetExecutionResponseRequest)
+      returns (stream GetExecutionResponseResponse) {
   }
 }
