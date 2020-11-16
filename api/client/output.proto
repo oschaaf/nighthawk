@@ -53,7 +53,6 @@ message Result {
   google.protobuf.Duration execution_duration = 4;
 }
 
-// Pre-existing
 message Output {
   google.protobuf.Timestamp timestamp = 1;
   nighthawk.client.CommandLineOptions options = 2;

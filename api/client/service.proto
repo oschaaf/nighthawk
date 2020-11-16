@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package nighthawk.client;
 
+import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/duration.proto";
 import "google/rpc/status.proto";
@@ -57,22 +58,18 @@ service NighthawkService {
 // Perform an execution request through an intermediate service that will in turn delegate
 // to one or more other services for actual handling.
 message DistributedRequest {
-  oneof request_type {
-    ExecutionRequest execution_request = 1;
-    GetExecutionResponseRequest get_execution_response_request = 2;
-  }
-  // Specify one or more services that will handle the request_type message associated to this.
-  repeated envoy.config.core.v3.Address execution_services = 3;
+  // Generic message that should be delegated to the service(s) specified below.
+  google.protobuf.Any request_message = 1;
+  // Specify one or more services that will handle the request_message associated to this.
+  repeated envoy.config.core.v3.Address services = 2;
 }
 
 // Carries all responses associated to a DistributedExecutionRequest.
 message DistributedResponse {
-  oneof response_type {
-    ExecutionResponse execution_response = 1;
-    GetExecutionResponseResponse get_execution_response_response = 2;
-  }
-  // For debugging, we include the source of the response.
-  envoy.config.core.v3.Address execution_service = 3;
+  // Generic response that from the service(s) that handled the generic request message.
+  google.protobuf.Any response_message = 1;
+  // The source of the response.
+  envoy.config.core.v3.Address service = 2;
 }
 
 // Service which proxies message to one or more other services for handling.
@@ -83,16 +80,16 @@ service NighthawkDistributor {
 }
 
 // Encapsulates an ExecutionResponse.
-message StoreExecutionResponseRequest {
-  // Response contains the effective execution id, which will be used as a lookup key
+message StoreExecutionRequest {
+  // Response must contain the effective execution id, which will be used as a lookup key.0
   ExecutionResponse execution_response = 1;
 }
 
 // Empty return value message, that serves as a future extension point.
-message StoreExecutionResponseResponse {
+message StoreExecutionResponse {
 }
 
-message GetExecutionResponseRequest {
+message SinkRequest {
   // Unique id for lookup purposes.
   string execution_id = 1;
   // Indicate the desired timeout that will be used to wait for an in progress execution to
@@ -100,7 +97,7 @@ message GetExecutionResponseRequest {
   google.protobuf.Duration execution_wait_timeout = 5 [(validate.rules).duration.gt.seconds = 0];
 }
 
-message GetExecutionResponseResponse {
+message SinkResponse {
   // Response associated to the requested execution id.
   ExecutionResponse execution_response = 1;
   // Indicate if raw results should be returned. Default false.
@@ -113,12 +110,10 @@ message GetExecutionResponseResponse {
 service NighthawkSink {
   // Accepts a stream of execution responses, which is the return value of
   // NighthawkService.ExecutionStream. Workers can forward their results using this method.
-  rpc StoreExecutionResponse(stream StoreExecutionResponseRequest)
-      returns (StoreExecutionResponseResponse) {
+  rpc StoreExecutionResponseStream(stream StoreExecutionRequest) returns (StoreExecutionResponse) {
   }
 
   // Gets the stored response of an execution, keyed by execution id.
-  rpc GetExecutionResponse(stream GetExecutionResponseRequest)
-      returns (stream GetExecutionResponseResponse) {
+  rpc SinkRequestStream(stream SinkRequest) returns (stream SinkResponse) {
   }
 }
