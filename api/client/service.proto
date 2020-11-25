@@ -22,16 +22,14 @@ message StartRequest {
 }
 
 // TODO(oschaaf): Not implemented yet.
-message UpdateRequest {
-}
+message UpdateRequest {}
 
 // TODO(oschaaf): Not implemented yet.
-message CancellationRequest {
-}
+message CancellationRequest {}
 
 message ExecutionRequest {
   oneof command_specific_options {
-    option (validate.required) = true;
+    option(validate.required) = true;
     StartRequest start_request = 1;
     UpdateRequest update_request = 2;
     CancellationRequest cancellation_request = 3;
@@ -51,32 +49,35 @@ service NighthawkService {
   //  Accepts a stream of ExecutionRequests, which can be used to initiate, update, or cancel a
   //  test. Returns a stream of ExecutionResponse objects which will contain results for all
   //  Nighthawk runs.
-  rpc ExecutionStream(stream ExecutionRequest) returns (stream ExecutionResponse) {
-  }
+  rpc ExecutionStream(stream ExecutionRequest) returns(stream ExecutionResponse) {}
 }
 
-// Perform an execution request through an intermediate service that will in turn delegate
-// to one or more other services for actual handling.
+// Perform an execution request through an intermediate service that will in
+// turn delegate to one or more other services for actual handling.
 message DistributedRequest {
-  // Generic message that should be delegated to the service(s) specified below.
-  google.protobuf.Any request_message = 1;
-  // Specify one or more services that will handle the request_message associated to this.
-  repeated envoy.config.core.v3.Address services = 2;
+  oneof distributed_request_type {
+    ExecutionRequest start_request = 1;
+    SinkRequest sink_request = 2;
+  }
+  // Specify one or more services that will handle the request_message
+  // associated with this.
+  repeated envoy.config.core.v3.Address services = 3;
 }
 
-// Carries all responses associated to a DistributedExecutionRequest.
+// Carries all responses associated with a DistributedExecutionRequest.
 message DistributedResponse {
-  // Generic response that from the service(s) that handled the generic request message.
-  google.protobuf.Any response_message = 1;
+  oneof distributed_response_type {
+    ExecutionResponse start_request = 1;
+    SinkResponse sink_request = 2;
+  }
   // The source of the response.
-  envoy.config.core.v3.Address service = 2;
+  envoy.config.core.v3.Address service = 3;
 }
 
-// Service which proxies message to one or more other services for handling.
+// Service which proxies messages to one or more other services for handling.
 service NighthawkDistributor {
   // Propagate StartRequest wrapped in DistributedExecutionRequest to one or more other services.
-  rpc DistributedRequestStream(stream DistributedRequest) returns (stream DistributedResponse) {
-  }
+  rpc DistributedRequestStream(stream DistributedRequest) returns(stream DistributedResponse) {}
 }
 
 // Encapsulates an ExecutionResponse.
@@ -86,8 +87,7 @@ message StoreExecutionRequest {
 }
 
 // Empty return value message, that serves as a future extension point.
-message StoreExecutionResponse {
-}
+message StoreExecutionResponse {}
 
 message SinkRequest {
   // Unique id for lookup purposes.
@@ -110,10 +110,8 @@ message SinkResponse {
 service NighthawkSink {
   // Accepts a stream of execution responses, which is the return value of
   // NighthawkService.ExecutionStream. Workers can forward their results using this method.
-  rpc StoreExecutionResponseStream(stream StoreExecutionRequest) returns (StoreExecutionResponse) {
-  }
+  rpc StoreExecutionResponseStream(stream StoreExecutionRequest) returns(StoreExecutionResponse) {}
 
   // Gets the stored response of an execution, keyed by execution id.
-  rpc SinkRequestStream(stream SinkRequest) returns (stream SinkResponse) {
-  }
+  rpc SinkRequestStream(stream SinkRequest) returns(stream SinkResponse) {}
 }
