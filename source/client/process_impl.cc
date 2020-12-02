@@ -475,9 +475,24 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
     createWorkers(number_of_workers);
     tls_.registerThread(*dispatcher_, true);
     store_root_.initializeThreading(*dispatcher_, tls_);
+
+    auto* admin_layer = bootstrap.mutable_layered_runtime()->add_layers();
+    admin_layer->set_name("admin layer");
+    admin_layer->mutable_admin_layer();
+    envoy::config::bootstrap::v3::RuntimeLayer* runtime_layer =
+        bootstrap.mutable_layered_runtime()->add_layers();
+    runtime_layer->set_name("static_layer");
+    Envoy::ProtobufWkt::Value value1;
+    value1.set_string_value(std::string("true"));
+    (*runtime_layer->mutable_static_layer()
+          ->mutable_fields())[std::string("envoy.reloadable_features.enable_deprecated_v2_api")] =
+        value1;
+    (*runtime_layer->mutable_static_layer()
+          ->mutable_fields())[std::string("envoy.features.enable_all_deprecated_features")] =
+        value1;
     runtime_singleton_ = std::make_unique<Envoy::Runtime::ScopedLoaderSingleton>(
         Envoy::Runtime::LoaderPtr{new Envoy::Runtime::LoaderImpl(
-            *dispatcher_, tls_, {}, *local_info_, store_root_, generator_,
+            *dispatcher_, tls_, bootstrap.layered_runtime(), *local_info_, store_root_, generator_,
             Envoy::ProtobufMessage::getStrictValidationVisitor(), *api_)});
     ssl_context_manager_ =
         std::make_unique<Envoy::Extensions::TransportSockets::Tls::ContextManagerImpl>(
@@ -502,6 +517,17 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
     cluster_manager_->setInitializedCb(
         [this]() -> void { init_manager_.initialize(init_watcher_); });
 
+    /*
+      envoy::config::bootstrap::v3::RuntimeLayer* runtime_layer =
+      bootstrap.mutable_layered_runtime()->add_layers(); runtime_layer->set_name("static_layer");
+      Envoy::ProtobufWkt::Value value1;
+      value1.set_string_value(std::string("true"));
+      (*runtime_layer->mutable_static_layer()->mutable_fields())[std::string("envoy.reloadable_features.enable_deprecated_v2_api")]
+      = value1;
+      (*runtime_layer->mutable_static_layer()->mutable_fields())[std::string("envoy.features.enable_all_deprecated_features")]
+      = value1;
+
+    */
     Envoy::Runtime::LoaderSingleton::get().initialize(*cluster_manager_);
 
     std::list<std::unique_ptr<Envoy::Stats::Sink>> stats_sinks;
@@ -595,12 +621,12 @@ bool ProcessImpl::run(OutputCollector& collector) {
     return false;
   }
 
-  try {
-    return runInternal(collector, uris, request_source_uri, tracing_uri);
-  } catch (Envoy::EnvoyException& ex) {
-    ENVOY_LOG(error, "Fatal exception: {}", ex.what());
-    throw;
-  }
+  // try {
+  return runInternal(collector, uris, request_source_uri, tracing_uri);
+  //} catch (Envoy::EnvoyException& ex) {
+  //  ENVOY_LOG(error, "Fatal exception: {}", ex.what());
+  //  throw;
+  //}
 }
 
 void ProcessImpl::setupForHRTimers() {

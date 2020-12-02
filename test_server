@@ -1,0 +1,29 @@
+#!/bin/sh
+set -ue
+set +x
+
+config_path_arg_found=0
+config_path=""
+# todo(oschaaf): need to determine extension
+new_config_path="$(mktemp).json"
+new_args=""
+for var in "$@"
+do
+    echo "$var"
+    if [ "$var" = "-c" ] || [ "$var" = "--config-path" ]; then
+        config_path_arg_found=1
+        new_args="$new_args $var"
+    elif [ $config_path_arg_found -eq 1 ]; then
+        config_path="$var"
+        new_args="$new_args $new_config_path"
+        config_path_arg_found=0
+    else
+        new_args="$new_args $var"
+    fi
+done
+dir="$(dirname $0)"
+if "$dir/v2_bootstrap_override_injector" "$config_path" "$new_config_path" ; then
+    exec "$dir/nighthawk_test_server_direct" --bootstrap-version 2 $new_args
+else
+    exec "$dir/nighthawk_test_server_direct" "$@"
+fi
