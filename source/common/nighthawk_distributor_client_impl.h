@@ -10,9 +10,9 @@ namespace Nighthawk {
 
 class NighthawkDistributorClientImpl : public NighthawkDistributorClient {
 public:
-  absl::StatusOr<nighthawk::client::StoreExecutionResponse> StoreExecutionResponseStream(
-      nighthawk::client::NighthawkSink::StubInterface* nighthawk_sink_stub,
-      const nighthawk::client::StoreExecutionRequest& store_execution_request) const override;
+  absl::StatusOr<::nighthawk::client::DistributedResponse> DistributedRequest(
+      nighthawk::client::NighthawkDistributor::StubInterface& nighthawk_distributor_stub,
+      const nighthawk::client::DistributedRequest& distributed_request) const override;
 };
 
 } // namespace Nighthawk

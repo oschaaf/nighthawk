@@ -59,7 +59,7 @@ service NighthawkService {
 // turn delegate to one or more other services for actual handling.
 message DistributedRequest {
   oneof distributed_request_type {
-    ExecutionRequest start_request = 1;
+    ExecutionRequest execution_request = 1;
     SinkRequest sink_request = 2;
   }
   // Specify one or more services that will handle the request_message
@@ -70,7 +70,7 @@ message DistributedRequest {
 // Carries all responses associated with a DistributedExecutionRequest.
 message DistributedResponse {
   oneof distributed_response_type {
-    ExecutionResponse start_request = 1;
+    ExecutionResponse execution_response = 1;
     SinkResponse sink_request = 2;
   }
   // The source of the response.
