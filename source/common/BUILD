@@ -49,6 +49,26 @@ envoy_cc_library(
 )
 
 envoy_cc_library(
+    name = "nighthawk_distributor_client_impl",
+    srcs = [
+        "nighthawk_distributor_client_impl.cc",
+    ],
+    hdrs = [
+        "nighthawk_distributor_client_impl.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/client:base_cc_proto",
+        "//api/client:grpc_service_lib",
+        "//include/nighthawk/common:nighthawk_distributor_client",
+        "@envoy//source/common/common:assert_lib_with_external_headers",
+        "@envoy//source/common/common:statusor_lib_with_external_headers",
+        "@envoy//source/common/protobuf:protobuf_with_external_headers",
+    ],
+)
+
+envoy_cc_library(
     name = "request_impl_lib",
     hdrs = [
         "request_impl.h",
