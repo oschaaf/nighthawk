@@ -26,6 +26,9 @@ public:
   uint64_t count() const override;
   uint64_t max() const override;
   uint64_t min() const override;
+  absl::StatusOr<std::unique_ptr<std::istream>> serializeNative() const override;
+  // TODO(oschaaf): needs either a reset() or force construct/return a fresh histogram.
+  absl::Status deserializeNative(std::istream&) override;
 
 protected:
   std::string id_;
@@ -145,6 +148,9 @@ public:
   StatisticPtr createNewInstanceOfSameType() const override {
     return std::make_unique<HdrStatistic>();
   };
+
+  absl::StatusOr<std::unique_ptr<std::istream>> serializeNative() const override;
+  absl::Status deserializeNative(std::istream&) override;
 
 private:
   static const int SignificantDigits;

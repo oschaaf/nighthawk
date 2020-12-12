@@ -209,6 +209,30 @@ TYPED_TEST(TypedStatisticTest, ProtoOutputEmptyStats) {
   EXPECT_EQ(proto.pstdev().nanos(), 0);
 }
 
+TYPED_TEST(TypedStatisticTest, NativeRoundtrip) {
+  TypeParam a;
+
+  a.setId("bar");
+  a.addValue(6543456);
+  a.addValue(342335);
+  a.addValue(543);
+
+  const absl::StatusOr<std::unique_ptr<std::istream>> status_or_stream = a.serializeNative();
+  EXPECT_TRUE(status_or_stream.ok() ||
+              status_or_stream.status().code() == absl::StatusCode::kUnimplemented);
+  // If the histogram states it implements native serialization/deserialization, put it through
+  // a round trip test.
+  if (status_or_stream.ok()) {
+    TypeParam b;
+    absl::Status status = b.deserializeNative(*status_or_stream.value());
+    EXPECT_TRUE(status.ok());
+    EXPECT_EQ(3, b.count());
+    EXPECT_EQ(a.count(), b.count());
+    EXPECT_EQ(a.mean(), b.mean());
+    EXPECT_EQ(a.pstdev(), b.pstdev());
+  }
+}
+
 TYPED_TEST(TypedStatisticTest, StringOutput) {
   TypeParam a;
 

@@ -20,6 +20,10 @@ public:
   absl::StatusOr<nighthawk::client::StoreExecutionResponse> StoreExecutionResponseStream(
       nighthawk::client::NighthawkSink::StubInterface* nighthawk_sink_stub,
       const nighthawk::client::StoreExecutionRequest& store_execution_request) const override;
+
+  absl::StatusOr<nighthawk::client::SinkResponse>
+  SinkRequestStream(nighthawk::client::NighthawkSink::StubInterface& nighthawk_sink_stub,
+                    const nighthawk::client::SinkRequest& sink_request) const override;
 };
 
 } // namespace Nighthawk

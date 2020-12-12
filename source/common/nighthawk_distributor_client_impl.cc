@@ -9,7 +9,6 @@ NighthawkDistributorClientImpl::DistributedRequest(
     nighthawk::client::NighthawkDistributor::StubInterface& nighthawk_distributor_stub,
     const nighthawk::client::DistributedRequest& distributed_request) const {
   nighthawk::client::DistributedResponse response;
-  //*request.mutable_start_request()->mutable_options() = command_line_options;
 
   ::grpc::ClientContext context;
   std::shared_ptr<::grpc::ClientReaderWriterInterface<nighthawk::client::DistributedRequest,

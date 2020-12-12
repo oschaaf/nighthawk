@@ -59,20 +59,21 @@ message Output {
   nighthawk.client.CommandLineOptions options = 2;
   repeated Result results = 3;
   envoy.config.core.v3.BuildVersion version = 4;
-  // Unique id for lookup purposes. This will be taken from CommandLineOptions if set,
-  // if it is not set there it will be auto-generated.
-  string execution_id = 5;
 }
 
 // Trailing data associated to Output.
 message OutputAppendix {
   // Id of this appendix.
   string id = 1;
+  // A single id can be transferred in multiple chunks. The appendix
+  // can be re-assembled by concatenating chunks in the order specified
+  // by this sequence number.
+  uint32 sequence_number = 2;
   // Initially we will only use this to transport (chunks of) HdrHistograms.
-  google.protobuf.Any data = 2;
+  google.protobuf.Any data = 3;
   // This will only be set for the last appendix of the series for this id.
   // Note: while for HdrHistogram this would be viable we don't add the number of anticipated chunks
   // to avoid imposing high memory requirements on the generating side in cases where the number of
   // chunks aren't known up front.
-  bool is_last = 3;
+  bool is_last = 4;
 }

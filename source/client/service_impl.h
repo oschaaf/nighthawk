@@ -20,6 +20,7 @@
 
 #include "nighthawk/client/process.h"
 #include "nighthawk/common/request_source.h"
+#include "nighthawk/common/sink.h"
 
 namespace Nighthawk {
 namespace Client {
@@ -89,6 +90,48 @@ public:
 
 private:
   RequestSourcePtr createStaticEmptyRequestSource(const uint32_t amount);
+};
+
+class SinkServiceImpl final : public nighthawk::client::NighthawkSink::Service,
+                              public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
+
+public:
+  SinkServiceImpl(std::unique_ptr<Sink>&& sink);
+  ::grpc::Status StoreExecutionResponseStream(
+      ::grpc::ServerContext* context,
+      ::grpc::ServerReader<::nighthawk::client::StoreExecutionRequest>* reader,
+      ::nighthawk::client::StoreExecutionResponse* response) override;
+
+  ::grpc::Status
+  SinkRequestStream(::grpc::ServerContext* context,
+                    ::grpc::ServerReaderWriter<::nighthawk::client::SinkResponse,
+                                               ::nighthawk::client::SinkRequest>* stream) override;
+
+private:
+  // TODO(oschaaf): ref?
+  std::unique_ptr<Sink> sink_;
+};
+
+class NighthawkDistributorServiceImpl final
+    : public nighthawk::client::NighthawkDistributor::Service,
+      public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
+
+public:
+  ::grpc::Status DistributedRequestStream(
+      ::grpc::ServerContext* context,
+      ::grpc::ServerReaderWriter<::nighthawk::client::DistributedResponse,
+                                 ::nighthawk::client::DistributedRequest>* stream) override;
+
+private:
+  ::grpc::Status validateRequest(::nighthawk::client::DistributedRequest request) const;
+  std::vector<nighthawk::client::DistributedResponse>
+  handleRequest(const ::nighthawk::client::DistributedRequest request) const;
+  nighthawk::client::DistributedResponse
+  handleSinkRequest(const envoy::config::core::v3::Address& service,
+                    const ::nighthawk::client::SinkRequest request) const;
+  nighthawk::client::DistributedResponse
+  handleExecutionRequest(const envoy::config::core::v3::Address& service,
+                         const ::nighthawk::client::ExecutionRequest request) const;
 };
 
 } // namespace Client

@@ -58,3 +58,13 @@ envoy_cc_test(
         "@com_github_grpc_grpc//:grpc++_test",
     ],
 )
+
+envoy_cc_test(
+    name = "sink_test",
+    srcs = ["sink_test.cc"],
+    repository = "@envoy",
+    deps = [
+        "//source/common:sink_impl_lib",
+        "@envoy//source/common/common:random_generator_lib_with_external_headers",
+    ],
+)

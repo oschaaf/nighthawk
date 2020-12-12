@@ -5,6 +5,7 @@
 
 #include "nighthawk/common/exception.h"
 
+#include "common/sink_impl.h"
 #include "common/utility.h"
 #include "common/version_info.h"
 
@@ -32,7 +33,8 @@ ServiceMain::ServiceMain(int argc, const char** argv) {
       "service listens. Default empty.",
       false, "", "", cmd);
 
-  std::vector<std::string> service_names{"traffic-generator-service", "dummy-request-source"};
+  std::vector<std::string> service_names{"traffic-generator-service", "dummy-request-source",
+                                         "sink", "distributor"};
   TCLAP::ValuesConstraint<std::string> service_names_allowed(service_names);
   TCLAP::ValueArg<std::string> service_arg(
       "", "service", "Specifies which service to run. Default 'traffic-generator-service'.", false,
@@ -43,6 +45,10 @@ ServiceMain::ServiceMain(int argc, const char** argv) {
     service_ = std::make_unique<ServiceImpl>();
   } else if (service_arg.getValue() == "dummy-request-source") {
     service_ = std::make_unique<RequestSourceServiceImpl>();
+  } else if (service_arg.getValue() == "sink") {
+    service_ = std::make_unique<SinkServiceImpl>(std::make_unique<FileSinkImpl>());
+  } else if (service_arg.getValue() == "distributor") {
+    service_ = std::make_unique<NighthawkDistributorServiceImpl>();
   }
   RELEASE_ASSERT(service_ != nullptr, "Service mapping failed");
   listener_bound_address_ = appendDefaultPortIfNeeded(listen_arg.getValue());

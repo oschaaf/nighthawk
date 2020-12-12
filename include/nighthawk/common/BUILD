@@ -32,6 +32,7 @@ envoy_basic_cc_library(
         "@envoy//include/envoy/upstream:cluster_manager_interface_with_external_headers",
         "@envoy//source/common/common:minimal_logger_lib",
         "@envoy//source/common/common:non_copyable_with_external_headers",
+        "@envoy//source/common/common:statusor_lib_with_external_headers",
         "@envoy//source/common/event:dispatcher_lib_with_external_headers",
         "@envoy//source/common/network:utility_lib_with_external_headers",
     ],
@@ -117,5 +118,17 @@ envoy_basic_cc_library(
     deps = [
         "@envoy//include/envoy/common:base_includes",
         "@envoy//include/envoy/common:time_interface",
+    ],
+)
+
+envoy_basic_cc_library(
+    name = "sink_lib",
+    hdrs = [
+        "sink.h",
+    ],
+    include_prefix = "nighthawk/common",
+    deps = [
+        "//api/client:grpc_service_lib",
+        "@envoy//source/common/common:statusor_lib_with_external_headers",
     ],
 )

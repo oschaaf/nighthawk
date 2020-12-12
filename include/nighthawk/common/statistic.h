@@ -11,6 +11,7 @@
 
 #include "api/client/output.pb.h"
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace Nighthawk {
@@ -115,6 +116,9 @@ public:
    * @param id The id that should be set for the Statistic instance.
    */
   virtual void setId(absl::string_view id) PURE;
+
+  virtual absl::StatusOr<std::unique_ptr<std::istream>> serializeNative() const PURE;
+  virtual absl::Status deserializeNative(std::istream&) PURE;
 };
 
 } // namespace Nighthawk

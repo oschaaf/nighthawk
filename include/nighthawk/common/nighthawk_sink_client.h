@@ -16,6 +16,10 @@ public:
   virtual absl::StatusOr<nighthawk::client::StoreExecutionResponse> StoreExecutionResponseStream(
       nighthawk::client::NighthawkSink::StubInterface* nighthawk_sink_stub,
       const nighthawk::client::StoreExecutionRequest& store_execution_request) const PURE;
+
+  virtual absl::StatusOr<nighthawk::client::SinkResponse>
+  SinkRequestStream(nighthawk::client::NighthawkSink::StubInterface& nighthawk_sink_stub,
+                    const nighthawk::client::SinkRequest& sink_request) const PURE;
 };
 
 } // namespace Nighthawk

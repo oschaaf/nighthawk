@@ -26,15 +26,6 @@ using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::SetArgPointee;
 
-class DistributorTestBase : public testing::Test {
-protected:
-  nighthawk::client::MockNighthawkDistributorStub stub_;
-};
-
-TEST_F(DistributorTestBase, UsesSpecifiedDistributedResponseArguments) {
-  NighthawkDistributorClientImpl client;
-}
-
 TEST(DistributedRequest, UsesSpecifiedCommandLineOptions) {
   const int kExpectedRps = 456;
   DistributedRequest request;
