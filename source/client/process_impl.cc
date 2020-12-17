@@ -1,5 +1,6 @@
 #include "client/process_impl.h"
 
+#include <grpc++/grpc++.h>
 #include <sys/file.h>
 
 #include <chrono>
@@ -43,6 +44,7 @@
 #include "api/client/output.pb.h"
 
 #include "common/frequency.h"
+#include "common/nighthawk_sink_client_impl.h"
 #include "common/uri_impl.h"
 #include "common/utility.h"
 
@@ -582,7 +584,6 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
     // We don't write per-worker results if we only have a single worker, because the global
     // results will be precisely the same.
     if (workers_.size() > 1) {
-      StatisticFactoryImpl statistic_factory(options_);
       collector.addResult(fmt::format("worker_{}", i),
                           vectorizeStatisticPtrMap(worker->statistics()),
                           worker->threadLocalCounterValues(), sequencer_execution_duration,
@@ -599,9 +600,30 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
   // etc.
   const auto& counters = Utility().mapCountersFromStore(
       store_root_, [](absl::string_view, uint64_t value) { return value > 0; });
-  StatisticFactoryImpl statistic_factory(options_);
   collector.addResult("global", mergeWorkerStatistics(workers_), counters,
                       total_execution_duration / workers_.size(), first_acquisition_time);
+
+  if (options_.sink().has_value()) {
+    nighthawk::client::SinkConfiguration configuration = options_.sink().value();
+    std::unique_ptr<nighthawk::client::NighthawkSink::Stub> sink_stub;
+    std::shared_ptr<::grpc::Channel> sink_channel;
+    sink_channel =
+        grpc::CreateChannel(fmt::format("{}:{}", configuration.address().socket_address().address(),
+                                        configuration.address().socket_address().port_value()),
+                            grpc::InsecureChannelCredentials());
+    sink_stub = std::make_unique<nighthawk::client::NighthawkSink::Stub>(sink_channel);
+
+    NighthawkSinkClientImpl sink_client;
+    ::nighthawk::client::StoreExecutionRequest request;
+    //*(request.mutable_execution_response()->mutable_execution_id()) = options_;
+    *(request.mutable_execution_response()->mutable_output()) = collector.toProto();
+    const auto status = sink_client.StoreExecutionResponseStream(sink_stub.get(), request);
+    if (!status.ok()) {
+      ENVOY_LOG(error, "Failed to store results at sink: '{}'", status.status().ToString());
+      return false;
+    }
+  }
+
   return counters.find("sequencer.failed_terminations") == counters.end();
 }
 

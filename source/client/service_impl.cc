@@ -29,6 +29,16 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
   }
 
   nighthawk::client::ExecutionResponse response;
+
+  // We must avoid touching OptionsImpl if a ProcessImpl is active, because we'll get an assert
+  // otherwise as doing so in turn will trigger an assert in Envoy as validation occurs.
+  if (thread_.joinable()) {
+    response.mutable_error_detail()->set_code(grpc::StatusCode::INTERNAL);
+    response.mutable_error_detail()->set_message("kinda busy sry kbye");
+    writeResponse(response);
+    return;
+  }
+
   OptionsPtr options;
   try {
     options = std::make_unique<OptionsImpl>(request.start_request().options());
@@ -39,17 +49,33 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
     return;
   }
 
-  ProcessImpl process(*options, time_system_, process_wide_);
-  OutputCollectorImpl output_collector(time_system_, *options);
-  const bool ok = process.run(output_collector);
-  if (!ok) {
-    response.mutable_error_detail()->set_code(grpc::StatusCode::INTERNAL);
-    // TODO(https://github.com/envoyproxy/nighthawk/issues/181): wire through error descriptions, so
-    // we can do better here.
-    response.mutable_error_detail()->set_message("Unknown failure");
+  thread_ = std::thread([this, request, &response]() {
+    OptionsPtr options = std::make_unique<OptionsImpl>(request.start_request().options());
+    ProcessImpl process(*options, time_system_, process_wide_);
+    OutputCollectorImpl output_collector(time_system_, *options);
+    const bool ok = process.run(output_collector);
+    if (!options->sink().has_value()) {
+      if (!ok) {
+        response.mutable_error_detail()->set_code(grpc::StatusCode::INTERNAL);
+        // TODO(https://github.com/envoyproxy/nighthawk/issues/181): wire through error
+        // descriptions, so we can do better here.
+        response.mutable_error_detail()->set_message("Unknown failure");
+      }
+      *(response.mutable_output()) = output_collector.toProto();
+    }
+    process.shutdown();
+  });
+
+  // If there's no sink, we need to wait for the output to become available.
+  // If there is a sink, we return an empty reply to indicate acceptance.
+  if (!options->sink().has_value()) {
+    thread_.join();
+  } else {
+    // Launch a 'completion thread' which will call join on the thread running our ProcessImpl.
+    std::thread completion_thread = std::thread([this]() { thread_.join(); });
+    completion_thread.detach();
   }
-  *(response.mutable_output()) = output_collector.toProto();
-  process.shutdown();
+
   // We release before writing the response to avoid a race with the client's follow up request
   // coming in before we release the lock, which would lead up to us declining service when
   // we should not.
@@ -215,69 +241,69 @@ SinkServiceImpl::SinkServiceImpl(std::unique_ptr<Sink>&& sink) : sink_(std::move
 }
 
 ::grpc::Status NighthawkDistributorServiceImpl::validateRequest(
-    ::nighthawk::client::DistributedRequest request) const {
+    const ::nighthawk::client::DistributedRequest& request) const {
+  // xxx: why the std::strings() below?
   if (request.has_sink_request()) {
     if (request.services_size() != 1) {
-      return grpc::Status(
-          grpc::StatusCode::INTERNAL,
-          std::string("DistributedRequest.SinkRequest should specify exactly one service."));
+      return grpc::Status(grpc::StatusCode::INTERNAL,
+                          "DistributedRequest.SinkRequest should specify exactly one service.");
     }
-  } else if (!request.has_execution_request()) {
+  } else if (request.has_execution_request()) {
     if (request.services_size() == 0) {
-      return grpc::Status(
-          grpc::StatusCode::INTERNAL,
-          std::string("DistributedRequest.ExecutionRequest should specify services."));
+      return grpc::Status(grpc::StatusCode::INTERNAL,
+                          "DistributedRequest.ExecutionRequest should specify services.");
     }
     ::nighthawk::client::ExecutionRequest execution_request = request.execution_request();
     if (!execution_request.has_start_request()) {
-      return grpc::Status(
-          grpc::StatusCode::INTERNAL,
-          std::string("DistributedRequest.ExecutionRequest MUST have StartRequest."));
+      return grpc::Status(grpc::StatusCode::INTERNAL,
+                          "DistributedRequest.ExecutionRequest MUST have StartRequest.");
     }
     if (!execution_request.start_request().has_options()) {
       return grpc::Status(
           grpc::StatusCode::INTERNAL,
-          std::string(
-              "DistributedRequest.ExecutionRequest.StartRequest MUST have CommandLineOptions."));
+          "DistributedRequest.ExecutionRequest.StartRequest MUST have CommandLineOptions.");
     }
     if (!execution_request.start_request().options().has_sink()) {
       return grpc::Status(
           grpc::StatusCode::INTERNAL,
-          std::string("DistributedRequest.ExecutionRequest MUST specify a sink in its options."));
+          "DistributedRequest.ExecutionRequest MUST specify a sink in its options.");
     }
   } else {
-    return grpc::Status(
-        grpc::StatusCode::INTERNAL,
-        std::string("Request should have either a SinkRequest or an ExecutionRequest."));
+    return grpc::Status(grpc::StatusCode::INTERNAL,
+                        "Request should have either a SinkRequest or an ExecutionRequest.");
   }
   return ::grpc::Status::OK;
 }
-nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleSinkRequest(
+absl::StatusOr<nighthawk::client::SinkResponse> NighthawkDistributorServiceImpl::handleSinkRequest(
     const envoy::config::core::v3::Address& service,
-    const ::nighthawk::client::SinkRequest request) const {
+    const ::nighthawk::client::SinkRequest& request) const {
   NighthawkSinkClientImpl client;
-  nighthawk::client::DistributedResponse response;
+  // nighthawk::client::DistributedResponse response;
   std::unique_ptr<nighthawk::client::NighthawkSink::Stub> stub;
   std::shared_ptr<::grpc::Channel> channel;
   channel = grpc::CreateChannel(fmt::format("{}:{}", service.socket_address().address(),
                                             service.socket_address().port_value()),
                                 grpc::InsecureChannelCredentials());
   stub = std::make_unique<nighthawk::client::NighthawkSink::Stub>(channel);
+  /*
   absl::StatusOr<nighthawk::client::SinkResponse> status = client.SinkRequestStream(*stub, request);
   if (!status.ok()) {
     // Translate from absl's StatusOr to grpc's Status.
     response.mutable_error()->set_code(static_cast<int>(status.status().code()));
-    response.mutable_error()->set_message(std::string("Distributed Sink Request failed!"));
+    response.mutable_error()->set_message("Distributed Sink Request failed!");
   } else {
     *(response.mutable_sink_response()) = status.value();
   }
   return response;
+  */
+  return client.SinkRequestStream(*stub, request);
 }
 
-nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleExecutionRequest(
+absl::StatusOr<nighthawk::client::ExecutionResponse>
+NighthawkDistributorServiceImpl::handleExecutionRequest(
     const envoy::config::core::v3::Address& service,
-    const ::nighthawk::client::ExecutionRequest request) const {
-  nighthawk::client::DistributedResponse response;
+    const ::nighthawk::client::ExecutionRequest& request) const {
+  // nighthawk::client::DistributedResponse response;
   NighthawkServiceClientImpl client;
   std::unique_ptr<nighthawk::client::NighthawkService::Stub> stub;
   std::shared_ptr<::grpc::Channel> channel;
@@ -288,6 +314,7 @@ nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleEx
   // TODO(oschaaf): MUST first ensure all resources are available to avoid one execution
   // starting and another one failing for good UX, or perhaps cancel everything if one failed to
   // start.
+  /*
   absl::StatusOr<nighthawk::client::ExecutionResponse> status =
       client.PerformNighthawkBenchmark(stub.get(), request.start_request().options());
   if (!status.ok()) {
@@ -298,23 +325,44 @@ nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleEx
     *(response.mutable_execution_response()) = status.value();
   }
   return response;
+  */
+  return client.PerformNighthawkBenchmark(stub.get(), request.start_request().options());
 }
 
-std::vector<nighthawk::client::DistributedResponse> NighthawkDistributorServiceImpl::handleRequest(
-    const ::nighthawk::client::DistributedRequest request) const {
-  std::vector<nighthawk::client::DistributedResponse> responses;
+// Translates one or more backend response into a single reply message
+nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleRequest(
+    const ::nighthawk::client::DistributedRequest& request) const {
+  nighthawk::client::DistributedResponse response;
   if (request.has_sink_request()) {
+    ENVOY_LOG(trace, "Handling sink request");
     RELEASE_ASSERT(request.services_size() == 1, "services_size() != 1");
     const envoy::config::core::v3::Address& service = request.services(0);
-    responses.emplace_back(handleSinkRequest(service, request.sink_request()));
+    absl::StatusOr<nighthawk::client::SinkResponse> sink_response =
+        handleSinkRequest(service, request.sink_request());
+    if (!sink_response.ok()) {
+      // Translate from absl's StatusOr to grpc's Status.
+      response.mutable_error()->set_code(static_cast<int>(sink_response.status().code()));
+      response.mutable_error()->set_message(std::string("Distributed Sink Request failed!"));
+    } else {
+      *(response.add_fragment()->mutable_sink_response()) = sink_response.value();
+    }
   } else if (request.has_execution_request()) {
+    ENVOY_LOG(trace, "Handling execution request");
     RELEASE_ASSERT(request.services_size() != 0, "services_size() == 0");
     RELEASE_ASSERT(request.execution_request().has_start_request(), "no start_request");
     RELEASE_ASSERT(request.execution_request().start_request().has_options(), "no options");
     // Requests we forward for initiation must have have a sink specified.
     RELEASE_ASSERT(request.execution_request().start_request().options().has_sink(), "no sink");
     for (const envoy::config::core::v3::Address& service : request.services()) {
-      responses.emplace_back(handleExecutionRequest(service, request.execution_request()));
+      absl::StatusOr<nighthawk::client::ExecutionResponse> execution_response =
+          handleExecutionRequest(service, request.execution_request());
+      if (!execution_response.ok()) {
+        // Translate from absl's StatusOr to grpc's Status.
+        response.mutable_error()->set_code(static_cast<int>(execution_response.status().code()));
+        response.mutable_error()->set_message(std::string("Distributed Execution Request failed!"));
+      } else {
+        *(response.add_fragment()->mutable_execution_response()) = execution_response.value();
+      }
     }
   } else {
     // Neither a SinkRequest nor an ExecutionRequest, that shouldn't happen.
@@ -322,7 +370,7 @@ std::vector<nighthawk::client::DistributedResponse> NighthawkDistributorServiceI
   }
   // All recipients have been messaged OK.
   //  TODO: service could be echoed back
-  return responses;
+  return response;
 }
 
 ::grpc::Status NighthawkDistributorServiceImpl::DistributedRequestStream(
@@ -333,15 +381,15 @@ std::vector<nighthawk::client::DistributedResponse> NighthawkDistributorServiceI
   ::grpc::Status status = grpc::Status::OK;
   while (status.ok() && stream->Read(&request)) {
     ENVOY_LOG(trace, "Inbound DistributedRequest {}", request.DebugString());
-    ::grpc::Status status = validateRequest(request);
+    status = validateRequest(request);
     if (status.ok()) {
-      std::vector<nighthawk::client::DistributedResponse> responses = handleRequest(request);
-      for (const nighthawk::client::DistributedResponse& response : responses) {
-        if (!stream->Write(response)) {
-          ENVOY_LOG(error, "Failed to write DistributedResponse.");
-          status = grpc::Status(grpc::StatusCode::INTERNAL,
-                                std::string("Failed to write DistributedResponse."));
-        }
+      nighthawk::client::DistributedResponse response = handleRequest(request);
+      if (!stream->Write(response)) {
+        ENVOY_LOG(error, "Failed to write DistributedResponse.");
+        status = grpc::Status(grpc::StatusCode::INTERNAL,
+                              std::string("Failed to write DistributedResponse."));
+      } else {
+        ENVOY_LOG(trace, "Wrote DistributedResponse {}", response.DebugString());
       }
     }
   }

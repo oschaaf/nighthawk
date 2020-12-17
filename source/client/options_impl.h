@@ -95,6 +95,10 @@ public:
   };
   bool allowEnvoyDeprecatedV2Api() const override { return allow_envoy_deprecated_v2_api_; }
   absl::optional<Envoy::SystemTime> scheduled_start() const override { return scheduled_start_; }
+  absl::optional<nighthawk::client::SinkConfiguration> sink() const override { return sink_; };
+  absl::optional<nighthawk::client::DistributorConfiguration> distributor() const override {
+    return distributor_;
+  };
 
 private:
   void parsePredicates(const TCLAP::MultiArg<std::string>& arg,
@@ -153,6 +157,8 @@ private:
   std::string latency_response_header_name_;
   bool allow_envoy_deprecated_v2_api_{false};
   absl::optional<Envoy::SystemTime> scheduled_start_;
+  absl::optional<nighthawk::client::SinkConfiguration> sink_;
+  absl::optional<nighthawk::client::DistributorConfiguration> distributor_;
 };
 
 } // namespace Client

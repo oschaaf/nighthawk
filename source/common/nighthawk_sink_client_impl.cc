@@ -47,7 +47,7 @@ absl::StatusOr<nighthawk::client::SinkResponse> NighthawkSinkClientImpl::SinkReq
     got_response = true;
   }
   if (!got_response) {
-    return absl::InternalError("Nighthawk Service did not send a gRPC response.");
+    return absl::InternalError("Sink Service did not send a gRPC response.");
   }
   ::grpc::Status status = stream->Finish();
   if (!status.ok()) {

@@ -78,6 +78,9 @@ public:
   virtual bool allowEnvoyDeprecatedV2Api() const PURE;
 
   virtual absl::optional<Envoy::SystemTime> scheduled_start() const PURE;
+  virtual absl::optional<nighthawk::client::SinkConfiguration> sink() const PURE;
+  virtual absl::optional<nighthawk::client::DistributorConfiguration> distributor() const PURE;
+
   /**
    * Converts an Options instance to an equivalent CommandLineOptions instance in terms of option
    * values.

@@ -17,6 +17,8 @@ NighthawkServiceClientImpl::PerformNighthawkBenchmark(
                                                       nighthawk::client::ExecutionResponse>>
       stream(nighthawk_service_stub->ExecutionStream(&context));
 
+  ENVOY_LOG_MISC(trace, "Write {}", request.DebugString());
+
   if (!stream->Write(request)) {
     return absl::UnavailableError("Failed to write request to the Nighthawk Service gRPC channel.");
   } else if (!stream->WritesDone()) {
@@ -28,11 +30,14 @@ NighthawkServiceClientImpl::PerformNighthawkBenchmark(
     RELEASE_ASSERT(!got_response,
                    "Nighthawk Service has started responding with more than one message.");
     got_response = true;
+    ENVOY_LOG_MISC(trace, "Read {}", response.DebugString());
   }
   if (!got_response) {
     return absl::InternalError("Nighthawk Service did not send a gRPC response.");
   }
   ::grpc::Status status = stream->Finish();
+  ENVOY_LOG_MISC(trace, "Finish {}", status.ok());
+
   if (!status.ok()) {
     return absl::Status(static_cast<absl::StatusCode>(status.error_code()), status.error_message());
   }

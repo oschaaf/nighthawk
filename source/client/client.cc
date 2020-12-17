@@ -28,6 +28,7 @@
 #include "common/utility.h"
 
 #include "client/client_worker_impl.h"
+#include "client/distributed_process_impl.h"
 #include "client/factories_impl.h"
 #include "client/options_impl.h"
 #include "client/output_collector_impl.h"
@@ -52,10 +53,18 @@ bool Main::run() {
       spdlog::level::from_str(lower), "[%T.%f][%t][%L] %v", log_lock, false);
   Envoy::Event::RealTimeSystem time_system; // NO_CHECK_FORMAT(real_time)
   ProcessPtr process;
-  std::unique_ptr<nighthawk::client::NighthawkService::Stub> stub;
+  std::unique_ptr<nighthawk::client::NighthawkDistributor::Stub> distributor_stub;
+  std::unique_ptr<nighthawk::client::NighthawkService::Stub> service_stub;
   std::shared_ptr<::grpc::Channel> channel;
 
-  if (options_->nighthawkService() != "") {
+  if (options_->distributor().has_value()) {
+    channel = grpc::CreateChannel(
+        fmt::format("{}:{}", options_->distributor().value().address().socket_address().address(),
+                    options_->distributor().value().address().socket_address().port_value()),
+        grpc::InsecureChannelCredentials());
+    distributor_stub = std::make_unique<nighthawk::client::NighthawkDistributor::Stub>(channel);
+    process = std::make_unique<DistributedProcessImpl>(*options_, *distributor_stub);
+  } else if (options_->nighthawkService() != "") {
     UriPtr uri;
 
     try {
@@ -67,8 +76,8 @@ bool Main::run() {
 
     channel = grpc::CreateChannel(fmt::format("{}:{}", uri->hostWithoutPort(), uri->port()),
                                   grpc::InsecureChannelCredentials());
-    stub = std::make_unique<nighthawk::client::NighthawkService::Stub>(channel);
-    process = std::make_unique<RemoteProcessImpl>(*options_, *stub);
+    service_stub = std::make_unique<nighthawk::client::NighthawkService::Stub>(channel);
+    process = std::make_unique<RemoteProcessImpl>(*options_, *service_stub);
   } else {
     process = std::make_unique<ProcessImpl>(*options_, time_system);
   }

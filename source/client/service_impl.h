@@ -71,6 +71,7 @@ private:
   // busy_lock_ is used to test from the service thread to query if there's
   // an active test being run.
   Envoy::Thread::MutexBasicLockable busy_lock_;
+  std::thread thread_;
 };
 
 /**
@@ -123,15 +124,15 @@ public:
                                  ::nighthawk::client::DistributedRequest>* stream) override;
 
 private:
-  ::grpc::Status validateRequest(::nighthawk::client::DistributedRequest request) const;
-  std::vector<nighthawk::client::DistributedResponse>
-  handleRequest(const ::nighthawk::client::DistributedRequest request) const;
+  ::grpc::Status validateRequest(const ::nighthawk::client::DistributedRequest& request) const;
   nighthawk::client::DistributedResponse
+  handleRequest(const ::nighthawk::client::DistributedRequest& request) const;
+  absl::StatusOr<nighthawk::client::SinkResponse>
   handleSinkRequest(const envoy::config::core::v3::Address& service,
-                    const ::nighthawk::client::SinkRequest request) const;
-  nighthawk::client::DistributedResponse
+                    const ::nighthawk::client::SinkRequest& request) const;
+  absl::StatusOr<nighthawk::client::ExecutionResponse>
   handleExecutionRequest(const envoy::config::core::v3::Address& service,
-                         const ::nighthawk::client::ExecutionRequest request) const;
+                         const ::nighthawk::client::ExecutionRequest& request) const;
 };
 
 } // namespace Client

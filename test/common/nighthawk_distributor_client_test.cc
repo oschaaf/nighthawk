@@ -114,7 +114,7 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceDoesNotSendResponse) {
   ASSERT_FALSE(response_or.ok());
   EXPECT_EQ(response_or.status().code(), absl::StatusCode::kInternal);
   EXPECT_THAT(response_or.status().message(),
-              HasSubstr("Nighthawk Service did not send a gRPC response."));
+              HasSubstr("Distributor Service did not send a gRPC response."));
 }
 
 TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceWriteFails) {

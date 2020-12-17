@@ -321,6 +321,14 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       "false",
       cmd);
 
+  TCLAP::ValueArg<std::string> sink(
+      "", "sink", "Set an optional sink address for storing results. Default: \"\"", false, "",
+      "string", cmd);
+
+  TCLAP::ValueArg<std::string> distributor("", "distributor",
+                                           "Set an optional distributor address. Default: \"\"",
+                                           false, "", "string", cmd);
+
   Utility::parseCommand(cmd, argc, argv);
 
   // --duration and --no-duration are mutually exclusive
@@ -454,6 +462,35 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   TCLAP_SET_IF_SPECIFIED(stats_flush_interval, stats_flush_interval_);
   TCLAP_SET_IF_SPECIFIED(latency_response_header_name, latency_response_header_name_);
   TCLAP_SET_IF_SPECIFIED(allow_envoy_deprecated_v2_api, allow_envoy_deprecated_v2_api_);
+  if (sink.isSet()) {
+    const std::string& host_port = sink.getValue();
+    std::string host;
+    int port;
+    if (!Utility::parseHostPort(host_port, &host, &port)) {
+      throw MalformedArgvException(fmt::format("--sink must be in the format "
+                                               "IPv4:port, [IPv6]:port, or DNS:port. Got '{}'",
+                                               host_port));
+    }
+    nighthawk::client::SinkConfiguration configuration;
+    configuration.mutable_address()->mutable_socket_address()->set_address(host);
+    configuration.mutable_address()->mutable_socket_address()->set_port_value(port);
+    sink_ = configuration;
+  }
+
+  if (distributor.isSet()) {
+    const std::string& host_port = distributor.getValue();
+    std::string host;
+    int port;
+    if (!Utility::parseHostPort(host_port, &host, &port)) {
+      throw MalformedArgvException(fmt::format("--distributor must be in the format "
+                                               "IPv4:port, [IPv6]:port, or DNS:port. Got '{}'",
+                                               host_port));
+    }
+    nighthawk::client::DistributorConfiguration configuration;
+    configuration.mutable_address()->mutable_socket_address()->set_address(host);
+    configuration.mutable_address()->mutable_socket_address()->set_port_value(port);
+    distributor_ = configuration;
+  }
 
   // CLI-specific tests.
   // TODO(oschaaf): as per mergconflicts's remark, it would be nice to aggregate
@@ -668,6 +705,12 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options) {
     scheduled_start_ =
         Envoy::SystemTime(std::chrono::time_point<std::chrono::system_clock>(elapsed_since_epoch));
   }
+  if (options.has_sink()) {
+    sink_ = options.sink();
+  }
+  if (options.has_distributor()) {
+    distributor_ = options.distributor();
+  }
   validate();
 }
 
@@ -851,6 +894,13 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptionsInternal() const {
         Envoy::ProtobufUtil::TimeUtil::NanosecondsToTimestamp(
             scheduled_start_.value().time_since_epoch().count());
   }
+  if (sink_.has_value()) {
+    *(command_line_options->mutable_sink()) = sink_.value();
+  }
+  if (distributor_.has_value()) {
+    *(command_line_options->mutable_distributor()) = distributor_.value();
+  }
+
   return command_line_options;
 }
 

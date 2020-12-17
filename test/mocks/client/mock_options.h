@@ -59,6 +59,8 @@ public:
   MOCK_CONST_METHOD0(responseHeaderWithLatencyInput, std::string());
   MOCK_CONST_METHOD0(allowEnvoyDeprecatedV2Api, bool());
   MOCK_CONST_METHOD0(scheduled_start, absl::optional<Envoy::SystemTime>());
+  MOCK_CONST_METHOD0(sink, absl::optional<nighthawk::client::SinkConfiguration>());
+  MOCK_CONST_METHOD0(distributor, absl::optional<nighthawk::client::DistributorConfiguration>());
 };
 
 } // namespace Client
