@@ -216,7 +216,7 @@ TEST(SinkRequest, ReturnsNighthawkResponseSuccessfully) {
   EXPECT_EQ(actual_response.DebugString(), expected_response.DebugString());
 }
 
-TEST(SinkRequest, ReturnsErrorIfNighthawkServiceDoesNotSendResponse) {
+TEST(SinkRequest, WillFinishIfNighthawkServiceDoesNotSendResponse) {
   nighthawk::client::MockNighthawkSinkStub mock_nighthawk_sink_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
@@ -227,16 +227,14 @@ TEST(SinkRequest, ReturnsErrorIfNighthawkServiceDoesNotSendResponse) {
         EXPECT_CALL(*mock_reader_writer, Read(_)).WillOnce(Return(false));
         EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
         EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(true));
+        EXPECT_CALL(*mock_reader_writer, Finish()).WillOnce(Return(::grpc::Status::OK));
         return mock_reader_writer;
       });
 
   NighthawkSinkClientImpl client;
   absl::StatusOr<SinkResponse> response_or =
       client.SinkRequestStream(mock_nighthawk_sink_stub, ::nighthawk::client::SinkRequest());
-  ASSERT_FALSE(response_or.ok());
-  EXPECT_EQ(response_or.status().code(), absl::StatusCode::kInternal);
-  EXPECT_THAT(response_or.status().message(),
-              HasSubstr("Sink Service did not send a gRPC response."));
+  EXPECT_TRUE(response_or.ok());
 }
 
 TEST(SinkRequest, ReturnsErrorIfNighthawkServiceWriteFails) {

@@ -119,16 +119,16 @@ message SinkRequest {
   // Indicate the desired timeout that will be used to wait for an in progress execution to
   // complete. Optional, default 30 seconds.
   google.protobuf.Duration execution_wait_timeout = 5 [(validate.rules).duration.gt.seconds = 0];
+  // Indicate if raw results should be returned. Default false.
+  // If set, the consuming side should be able to handle OutputAppendix messages,
+  // and no aggregation will be performed.
+  // If not set an aggregated result will be returned.
+  // bool raw = 2;
 }
 
 message SinkResponse {
   // Response associated to the requested execution id.
   ExecutionResponse execution_response = 1;
-  // Indicate if raw results should be returned. Default false.
-  // If set, the consuming side should be able to handle OutputAppendix messages,
-  // and no aggregation will be performed.
-  // If not set an aggregated result will be returned.
-  bool raw = 2;
 }
 
 service NighthawkSink {

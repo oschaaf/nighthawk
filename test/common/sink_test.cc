@@ -23,7 +23,7 @@ private:
 TYPED_TEST_SUITE(TypedSinkTest, SinkTypes);
 
 TYPED_TEST(TypedSinkTest, BasicSaveAndLoad) {
-  FileSinkImpl sink;
+  TypeParam sink;
   nighthawk::client::ExecutionResponse result_to_store;
   *(result_to_store.mutable_execution_id()) = this->executionIdForTest();
   absl::Status status = sink.StoreExecutionResultPiece(result_to_store);
@@ -34,8 +34,15 @@ TYPED_TEST(TypedSinkTest, BasicSaveAndLoad) {
   EXPECT_EQ(this->executionIdForTest(), status_or_execution_responses.value()[0].execution_id());
 }
 
+TYPED_TEST(TypedSinkTest, LoadNonExisting) {
+  TypeParam sink;
+  const auto status_or_execution_responses = sink.LoadExecutionResult("key-that-does-not-exist");
+  ASSERT_EQ(status_or_execution_responses.ok(), false);
+  ASSERT_EQ(status_or_execution_responses.status().code(), absl::StatusCode::kNotFound);
+}
+
 TYPED_TEST(TypedSinkTest, Append) {
-  FileSinkImpl sink;
+  TypeParam sink;
   nighthawk::client::ExecutionResponse result_to_store;
   *(result_to_store.mutable_execution_id()) = this->executionIdForTest();
   absl::Status status = sink.StoreExecutionResultPiece(result_to_store);

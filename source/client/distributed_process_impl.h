@@ -41,6 +41,8 @@ public:
   bool requestExecutionCancellation() override;
 
 private:
+  absl::StatusOr<const nighthawk::client::DistributedResponse>
+  sendDistributedRequest(const ::nighthawk::client::DistributedRequest& request) const;
   const Options& options_;
   const std::unique_ptr<NighthawkDistributorClient> service_client_;
   nighthawk::client::NighthawkDistributor::Stub& stub_;

@@ -109,6 +109,11 @@ public:
                                                ::nighthawk::client::SinkRequest>* stream) override;
 
 private:
+  absl::StatusOr<::nighthawk::client::SinkResponse> aggregateSinkResponses(
+      absl::string_view requested_execution_id,
+      const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
+  const absl::Status mergeIntoAggregatedOutput(const ::nighthawk::client::Output& input_to_merge,
+                                               ::nighthawk::client::Output& merge_target) const;
   // TODO(oschaaf): ref?
   std::unique_ptr<Sink> sink_;
 };

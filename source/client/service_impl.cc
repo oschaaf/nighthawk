@@ -203,7 +203,7 @@ SinkServiceImpl::SinkServiceImpl(std::unique_ptr<Sink>&& sink) : sink_(std::move
   nighthawk::client::StoreExecutionRequest request;
   while (request_reader->Read(&request)) {
     ENVOY_LOG(info, "StoreExecutionResponseStream request {}", request.DebugString());
-    ::nighthawk::client::ExecutionResponse response_to_store = request.execution_response();
+    const ::nighthawk::client::ExecutionResponse& response_to_store = request.execution_response();
     const auto status = sink_->StoreExecutionResultPiece(response_to_store);
     if (!status.ok()) {
       // TODO: can we translate status code?
@@ -213,31 +213,99 @@ SinkServiceImpl::SinkServiceImpl(std::unique_ptr<Sink>&& sink) : sink_(std::move
   return ::grpc::Status::OK;
 };
 
+const absl::Status
+SinkServiceImpl::mergeIntoAggregatedOutput(const ::nighthawk::client::Output& input_to_merge,
+                                           ::nighthawk::client::Output& merge_target) const {
+  if (!merge_target.has_options()) {
+    // If no options are set, that means this is the first part of the merge.
+    // Set some properties that shouldbe equal amongst all Output instances.
+    // TODO(XXX): force/validate that.
+    *(merge_target.mutable_options()) = input_to_merge.options();
+    *(merge_target.mutable_timestamp()) = input_to_merge.timestamp();
+    *(merge_target.mutable_version()) = input_to_merge.version();
+  }
+  for (const auto& result : input_to_merge.results()) {
+    merge_target.add_results()->MergeFrom(result);
+  }
+  return absl::OkStatus();
+}
+
+absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSinkResponses(
+    absl::string_view requested_execution_id,
+    const std::vector<::nighthawk::client::ExecutionResponse>& responses) const {
+  if (responses.size() == 0) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        "sink->LoadExecutionResult yielded an empty vector, and broke its promise.");
+  }
+
+  ::nighthawk::client::SinkResponse response;
+  ::nighthawk::client::ExecutionResponse* aggregated_response =
+      response.mutable_execution_response();
+  ::nighthawk::client::Output aggregated_output;
+  aggregated_response->mutable_execution_id()->assign(requested_execution_id);
+  for (const ::nighthawk::client::ExecutionResponse& execution_response : responses) {
+    if (execution_response.execution_id() != requested_execution_id) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "sink->LoadExecutionResult yielded a result with a bad execution id!");
+    }
+    if (execution_response.has_error_detail()) {
+      ::google::rpc::Status* error_detail = aggregated_response->mutable_error_detail();
+      error_detail->set_code(-1);
+      error_detail->set_message("One or more remote execution(s) terminated with a failure.");
+      error_detail->add_details()->PackFrom(execution_response.error_detail());
+    }
+
+    if (execution_response.has_appendix()) {
+      ENVOY_LOG(error, "TODO: Appendix handling!");
+    } else if (execution_response.has_output()) {
+      absl::Status merge_status =
+          mergeIntoAggregatedOutput(execution_response.output(), aggregated_output);
+      if (!merge_status.ok()) {
+        return merge_status;
+      }
+    } else {
+      return absl::Status(
+          absl::StatusCode::kInternal,
+          "sink->LoadExecutionResult yielded a result with neither an appendix or output set!");
+    }
+  }
+
+  *(aggregated_response->mutable_output()) = aggregated_output;
+  return response;
+}
+
 ::grpc::Status SinkServiceImpl::SinkRequestStream(
     ::grpc::ServerContext*,
     ::grpc::ServerReaderWriter<::nighthawk::client::SinkResponse, ::nighthawk::client::SinkRequest>*
         stream) {
   nighthawk::client::SinkRequest request;
-  bool ok = true;
+  absl::Status status = absl::OkStatus();
   while (stream->Read(&request)) {
     ENVOY_LOG(trace, "Inbound SinkRequest {}", request.DebugString());
-    // TODO: can execution_id() yield nullptr?
     const absl::StatusOr<std::vector<::nighthawk::client::ExecutionResponse>>
         status_or_execution_responses = sink_->LoadExecutionResult(request.execution_id());
-    ok = ok && status_or_execution_responses.ok();
-    if (ok) {
-      ::nighthawk::client::SinkResponse response;
-      // TODO(oschaaf): Compute single execution response from the results & set it.
-      //*(response.mutable_execution_response()) = status_or_execution_response.value();
-      ok = ok && stream->Write(response);
+    status.Update(status_or_execution_responses.status());
+    if (status.ok()) {
+      const std::vector<::nighthawk::client::ExecutionResponse>& responses =
+          status_or_execution_responses.value();
+      absl::StatusOr<::nighthawk::client::SinkResponse> response =
+          aggregateSinkResponses(request.execution_id(), responses);
+      status.Update(response.status());
+      if (status.ok() && !stream->Write(response.value())) {
+        status.Update(
+            absl::Status(absl::StatusCode::kInternal, "Failure writing response to stream."));
+      }
     }
-    if (!ok) {
-      ENVOY_LOG(error, "Failed to send SinkResponse.");
+    if (!status.ok()) {
+      ENVOY_LOG(error, "Failure while handling SinkRequest: {} -> {}", request.DebugString(),
+                status.ToString());
       break;
     }
   }
   ENVOY_LOG(trace, "Finishing stream");
-  return ok ? grpc::Status::OK : grpc::Status(grpc::StatusCode::INTERNAL, std::string("error"));
+  return status.ok() ? grpc::Status::OK
+                     : grpc::Status(grpc::StatusCode::INTERNAL, status.ToString());
 }
 
 ::grpc::Status NighthawkDistributorServiceImpl::validateRequest(
@@ -253,7 +321,7 @@ SinkServiceImpl::SinkServiceImpl(std::unique_ptr<Sink>&& sink) : sink_(std::move
       return grpc::Status(grpc::StatusCode::INTERNAL,
                           "DistributedRequest.ExecutionRequest should specify services.");
     }
-    ::nighthawk::client::ExecutionRequest execution_request = request.execution_request();
+    const ::nighthawk::client::ExecutionRequest& execution_request = request.execution_request();
     if (!execution_request.has_start_request()) {
       return grpc::Status(grpc::StatusCode::INTERNAL,
                           "DistributedRequest.ExecutionRequest MUST have StartRequest.");
@@ -278,24 +346,12 @@ absl::StatusOr<nighthawk::client::SinkResponse> NighthawkDistributorServiceImpl:
     const envoy::config::core::v3::Address& service,
     const ::nighthawk::client::SinkRequest& request) const {
   NighthawkSinkClientImpl client;
-  // nighthawk::client::DistributedResponse response;
   std::unique_ptr<nighthawk::client::NighthawkSink::Stub> stub;
   std::shared_ptr<::grpc::Channel> channel;
   channel = grpc::CreateChannel(fmt::format("{}:{}", service.socket_address().address(),
                                             service.socket_address().port_value()),
                                 grpc::InsecureChannelCredentials());
   stub = std::make_unique<nighthawk::client::NighthawkSink::Stub>(channel);
-  /*
-  absl::StatusOr<nighthawk::client::SinkResponse> status = client.SinkRequestStream(*stub, request);
-  if (!status.ok()) {
-    // Translate from absl's StatusOr to grpc's Status.
-    response.mutable_error()->set_code(static_cast<int>(status.status().code()));
-    response.mutable_error()->set_message("Distributed Sink Request failed!");
-  } else {
-    *(response.mutable_sink_response()) = status.value();
-  }
-  return response;
-  */
   return client.SinkRequestStream(*stub, request);
 }
 
@@ -303,7 +359,6 @@ absl::StatusOr<nighthawk::client::ExecutionResponse>
 NighthawkDistributorServiceImpl::handleExecutionRequest(
     const envoy::config::core::v3::Address& service,
     const ::nighthawk::client::ExecutionRequest& request) const {
-  // nighthawk::client::DistributedResponse response;
   NighthawkServiceClientImpl client;
   std::unique_ptr<nighthawk::client::NighthawkService::Stub> stub;
   std::shared_ptr<::grpc::Channel> channel;
@@ -311,21 +366,6 @@ NighthawkDistributorServiceImpl::handleExecutionRequest(
                                             service.socket_address().port_value()),
                                 grpc::InsecureChannelCredentials());
   stub = std::make_unique<nighthawk::client::NighthawkService::Stub>(channel);
-  // TODO(oschaaf): MUST first ensure all resources are available to avoid one execution
-  // starting and another one failing for good UX, or perhaps cancel everything if one failed to
-  // start.
-  /*
-  absl::StatusOr<nighthawk::client::ExecutionResponse> status =
-      client.PerformNighthawkBenchmark(stub.get(), request.start_request().options());
-  if (!status.ok()) {
-    // Translate from absl's StatusOr to grpc's Status.
-    response.mutable_error()->set_code(static_cast<int>(status.status().code()));
-    response.mutable_error()->set_message(std::string("Distributed Execution Request failed!"));
-  } else {
-    *(response.mutable_execution_response()) = status.value();
-  }
-  return response;
-  */
   return client.PerformNighthawkBenchmark(stub.get(), request.start_request().options());
 }
 
@@ -342,7 +382,8 @@ nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleRe
     if (!sink_response.ok()) {
       // Translate from absl's StatusOr to grpc's Status.
       response.mutable_error()->set_code(static_cast<int>(sink_response.status().code()));
-      response.mutable_error()->set_message(std::string("Distributed Sink Request failed!"));
+      response.mutable_error()->set_message(
+          fmt::format("Distributed Sink Request failed: {}", sink_response.status().ToString()));
     } else {
       *(response.add_fragment()->mutable_sink_response()) = sink_response.value();
     }

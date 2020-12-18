@@ -46,9 +46,6 @@ absl::StatusOr<nighthawk::client::SinkResponse> NighthawkSinkClientImpl::SinkReq
                    "Sink Service has started responding with more than one message.");
     got_response = true;
   }
-  if (!got_response) {
-    return absl::InternalError("Sink Service did not send a gRPC response.");
-  }
   ::grpc::Status status = stream->Finish();
   if (!status.ok()) {
     return absl::Status(static_cast<absl::StatusCode>(status.error_code()), status.error_message());

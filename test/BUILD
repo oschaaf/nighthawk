@@ -213,6 +213,18 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
+    name = "sink_service_test",
+    srcs = ["sink_service_test.cc"],
+    repository = "@envoy",
+    deps = [
+        "//source/client:nighthawk_service_lib",
+        "//test/mocks/common:mock_sink",
+        "//test/test_common:environment_lib",
+        "@envoy//test/test_common:network_utility_lib",
+    ],
+)
+
+envoy_cc_test(
     name = "statistic_test",
     srcs = ["statistic_test.cc"],
     data = [
