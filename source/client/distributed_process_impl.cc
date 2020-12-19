@@ -64,7 +64,16 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
     absl::StatusOr<const nighthawk::client::DistributedResponse> distributed_sink_response =
         sendDistributedRequest(distributed_sink_request);
     if (distributed_sink_response.ok()) {
-      if (distributed_sink_response.value().fragment_size() > 1) {
+      const nighthawk::client::DistributedResponse& distributed_response =
+          distributed_sink_response.value();
+      if (distributed_response.has_error()) {
+        ENVOY_LOG(error, "DistributedResponse.error: {}",
+                  distributed_sink_response.value().error().DebugString());
+      }
+      if (distributed_sink_response.value().fragment_size() == 0) {
+        ENVOY_LOG(error, "Distributed sink request yielded no results.");
+        return false;
+      } else if (distributed_sink_response.value().fragment_size() > 1) {
         RELEASE_ASSERT(false, "Sink started returning multiple fragments!");
       } else {
         const ::nighthawk::client::Output& output = distributed_sink_response.value()

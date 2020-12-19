@@ -17,6 +17,8 @@
 namespace Nighthawk {
 namespace Client {
 
+using ::Envoy::Protobuf::util::MessageDifferencer;
+
 void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionRequest& request) {
   std::unique_ptr<Envoy::Thread::LockGuard> busy_lock;
   {
@@ -219,14 +221,38 @@ SinkServiceImpl::mergeIntoAggregatedOutput(const ::nighthawk::client::Output& in
   if (!merge_target.has_options()) {
     // If no options are set, that means this is the first part of the merge.
     // Set some properties that shouldbe equal amongst all Output instances.
-    // TODO(XXX): force/validate that.
     *(merge_target.mutable_options()) = input_to_merge.options();
     *(merge_target.mutable_timestamp()) = input_to_merge.timestamp();
     *(merge_target.mutable_version()) = input_to_merge.version();
+  } else {
+    // Options used should not diverge for a executions under a single execution id.
+    // Versions probably shouldn't either. We sanity check these things here, and
+    // report on error when we detect any mismatch.
+    if (!MessageDifferencer::Equivalent(input_to_merge.options(), merge_target.options())) {
+      // TODO(XXX): have to exclude certain options here, like output-format, which are
+      // not relevant to actual execution.
+      return absl::Status(
+          absl::StatusCode::kInternal,
+          fmt::format("Options divergence detected across x-service results: {} vs {}.",
+                      merge_target.options().DebugString(),
+                      input_to_merge.options().DebugString()));
+    }
+    if (!MessageDifferencer::Equivalent(input_to_merge.version(), merge_target.version())) {
+      return absl::Status(
+          absl::StatusCode::kInternal,
+          fmt::format("Version divergence detected across x-service results: {} vs {}.",
+                      merge_target.version().DebugString(),
+                      input_to_merge.version().DebugString()));
+    }
+    // TODO(XXX): Consider validating that the associated timestamps are are close enough.
   }
+  // Append all input results into our own results.
+  // TODO(XXX): make sure we can distinct results from multiple sources.
   for (const auto& result : input_to_merge.results()) {
     merge_target.add_results()->MergeFrom(result);
   }
+  // The final step is the more complicated one: aggregate the top level result derived
+  // from the per-service execution results.
   return absl::OkStatus();
 }
 
@@ -249,6 +275,8 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
       return absl::Status(absl::StatusCode::kInternal,
                           "sink->LoadExecutionResult yielded a result with a bad execution id!");
     }
+    // If any error exists, set an error code and message & append the details of each such
+    // occurrence.
     if (execution_response.has_error_detail()) {
       ::google::rpc::Status* error_detail = aggregated_response->mutable_error_detail();
       error_detail->set_code(-1);

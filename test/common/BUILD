@@ -65,6 +65,7 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         "//source/common:sink_impl_lib",
+        "@com_github_grpc_grpc//:grpc++_test",  # Avoids undefined symbol _ZN4grpc24g_core_codegen_interfaceE in coverage test build.
         "@envoy//source/common/common:random_generator_lib_with_external_headers",
     ],
 )
