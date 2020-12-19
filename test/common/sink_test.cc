@@ -41,6 +41,24 @@ TYPED_TEST(TypedSinkTest, LoadNonExisting) {
   ASSERT_EQ(status_or_execution_responses.status().code(), absl::StatusCode::kNotFound);
 }
 
+TYPED_TEST(TypedSinkTest, EmptyKeyStoreFails) {
+  TypeParam sink;
+  nighthawk::client::ExecutionResponse result_to_store;
+  *(result_to_store.mutable_execution_id()) = "";
+  const absl::Status status = sink.StoreExecutionResultPiece(result_to_store);
+  ASSERT_EQ(status.ok(), false);
+  EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(status.message(), "Received an empty execution id");
+}
+
+TYPED_TEST(TypedSinkTest, EmptyKeyLoadFails) {
+  TypeParam sink;
+  const auto status_or_execution_responses = sink.LoadExecutionResult("");
+  ASSERT_EQ(status_or_execution_responses.ok(), false);
+  EXPECT_EQ(status_or_execution_responses.status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(status_or_execution_responses.status().message(), "Received an empty execution id");
+}
+
 TYPED_TEST(TypedSinkTest, Append) {
   TypeParam sink;
   nighthawk::client::ExecutionResponse result_to_store;

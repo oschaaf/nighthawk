@@ -329,6 +329,8 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
                                            "Set an optional distributor address. Default: \"\"",
                                            false, "", "string", cmd);
 
+  TCLAP::MultiArg<std::string> services("", "services", "Services", false, "string", cmd);
+
   Utility::parseCommand(cmd, argc, argv);
 
   // --duration and --no-duration are mutually exclusive
@@ -490,6 +492,24 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
     configuration.mutable_address()->mutable_socket_address()->set_address(host);
     configuration.mutable_address()->mutable_socket_address()->set_port_value(port);
     distributor_ = configuration;
+  }
+
+  if (services.isSet()) {
+    nighthawk::client::ExecutionConfiguration execution_configuration;
+    for (const std::string& service : services.getValue()) {
+
+      std::string host;
+      int port;
+      if (!Utility::parseHostPort(service, &host, &port)) {
+        throw MalformedArgvException(fmt::format("--services must be in the format "
+                                                 "IPv4:port, [IPv6]:port, or DNS:port. Got '{}'",
+                                                 service));
+      }
+      envoy::config::core::v3::Address* address = execution_configuration.add_addresses();
+      address->mutable_socket_address()->set_address(host);
+      address->mutable_socket_address()->set_port_value(port);
+    }
+    services_.emplace(execution_configuration);
   }
 
   // CLI-specific tests.
@@ -711,6 +731,12 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options) {
   if (options.has_distributor()) {
     distributor_ = options.distributor();
   }
+  if (options.has_services()) {
+    services_ = options.services();
+  }
+  if (options.has_execution_id()) {
+    execution_id_ = options.execution_id().value();
+  }
   validate();
 }
 
@@ -899,6 +925,12 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptionsInternal() const {
   }
   if (distributor_.has_value()) {
     *(command_line_options->mutable_distributor()) = distributor_.value();
+  }
+  if (services_.has_value()) {
+    *(command_line_options->mutable_services()) = services_.value();
+  }
+  if (execution_id_.has_value()) {
+    command_line_options->mutable_execution_id()->set_value(execution_id_.value());
   }
 
   return command_line_options;

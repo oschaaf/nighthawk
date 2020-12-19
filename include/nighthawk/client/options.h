@@ -80,6 +80,8 @@ public:
   virtual absl::optional<Envoy::SystemTime> scheduled_start() const PURE;
   virtual absl::optional<nighthawk::client::SinkConfiguration> sink() const PURE;
   virtual absl::optional<nighthawk::client::DistributorConfiguration> distributor() const PURE;
+  virtual absl::optional<nighthawk::client::ExecutionConfiguration> services() const PURE;
+  virtual absl::optional<std::string> executionId() const PURE;
 
   /**
    * Converts an Options instance to an equivalent CommandLineOptions instance in terms of option

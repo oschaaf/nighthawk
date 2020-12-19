@@ -99,6 +99,10 @@ public:
   absl::optional<nighthawk::client::DistributorConfiguration> distributor() const override {
     return distributor_;
   };
+  absl::optional<nighthawk::client::ExecutionConfiguration> services() const override {
+    return services_;
+  };
+  absl::optional<std::string> executionId() const override { return execution_id_; }
 
 private:
   void parsePredicates(const TCLAP::MultiArg<std::string>& arg,
@@ -159,6 +163,8 @@ private:
   absl::optional<Envoy::SystemTime> scheduled_start_;
   absl::optional<nighthawk::client::SinkConfiguration> sink_;
   absl::optional<nighthawk::client::DistributorConfiguration> distributor_;
+  absl::optional<nighthawk::client::ExecutionConfiguration> services_;
+  absl::optional<std::string> execution_id_;
 };
 
 } // namespace Client

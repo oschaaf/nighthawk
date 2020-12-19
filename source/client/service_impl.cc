@@ -206,8 +206,8 @@ SinkServiceImpl::SinkServiceImpl(std::unique_ptr<Sink>&& sink) : sink_(std::move
     const ::nighthawk::client::ExecutionResponse& response_to_store = request.execution_response();
     const auto status = sink_->StoreExecutionResultPiece(response_to_store);
     if (!status.ok()) {
-      // TODO: can we translate status code?
-      return ::grpc::Status(grpc::StatusCode::INTERNAL, "StoreExecutionResultPiece failed!");
+      ENVOY_LOG(error, "StoreExecutionResponseStream failure: {}", status.ToString());
+      return ::grpc::Status(grpc::StatusCode::INTERNAL, status.ToString());
     }
   }
   return ::grpc::Status::OK;

@@ -13,6 +13,9 @@ namespace Nighthawk {
 absl::Status FileSinkImpl::StoreExecutionResultPiece(
     const ::nighthawk::client::ExecutionResponse& response) const {
   const std::string& execution_id = response.execution_id();
+  if (execution_id.empty()) {
+    return absl::Status(absl::StatusCode::kInternal, "Received an empty execution id");
+  }
   std::filesystem::create_directories("/tmp/nh/" + std::string(execution_id) + "/");
   std::array<char, L_tmpnam> name_buffer;
   // TODO(oschaaf): tmpname complaint from compiler, dangerous. Portable mkstemp?
@@ -42,6 +45,9 @@ absl::Status FileSinkImpl::StoreExecutionResultPiece(
 
 const absl::StatusOr<std::vector<::nighthawk::client::ExecutionResponse>>
 FileSinkImpl::LoadExecutionResult(absl::string_view execution_id) const {
+  if (execution_id.empty()) {
+    return absl::Status(absl::StatusCode::kInternal, "Received an empty execution id");
+  }
   std::filesystem::path filesystem_directory_path("/tmp/nh/" + std::string(execution_id) + "/");
   std::vector<::nighthawk::client::ExecutionResponse> responses;
   ENVOY_LOG_MISC(error, "Sink loading results from '{}'", filesystem_directory_path);

@@ -61,6 +61,8 @@ public:
   MOCK_CONST_METHOD0(scheduled_start, absl::optional<Envoy::SystemTime>());
   MOCK_CONST_METHOD0(sink, absl::optional<nighthawk::client::SinkConfiguration>());
   MOCK_CONST_METHOD0(distributor, absl::optional<nighthawk::client::DistributorConfiguration>());
+  MOCK_CONST_METHOD0(services, absl::optional<nighthawk::client::ExecutionConfiguration>());
+  MOCK_CONST_METHOD0(executionId, absl::optional<std::string>());
 };
 
 } // namespace Client

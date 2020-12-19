@@ -113,6 +113,10 @@ message DistributorConfiguration {
   envoy.config.core.v3.Address address = 1;
 }
 
+message ExecutionConfiguration {
+  repeated envoy.config.core.v3.Address addresses = 1;
+}
+
 // TODO(oschaaf): Ultimately this will be a load test specification. The fact that it
 // can arrive via CLI is just a concrete detail. Change this to reflect that.
 // highest unused number is 106
@@ -245,4 +249,6 @@ message CommandLineOptions {
   // Provide an execution starting date and time. Optional, any value specified must be in the
   // future.
   google.protobuf.Timestamp scheduled_start = 105;
+  //
+  ExecutionConfiguration services = 43;
 }

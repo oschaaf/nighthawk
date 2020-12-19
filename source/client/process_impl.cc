@@ -612,15 +612,26 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
                                         configuration.address().socket_address().port_value()),
                             grpc::InsecureChannelCredentials());
     sink_stub = std::make_unique<nighthawk::client::NighthawkSink::Stub>(sink_channel);
-
     NighthawkSinkClientImpl sink_client;
     ::nighthawk::client::StoreExecutionRequest request;
-    //*(request.mutable_execution_response()->mutable_execution_id()) = options_;
-    *(request.mutable_execution_response()->mutable_output()) = collector.toProto();
+    ::nighthawk::client::ExecutionResponse* response_to_store =
+        request.mutable_execution_response();
+    if (options_.executionId().has_value()) {
+      *(response_to_store->mutable_execution_id()) = options_.executionId().value();
+    }
+    *(response_to_store->mutable_output()) = collector.toProto();
+    if (counters.find("sequencer.failed_terminations") != counters.end()) {
+      response_to_store->mutable_error_detail()->set_code(1);
+      response_to_store->mutable_error_detail()->set_message(
+          "Execution was terminated via failure predicate.");
+    }
     const auto status = sink_client.StoreExecutionResponseStream(sink_stub.get(), request);
     if (!status.ok()) {
       ENVOY_LOG(error, "Failed to store results at sink: '{}'", status.status().ToString());
       return false;
+    } else {
+      ENVOY_LOG(error, "Results successfully stored at sink, execution_id: '{}'",
+                options_.executionId().value());
     }
   }
 
