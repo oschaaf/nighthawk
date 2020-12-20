@@ -36,6 +36,7 @@ DistributedProcessImpl::sendDistributedRequest(
 
 bool DistributedProcessImpl::run(OutputCollector& collector) {
   Nighthawk::Client::CommandLineOptionsPtr options = options_.toCommandLineOptions();
+  // std::cerr << "@@@" << options->execution_id().value() << std::endl;
   ::nighthawk::client::DistributedRequest request;
   *(request.mutable_execution_request()->mutable_start_request()->mutable_options()) = *options;
   const std::string kTestId = "test-execution-id";
@@ -50,50 +51,49 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
   }
   const absl::StatusOr<const nighthawk::client::DistributedResponse>
       distributed_initiation_response = sendDistributedRequest(request);
-  if (distributed_initiation_response.ok()) {
-    // If we could initiate the distributed load test, then we can now query the sink to obtain
-    // results with the execution_id we obtained through that.
-    // TODO(XXX): set a sensible timeout, or do so on the other side.
-    ::nighthawk::client::DistributedRequest distributed_sink_request;
-    ::nighthawk::client::SinkRequest sink_request;
+  if (!distributed_initiation_response.ok()) {
+    return false;
+  }
+  // If we could initiate the distributed load test, then we can now query the sink to obtain
+  // results with the execution_id we obtained through that.
+  // TODO(XXX): set a sensible timeout, or do so on the other side.
+  ::nighthawk::client::DistributedRequest distributed_sink_request;
+  ::nighthawk::client::SinkRequest sink_request;
 
-    distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
-    sink_request.set_execution_id(kTestId);
-    *(distributed_sink_request.mutable_sink_request()) = sink_request;
+  distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
+  sink_request.set_execution_id(kTestId);
+  *(distributed_sink_request.mutable_sink_request()) = sink_request;
 
-    absl::StatusOr<const nighthawk::client::DistributedResponse> distributed_sink_response =
-        sendDistributedRequest(distributed_sink_request);
-    if (distributed_sink_response.ok()) {
-      const nighthawk::client::DistributedResponse& distributed_response =
-          distributed_sink_response.value();
-      if (distributed_response.has_error()) {
-        ENVOY_LOG(error, "DistributedResponse.error: {}",
-                  distributed_sink_response.value().error().DebugString());
-      }
-      if (distributed_sink_response.value().fragment_size() == 0) {
-        ENVOY_LOG(error, "Distributed sink request yielded no results.");
-        return false;
-      } else if (distributed_sink_response.value().fragment_size() > 1) {
-        RELEASE_ASSERT(false, "Sink started returning multiple fragments!");
-      } else {
-        const ::nighthawk::client::Output& output = distributed_sink_response.value()
-                                                        .fragment(0)
-                                                        .sink_response()
-                                                        .execution_response()
-                                                        .output();
-        collector.setOutput(output);
-        bool has_failed_termination = false;
-        for (const ::nighthawk::client::Result& result : output.results()) {
-          for (const ::nighthawk::client::Counter& counter : result.counters()) {
-            if (counter.name() == "sequencer.failed_terminations") {
-              has_failed_termination = true;
-              break;
-            }
-          }
+  absl::StatusOr<const nighthawk::client::DistributedResponse> distributed_sink_response =
+      sendDistributedRequest(distributed_sink_request);
+  if (!distributed_sink_response.ok()) {
+    return false;
+  }
+  const nighthawk::client::DistributedResponse& distributed_response =
+      distributed_sink_response.value();
+  if (distributed_response.has_error()) {
+    ENVOY_LOG(error, "DistributedResponse.error: {}",
+              distributed_sink_response.value().error().DebugString());
+  }
+  if (distributed_sink_response.value().fragment_size() == 0) {
+    ENVOY_LOG(error, "Distributed sink request yielded no results.");
+    return false;
+  } else if (distributed_sink_response.value().fragment_size() > 1) {
+    RELEASE_ASSERT(false, "Sink started returning multiple fragments!");
+  } else {
+    const ::nighthawk::client::Output& output =
+        distributed_sink_response.value().fragment(0).sink_response().execution_response().output();
+    collector.setOutput(output);
+    bool has_failed_termination = false;
+    for (const ::nighthawk::client::Result& result : output.results()) {
+      for (const ::nighthawk::client::Counter& counter : result.counters()) {
+        if (counter.name() == "sequencer.failed_terminations") {
+          has_failed_termination = true;
+          break;
         }
-        return !has_failed_termination;
       }
     }
+    return !has_failed_termination;
   }
 
   return false;

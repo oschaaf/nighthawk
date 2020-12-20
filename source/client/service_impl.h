@@ -11,6 +11,7 @@
 #endif
 
 #include <future>
+#include <map>
 #include <memory>
 
 #include "external/envoy/source/common/common/logger.h"
@@ -109,6 +110,8 @@ public:
                                                ::nighthawk::client::SinkRequest>* stream) override;
 
 private:
+  const std::map<const std::string, const StatisticPtr>
+  readAppendices(const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
   absl::StatusOr<::nighthawk::client::SinkResponse> aggregateSinkResponses(
       absl::string_view requested_execution_id,
       const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;

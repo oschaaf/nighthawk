@@ -608,9 +608,11 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
   // etc.
   const auto& counters = Utility().mapCountersFromStore(
       store_root_, [](absl::string_view, uint64_t value) { return value > 0; });
-  collector.addResult("global", mergeWorkerStatistics(workers_), counters,
+  const std::vector<StatisticPtr> merged_statistics = mergeWorkerStatistics(workers_);
+  collector.addResult("global", merged_statistics, counters,
                       total_execution_duration / workers_.size(), first_acquisition_time);
 
+  // TODO(XXX): refactor into distinct call(s).
   if (options_.sink().has_value()) {
     nighthawk::client::SinkConfiguration configuration = options_.sink().value();
     std::unique_ptr<nighthawk::client::NighthawkSink::Stub> sink_stub;
@@ -626,6 +628,11 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
         request.mutable_execution_response();
     if (options_.executionId().has_value()) {
       *(response_to_store->mutable_execution_id()) = options_.executionId().value();
+      ENVOY_LOG(info, "Using inbound execution id: {}", options_.executionId().value());
+    } else {
+      const std::string uuid = generator_.uuid();
+      ENVOY_LOG(info, "Assigning random execution id: {}", uuid);
+      *(response_to_store->mutable_execution_id()) = uuid;
     }
     *(response_to_store->mutable_output()) = collector.toProto();
     if (counters.find("sequencer.failed_terminations") != counters.end()) {
@@ -638,8 +645,40 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
       ENVOY_LOG(error, "Failed to store results at sink: '{}'", status.status().ToString());
       return false;
     } else {
-      ENVOY_LOG(error, "Results successfully stored at sink, execution_id: '{}'",
-                options_.executionId().value());
+      ENVOY_LOG(trace, "Results successfully stored at sink, execution_id: '{}'",
+                response_to_store->execution_id());
+    }
+
+    for (const StatisticPtr& statistic : merged_statistics) {
+      absl::StatusOr<std::unique_ptr<std::istream>> status_or_istream =
+          statistic->serializeNative();
+      if (status_or_istream.ok()) {
+        ENVOY_LOG(trace, "Statistic with id {} serialized successfully", statistic->id());
+        // Send it to the sink.
+        std::istream& istream = *(status_or_istream.value());
+        ::nighthawk::client::StoreExecutionRequest sink_store_request;
+        sink_store_request.mutable_execution_response()->set_execution_id(
+            response_to_store->execution_id());
+        nighthawk::client::OutputAppendix* appendix =
+            sink_store_request.mutable_execution_response()->mutable_appendix();
+        appendix->set_id(statistic->id());
+        appendix->set_sequence_number(0);
+        std::string tmp(std::istreambuf_iterator<char>(istream), {});
+        appendix->mutable_data()->set_value(tmp.data());
+        appendix->set_is_last(true);
+        const auto sink_store_status =
+            sink_client.StoreExecutionResponseStream(sink_stub.get(), sink_store_request);
+        if (sink_store_status.ok()) {
+          ENVOY_LOG(trace, "Appendix {} successfully handled at sink.", statistic->id(),
+                    status.status().ToString());
+        } else {
+          ENVOY_LOG(error, "Failed to store appendix {} at sink: '{}'", statistic->id(),
+                    status.status().ToString());
+        }
+      } else {
+        ENVOY_LOG(warn, "Couldn't serialize statistic with id {} -> {}", statistic->id(),
+                  status_or_istream.status().ToString());
+      }
     }
   }
 

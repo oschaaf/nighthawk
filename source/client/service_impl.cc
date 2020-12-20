@@ -35,8 +35,8 @@ void ServiceImpl::handleExecutionRequest(const nighthawk::client::ExecutionReque
   // We must avoid touching OptionsImpl if a ProcessImpl is active, because we'll get an assert
   // otherwise as doing so in turn will trigger an assert in Envoy as validation occurs.
   if (thread_.joinable()) {
-    response.mutable_error_detail()->set_code(grpc::StatusCode::INTERNAL);
-    response.mutable_error_detail()->set_message("kinda busy sry kbye");
+    response.mutable_error_detail()->set_code(grpc::StatusCode::RESOURCE_EXHAUSTED);
+    response.mutable_error_detail()->set_message("Load test execution service is too busy.");
     writeResponse(response);
     return;
   }
@@ -256,6 +256,16 @@ SinkServiceImpl::mergeIntoAggregatedOutput(const ::nighthawk::client::Output& in
   return absl::OkStatus();
 }
 
+const std::map<const std::string, const StatisticPtr> SinkServiceImpl::readAppendices(
+    const std::vector<::nighthawk::client::ExecutionResponse>& responses) const {
+  for (const auto& response : responses) {
+    if (response.has_appendix()) {
+      ENVOY_LOG(error, "fix appending handling");
+    }
+  }
+  return std::map<const std::string, const StatisticPtr>();
+}
+
 absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSinkResponses(
     absl::string_view requested_execution_id,
     const std::vector<::nighthawk::client::ExecutionResponse>& responses) const {
@@ -317,6 +327,8 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
     if (status.ok()) {
       const std::vector<::nighthawk::client::ExecutionResponse>& responses =
           status_or_execution_responses.value();
+      const std::map<const std::string, const StatisticPtr> stat_by_appendix_id =
+          readAppendices(responses);
       absl::StatusOr<::nighthawk::client::SinkResponse> response =
           aggregateSinkResponses(request.execution_id(), responses);
       status.Update(response.status());
