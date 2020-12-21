@@ -26,7 +26,7 @@ public:
    * gRPC server.
    */
   DistributedProcessImpl(const Options& options,
-                         nighthawk::client::NighthawkDistributor::Stub& stub);
+                         nighthawk::client::NighthawkDistributor::StubInterface& stub);
   /**
    * @param collector Collects the output from the remote nighthawk service.
    * @return true iff the remote execution should be considered successful. Unsuccessful execution
@@ -45,7 +45,7 @@ private:
   sendDistributedRequest(const ::nighthawk::client::DistributedRequest& request) const;
   const Options& options_;
   const std::unique_ptr<NighthawkDistributorClient> service_client_;
-  nighthawk::client::NighthawkDistributor::Stub& stub_;
+  nighthawk::client::NighthawkDistributor::StubInterface& stub_;
 };
 
 } // namespace Client

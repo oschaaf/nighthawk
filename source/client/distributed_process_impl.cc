@@ -16,8 +16,8 @@
 namespace Nighthawk {
 namespace Client {
 
-DistributedProcessImpl::DistributedProcessImpl(const Options& options,
-                                               nighthawk::client::NighthawkDistributor::Stub& stub)
+DistributedProcessImpl::DistributedProcessImpl(
+    const Options& options, nighthawk::client::NighthawkDistributor::StubInterface& stub)
     : options_(options), service_client_(std::make_unique<NighthawkDistributorClientImpl>()),
       stub_(stub) {}
 
@@ -36,7 +36,6 @@ DistributedProcessImpl::sendDistributedRequest(
 
 bool DistributedProcessImpl::run(OutputCollector& collector) {
   Nighthawk::Client::CommandLineOptionsPtr options = options_.toCommandLineOptions();
-  // std::cerr << "@@@" << options->execution_id().value() << std::endl;
   ::nighthawk::client::DistributedRequest request;
   *(request.mutable_execution_request()->mutable_start_request()->mutable_options()) = *options;
   const std::string kTestId = "test-execution-id";
@@ -60,7 +59,14 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
   ::nighthawk::client::DistributedRequest distributed_sink_request;
   ::nighthawk::client::SinkRequest sink_request;
 
-  distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
+  if (options_.sink().has_value()) {
+    distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
+  } else {
+    // TODO(XXX): without a sink, the request above should yield a full execution response,
+    // or we error out completely and reject earlier.
+    ENVOY_LOG(error, "Distributed request MUST have a sink configured today.");
+    return false;
+  }
   sink_request.set_execution_id(kTestId);
   *(distributed_sink_request.mutable_sink_request()) = sink_request;
 
