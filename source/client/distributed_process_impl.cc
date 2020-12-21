@@ -36,6 +36,14 @@ DistributedProcessImpl::sendDistributedRequest(
 
 bool DistributedProcessImpl::run(OutputCollector& collector) {
   Nighthawk::Client::CommandLineOptionsPtr options = options_.toCommandLineOptions();
+
+  if (!options_.sink().has_value()) {
+    // TODO(XXX): without a sink, the request above could yield a full execution response,
+    // Alternatively, we error out completely and reject early instead today.
+    ENVOY_LOG(error, "Distributed request MUST have a sink configured today.");
+    return false;
+  }
+
   ::nighthawk::client::DistributedRequest request;
   *(request.mutable_execution_request()->mutable_start_request()->mutable_options()) = *options;
   const std::string kTestId = "test-execution-id";
@@ -59,14 +67,7 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
   ::nighthawk::client::DistributedRequest distributed_sink_request;
   ::nighthawk::client::SinkRequest sink_request;
 
-  if (options_.sink().has_value()) {
-    distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
-  } else {
-    // TODO(XXX): without a sink, the request above should yield a full execution response,
-    // or we error out completely and reject earlier.
-    ENVOY_LOG(error, "Distributed request MUST have a sink configured today.");
-    return false;
-  }
+  distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
   sink_request.set_execution_id(kTestId);
   *(distributed_sink_request.mutable_sink_request()) = sink_request;
 

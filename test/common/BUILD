@@ -69,3 +69,12 @@ envoy_cc_test(
         "@envoy//source/common/common:random_generator_lib_with_external_headers",
     ],
 )
+
+envoy_cc_test(
+    name = "signal_handler_test",
+    srcs = ["signal_handler_test.cc"],
+    repository = "@envoy",
+    deps = [
+        "//source/common:nighthawk_common_lib",
+    ],
+)

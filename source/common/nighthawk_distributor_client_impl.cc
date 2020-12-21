@@ -14,9 +14,10 @@ NighthawkDistributorClientImpl::DistributedRequest(
       stream(nighthawk_distributor_stub.DistributedRequestStream(&context));
   ENVOY_LOG_MISC(trace, "Write {}", distributed_request.DebugString());
   if (!stream->Write(distributed_request)) {
-    return absl::UnavailableError("Failed to write request to the Nighthawk Service gRPC channel.");
+    return absl::UnavailableError(
+        "Failed to write request to the Nighthawk Distributor gRPC channel.");
   } else if (!stream->WritesDone()) {
-    return absl::InternalError("WritesDone() failed on the Nighthawk Service gRPC channel.");
+    return absl::InternalError("WritesDone() failed on the Nighthawk Distributor gRPC channel.");
   }
 
   bool got_response = false;

@@ -40,7 +40,8 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
   // - One to query the sink afterwards.
   // When that finishes, we test expectations for execution-id's and sink-result handling.
 
-  OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
+  OptionsPtr options =
+      TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/ --services service1:444");
   nighthawk::client::MockNighthawkDistributorStub stub;
   DistributedProcessImpl process(*options, stub);
   OutputCollectorImpl collector(simTime(), *options);
@@ -101,6 +102,76 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
   EXPECT_TRUE(MessageDifferencer::Equivalent(collector.toProto(), sink_output));
 
   process.shutdown();
+}
+
+TEST_F(DistributedProcessImplTest, WriteFailureOnDistributorLoadTestInitiations) {
+  OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
+  nighthawk::client::MockNighthawkDistributorStub stub;
+  DistributedProcessImpl process(*options, stub);
+  OutputCollectorImpl collector(simTime(), *options);
+  DistributedRequest observed_init_request;
+
+  EXPECT_CALL(stub, DistributedRequestStreamRaw)
+      .WillOnce([&observed_init_request](grpc_impl::ClientContext*) {
+        // Simulate a write failure on the load test initiation request.
+        auto* mock_reader_writer =
+            new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
+        EXPECT_CALL(*mock_reader_writer, Write(_, _))
+            .WillOnce(
+                ::testing::DoAll(::testing::SaveArg<0>(&observed_init_request), Return(false)));
+        return mock_reader_writer;
+      });
+
+  EXPECT_FALSE(process.run(collector));
+  process.shutdown();
+}
+
+TEST_F(DistributedProcessImplTest, WriteFailureOnSinkRequest) {
+  OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
+  nighthawk::client::MockNighthawkDistributorStub stub;
+  DistributedProcessImpl process(*options, stub);
+  OutputCollectorImpl collector(simTime(), *options);
+  DistributedRequest observed_init_request;
+  DistributedRequest observed_sink_request;
+
+  EXPECT_CALL(stub, DistributedRequestStreamRaw)
+      .Times(2)
+      .WillOnce([&observed_init_request](grpc_impl::ClientContext*) {
+        auto* mock_reader_writer =
+            new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
+        DistributedResponse dictated_response;
+        EXPECT_CALL(*mock_reader_writer, Read(_))
+            .WillOnce(
+                ::testing::DoAll(::testing::SetArgPointee<0>(dictated_response), Return(true)))
+            .WillOnce(Return(false));
+        EXPECT_CALL(*mock_reader_writer, Write(_, _))
+            .WillOnce(
+                ::testing::DoAll(::testing::SaveArg<0>(&observed_init_request), Return(true)));
+        EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(true));
+        EXPECT_CALL(*mock_reader_writer, Finish()).WillOnce(Return(::grpc::Status::OK));
+        return mock_reader_writer;
+      })
+      .WillOnce([&observed_sink_request](grpc_impl::ClientContext*) {
+        // Simulate a write failure on the sink request.
+        auto* mock_reader_writer =
+            new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
+        EXPECT_CALL(*mock_reader_writer, Write(_, _))
+            .WillOnce(
+                ::testing::DoAll(::testing::SaveArg<0>(&observed_sink_request), Return(false)));
+        return mock_reader_writer;
+      });
+
+  EXPECT_FALSE(process.run(collector));
+  process.shutdown();
+}
+
+TEST_F(DistributedProcessImplTest, NoSinkConfigurationResultsInFailure) {
+  // Not specifying a sink configuration should fail, at least today.
+  OptionsPtr options = TestUtility::createOptionsImpl("foo https://foo/");
+  OutputCollectorImpl collector(simTime(), *options);
+  nighthawk::client::MockNighthawkDistributorStub stub;
+  DistributedProcessImpl process(*options, stub);
+  EXPECT_FALSE(process.run(collector));
 }
 
 TEST_F(DistributedProcessImplTest, RequestExecutionCancellationDoesNotCrash) {
