@@ -33,7 +33,7 @@ TEST(DistributedRequest, UsesSpecifiedCommandLineOptions) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
-      .WillOnce([&request](grpc_impl::ClientContext*) {
+      .WillOnce([&request](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         // DistributedRequest currently expects Read to return true exactly once.
@@ -71,7 +71,7 @@ TEST(DistributedRequest, ReturnsNighthawkResponseSuccessfully) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
-      .WillOnce([&expected_response](grpc_impl::ClientContext*) {
+      .WillOnce([&expected_response](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         // DistributedRequest currently expects Read to return true exactly once.
@@ -99,7 +99,7 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceDoesNotSendResponse) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
+      .WillOnce([](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         EXPECT_CALL(*mock_reader_writer, Read(_)).WillOnce(Return(false));
@@ -122,7 +122,7 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceWriteFails) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
+      .WillOnce([](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(false));
@@ -142,7 +142,7 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceWritesDoneFails) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
+      .WillOnce([](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
@@ -163,7 +163,7 @@ TEST(DistributedRequest, PropagatesErrorIfNighthawkServiceGrpcStreamClosesAbnorm
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
+      .WillOnce([](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         // DistributedRequest currently expects Read to return true exactly once.

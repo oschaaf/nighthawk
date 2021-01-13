@@ -54,7 +54,7 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
 
   EXPECT_CALL(stub, DistributedRequestStreamRaw)
       .Times(2)
-      .WillOnce([&observed_init_request](grpc_impl::ClientContext*) {
+      .WillOnce([&observed_init_request](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         DistributedResponse dictated_response;
@@ -69,7 +69,7 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
         EXPECT_CALL(*mock_reader_writer, Finish()).WillOnce(Return(::grpc::Status::OK));
         return mock_reader_writer;
       })
-      .WillOnce([&observed_sink_request, sink_output](grpc_impl::ClientContext*) {
+      .WillOnce([&observed_sink_request, sink_output](grpc::ClientContext*) {
         DistributedResponse dictated_response;
         dictated_response.add_fragment()
             ->mutable_sink_response()
@@ -112,7 +112,7 @@ TEST_F(DistributedProcessImplTest, WriteFailureOnDistributorLoadTestInitiations)
   DistributedRequest observed_init_request;
 
   EXPECT_CALL(stub, DistributedRequestStreamRaw)
-      .WillOnce([&observed_init_request](grpc_impl::ClientContext*) {
+      .WillOnce([&observed_init_request](grpc::ClientContext*) {
         // Simulate a write failure on the load test initiation request.
         auto* mock_reader_writer =
             new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
@@ -136,7 +136,7 @@ TEST_F(DistributedProcessImplTest, WriteFailureOnSinkRequest) {
 
   EXPECT_CALL(stub, DistributedRequestStreamRaw)
       .Times(2)
-      .WillOnce([&observed_init_request](grpc_impl::ClientContext*) {
+      .WillOnce([&observed_init_request](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         DistributedResponse dictated_response;
@@ -151,7 +151,7 @@ TEST_F(DistributedProcessImplTest, WriteFailureOnSinkRequest) {
         EXPECT_CALL(*mock_reader_writer, Finish()).WillOnce(Return(::grpc::Status::OK));
         return mock_reader_writer;
       })
-      .WillOnce([&observed_sink_request](grpc_impl::ClientContext*) {
+      .WillOnce([&observed_sink_request](grpc::ClientContext*) {
         // Simulate a write failure on the sink request.
         auto* mock_reader_writer =
             new MockClientReaderWriter<DistributedRequest, DistributedResponse>();

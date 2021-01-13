@@ -34,7 +34,7 @@ TEST(StoreExecutionResponseStream, UsesSpecifiedExecutionResponseArguments) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_sink_stub, StoreExecutionResponseStreamRaw)
-      .WillOnce([&observed_request_1](grpc_impl::ClientContext*,
+      .WillOnce([&observed_request_1](grpc::ClientContext*,
                                       ::nighthawk::client::StoreExecutionResponse*) {
         auto* mock_writer = new grpc::testing::MockClientWriter<StoreExecutionRequest>();
         EXPECT_CALL(*mock_writer, Write(_, _))
@@ -43,7 +43,7 @@ TEST(StoreExecutionResponseStream, UsesSpecifiedExecutionResponseArguments) {
         EXPECT_CALL(*mock_writer, Finish()).WillOnce(Return(::grpc::Status::OK));
         return mock_writer;
       })
-      .WillOnce([&observed_request_2](grpc_impl::ClientContext*,
+      .WillOnce([&observed_request_2](grpc::ClientContext*,
                                       ::nighthawk::client::StoreExecutionResponse*) {
         auto* mock_writer = new grpc::testing::MockClientWriter<StoreExecutionRequest>();
         EXPECT_CALL(*mock_writer, Write(_, _))
@@ -81,7 +81,7 @@ TEST(StoreExecutionResponseStream, ReturnsResponseSuccessfully) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_sink_stub, StoreExecutionResponseStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
+      .WillOnce([](grpc::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
         auto* mock_writer = new grpc::testing::MockClientWriter<StoreExecutionRequest>();
         EXPECT_CALL(*mock_writer, Write(_, _)).WillOnce(Return(true));
         EXPECT_CALL(*mock_writer, WritesDone()).WillOnce(Return(true));
@@ -100,7 +100,7 @@ TEST(StoreExecutionResponseStream, ReturnsErrorIfNighthawkServiceWriteFails) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_sink_stub, StoreExecutionResponseStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
+      .WillOnce([](grpc::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
         auto* mock_writer = new grpc::testing::MockClientWriter<StoreExecutionRequest>();
         EXPECT_CALL(*mock_writer, Write(_, _)).WillOnce(Return(false));
         return mock_writer;
@@ -119,7 +119,7 @@ TEST(StoreExecutionResponseStream, ReturnsErrorIfNighthawkServiceWritesDoneFails
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_sink_stub, StoreExecutionResponseStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
+      .WillOnce([](grpc::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
         auto* mock_writer = new grpc::testing::MockClientWriter<StoreExecutionRequest>();
         EXPECT_CALL(*mock_writer, Write(_, _)).WillOnce(Return(true));
         EXPECT_CALL(*mock_writer, WritesDone()).WillOnce(Return(false));
@@ -139,7 +139,7 @@ TEST(StoreExecutionResponseStream, PropagatesErrorIfNighthawkServiceGrpcStreamCl
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_sink_stub, StoreExecutionResponseStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
+      .WillOnce([](grpc::ClientContext*, ::nighthawk::client::StoreExecutionResponse*) {
         auto* mock_writer = new grpc::testing::MockClientWriter<StoreExecutionRequest>();
         EXPECT_CALL(*mock_writer, Write(_, _)).WillOnce(Return(true));
         EXPECT_CALL(*mock_writer, WritesDone()).WillOnce(Return(true));
@@ -165,7 +165,7 @@ TEST(SinkRequest, UsesSpecifiedCommandLineOptions) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw)
-      .WillOnce([&request](grpc_impl::ClientContext*) {
+      .WillOnce([&request](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
         // SinkRequest currently expects Read to return true exactly once.
@@ -193,7 +193,7 @@ TEST(SinkRequest, ReturnsNighthawkResponseSuccessfully) {
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw)
-      .WillOnce([&expected_response](grpc_impl::ClientContext*) {
+      .WillOnce([&expected_response](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
         // SinkRequest currently expects Read to return true exactly once.
@@ -220,16 +220,15 @@ TEST(SinkRequest, WillFinishIfNighthawkServiceDoesNotSendResponse) {
   nighthawk::client::MockNighthawkSinkStub mock_nighthawk_sink_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
-  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
-        auto* mock_reader_writer =
-            new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
-        EXPECT_CALL(*mock_reader_writer, Read(_)).WillOnce(Return(false));
-        EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
-        EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(true));
-        EXPECT_CALL(*mock_reader_writer, Finish()).WillOnce(Return(::grpc::Status::OK));
-        return mock_reader_writer;
-      });
+  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw).WillOnce([](grpc::ClientContext*) {
+    auto* mock_reader_writer =
+        new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
+    EXPECT_CALL(*mock_reader_writer, Read(_)).WillOnce(Return(false));
+    EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
+    EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(true));
+    EXPECT_CALL(*mock_reader_writer, Finish()).WillOnce(Return(::grpc::Status::OK));
+    return mock_reader_writer;
+  });
 
   NighthawkSinkClientImpl client;
   absl::StatusOr<SinkResponse> response_or =
@@ -241,13 +240,12 @@ TEST(SinkRequest, ReturnsErrorIfNighthawkServiceWriteFails) {
   nighthawk::client::MockNighthawkSinkStub mock_nighthawk_sink_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
-  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
-        auto* mock_reader_writer =
-            new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
-        EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(false));
-        return mock_reader_writer;
-      });
+  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw).WillOnce([](grpc::ClientContext*) {
+    auto* mock_reader_writer =
+        new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
+    EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(false));
+    return mock_reader_writer;
+  });
 
   NighthawkSinkClientImpl client;
   absl::StatusOr<SinkResponse> response_or =
@@ -261,14 +259,13 @@ TEST(SinkRequest, ReturnsErrorIfNighthawkServiceWritesDoneFails) {
   nighthawk::client::MockNighthawkSinkStub mock_nighthawk_sink_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
-  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
-        auto* mock_reader_writer =
-            new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
-        EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
-        EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(false));
-        return mock_reader_writer;
-      });
+  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw).WillOnce([](grpc::ClientContext*) {
+    auto* mock_reader_writer =
+        new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
+    EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
+    EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(false));
+    return mock_reader_writer;
+  });
 
   NighthawkSinkClientImpl client;
   absl::StatusOr<SinkResponse> response_or =
@@ -282,19 +279,18 @@ TEST(SinkRequest, PropagatesErrorIfNighthawkServiceGrpcStreamClosesAbnormally) {
   nighthawk::client::MockNighthawkSinkStub mock_nighthawk_sink_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
-  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw)
-      .WillOnce([](grpc_impl::ClientContext*) {
-        auto* mock_reader_writer =
-            new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
-        // SinkRequest currently expects Read to return true exactly once.
-        EXPECT_CALL(*mock_reader_writer, Read(_)).WillOnce(Return(true)).WillOnce(Return(false));
-        EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
-        EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(true));
-        EXPECT_CALL(*mock_reader_writer, Finish())
-            .WillOnce(
-                Return(::grpc::Status(::grpc::PERMISSION_DENIED, "Finish failure status message")));
-        return mock_reader_writer;
-      });
+  EXPECT_CALL(mock_nighthawk_sink_stub, SinkRequestStreamRaw).WillOnce([](grpc::ClientContext*) {
+    auto* mock_reader_writer =
+        new grpc::testing::MockClientReaderWriter<SinkRequest, SinkResponse>();
+    // SinkRequest currently expects Read to return true exactly once.
+    EXPECT_CALL(*mock_reader_writer, Read(_)).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mock_reader_writer, Write(_, _)).WillOnce(Return(true));
+    EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(true));
+    EXPECT_CALL(*mock_reader_writer, Finish())
+        .WillOnce(
+            Return(::grpc::Status(::grpc::PERMISSION_DENIED, "Finish failure status message")));
+    return mock_reader_writer;
+  });
 
   NighthawkSinkClientImpl client;
   absl::StatusOr<SinkResponse> response_or =
