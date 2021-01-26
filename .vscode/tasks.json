@@ -221,6 +221,7 @@
       "id": "testTarget",
       "description": "type",
       "options": [
+        "//test/common:nighthawk_service_client_test",
         "//test:benchmark_http_client_test",
         "//test:client_test",
         "//test:client_worker_test",

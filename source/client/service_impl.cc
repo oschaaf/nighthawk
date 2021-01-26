@@ -321,8 +321,12 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
   absl::Status status = absl::OkStatus();
   while (stream->Read(&request)) {
     ENVOY_LOG(trace, "Inbound SinkRequest {}", request.DebugString());
-    const absl::StatusOr<std::vector<::nighthawk::client::ExecutionResponse>>
-        status_or_execution_responses = sink_->LoadExecutionResult(request.execution_id());
+    absl::StatusOr<std::vector<::nighthawk::client::ExecutionResponse>>
+        status_or_execution_responses;
+    do {
+      status_or_execution_responses = sink_->LoadExecutionResult(request.execution_id());
+      sleep(1);
+    } while (!status_or_execution_responses.ok());
     status.Update(status_or_execution_responses.status());
     if (status.ok()) {
       const std::vector<::nighthawk::client::ExecutionResponse>& responses =

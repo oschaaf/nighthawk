@@ -6,6 +6,8 @@
 
 #include "nighthawk/client/output_collector.h"
 
+#include "external/envoy/source/common/common/random_generator.h"
+
 #include "api/client/options.pb.h"
 #include "api/client/output.pb.h"
 
@@ -36,23 +38,26 @@ DistributedProcessImpl::sendDistributedRequest(
 
 bool DistributedProcessImpl::run(OutputCollector& collector) {
   Nighthawk::Client::CommandLineOptionsPtr options = options_.toCommandLineOptions();
-
   if (!options_.sink().has_value()) {
     // TODO(XXX): without a sink, the request above could yield a full execution response,
     // Alternatively, we error out completely and reject early instead today.
     ENVOY_LOG(error, "Distributed request MUST have a sink configured today.");
     return false;
   }
-
+  if (!options->has_execution_id()) {
+    Envoy::Random::RandomGeneratorImpl random_generator;
+    const std::string uuid = random_generator.uuid();
+    options->mutable_execution_id()->set_value(uuid);
+  }
+  const std::string execution_id = options->execution_id().value();
+  ENVOY_LOG(info, "Using execution id '{}'", execution_id);
   ::nighthawk::client::DistributedRequest request;
   *(request.mutable_execution_request()->mutable_start_request()->mutable_options()) = *options;
-  const std::string kTestId = "test-execution-id";
-  // TODO(XXX): only override if not set & optionize.
   request.mutable_execution_request()
       ->mutable_start_request()
       ->mutable_options()
       ->mutable_execution_id()
-      ->set_value(kTestId);
+      ->set_value(execution_id);
   if (options_.services().has_value()) {
     *(request.mutable_services()) = options_.services().value().addresses();
   }
@@ -68,7 +73,7 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
   ::nighthawk::client::SinkRequest sink_request;
 
   distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
-  sink_request.set_execution_id(kTestId);
+  sink_request.set_execution_id(execution_id);
   *(distributed_sink_request.mutable_sink_request()) = sink_request;
 
   absl::StatusOr<const nighthawk::client::DistributedResponse> distributed_sink_response =
@@ -82,14 +87,14 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
     ENVOY_LOG(error, "DistributedResponse.error: {}",
               distributed_sink_response.value().error().DebugString());
   }
-  if (distributed_sink_response.value().fragment_size() == 0) {
+  if (distributed_response.fragment_size() == 0) {
     ENVOY_LOG(error, "Distributed sink request yielded no results.");
     return false;
-  } else if (distributed_sink_response.value().fragment_size() > 1) {
+  } else if (distributed_response.fragment_size() > 1) {
     RELEASE_ASSERT(false, "Sink started returning multiple fragments!");
   } else {
     const ::nighthawk::client::Output& output =
-        distributed_sink_response.value().fragment(0).sink_response().execution_response().output();
+        distributed_response.fragment(0).sink_response().execution_response().output();
     collector.setOutput(output);
     bool has_failed_termination = false;
     for (const ::nighthawk::client::Result& result : output.results()) {
@@ -102,7 +107,6 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
     }
     return !has_failed_termination;
   }
-
   return false;
 }
 
