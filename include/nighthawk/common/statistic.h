@@ -117,8 +117,22 @@ public:
    */
   virtual void setId(absl::string_view id) PURE;
 
+  /**
+   * Build a string representation of this Statistic instance.
+   *
+   * @return absl::StatusOr<std::unique_ptr<std::istream>> Status or a stream that will yield
+   * a serialized representation of this Statistic instance.
+   */
   virtual absl::StatusOr<std::unique_ptr<std::istream>> serializeNative() const PURE;
-  virtual absl::Status deserializeNative(std::istream&) PURE;
+
+  /**
+   *  Reconstruct this Statistic instance using the serialization delivered by the input stream.
+   *
+   * @param input_stream Stream that will deliver a serialized representation.
+   * @return absl::Status Status indicating success or failure. Upon success the statistic
+   * instance this was called for will now represent what the stream contained.
+   */
+  virtual absl::Status deserializeNative(std::istream& input_stream) PURE;
 };
 
 } // namespace Nighthawk
