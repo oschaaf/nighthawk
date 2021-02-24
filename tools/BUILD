@@ -16,3 +16,11 @@ py_binary(
         "//:nighthawk_test_server",
     ],
 )
+
+py_binary(
+    name = "generate_traffic_profile",
+    srcs = ["generate_traffic_profile.py"],
+    deps = [
+        "//api/request_source:service_py_proto"
+    ]
+)
