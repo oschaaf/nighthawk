@@ -8,7 +8,7 @@
 
 #include "api/client/service.grpc.pb.h"
 
-#include "common/nighthawk_distributor_client_impl.h"
+#include "distributor/nighthawk_distributor_client_impl.h"
 
 namespace Nighthawk {
 namespace Client {

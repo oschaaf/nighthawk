@@ -96,27 +96,5 @@ private:
   RequestSourcePtr createStaticEmptyRequestSource(const uint32_t amount);
 };
 
-class NighthawkDistributorServiceImpl final
-    : public nighthawk::NighthawkDistributor::Service,
-      public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
-
-public:
-  ::grpc::Status DistributedRequestStream(
-      ::grpc::ServerContext* context,
-      ::grpc::ServerReaderWriter<::nighthawk::DistributedResponse, ::nighthawk::DistributedRequest>*
-          stream) override;
-
-private:
-  ::grpc::Status validateRequest(const ::nighthawk::DistributedRequest& request) const;
-  nighthawk::DistributedResponse
-  handleRequest(const ::nighthawk::DistributedRequest& request) const;
-  absl::StatusOr<::nighthawk::SinkResponse>
-  handleSinkRequest(const envoy::config::core::v3::Address& service,
-                    const ::nighthawk::SinkRequest& request) const;
-  absl::StatusOr<nighthawk::client::ExecutionResponse>
-  handleExecutionRequest(const envoy::config::core::v3::Address& service,
-                         const ::nighthawk::client::ExecutionRequest& request) const;
-};
-
 } // namespace Client
 } // namespace Nighthawk

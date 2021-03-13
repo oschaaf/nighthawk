@@ -10,6 +10,8 @@
 
 #include "client/service_impl.h"
 
+#include "distributor/service_impl.h"
+
 #include "sink/service_impl.h"
 #include "sink/sink_impl.h"
 
