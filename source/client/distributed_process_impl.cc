@@ -18,15 +18,14 @@
 namespace Nighthawk {
 namespace Client {
 
-DistributedProcessImpl::DistributedProcessImpl(
-    const Options& options, nighthawk::client::NighthawkDistributor::StubInterface& stub)
+DistributedProcessImpl::DistributedProcessImpl(const Options& options,
+                                               nighthawk::NighthawkDistributor::StubInterface& stub)
     : options_(options), service_client_(std::make_unique<NighthawkDistributorClientImpl>()),
       stub_(stub) {}
 
-absl::StatusOr<const nighthawk::client::DistributedResponse>
-DistributedProcessImpl::sendDistributedRequest(
-    const ::nighthawk::client::DistributedRequest& request) const {
-  const absl::StatusOr<const nighthawk::client::DistributedResponse> result =
+absl::StatusOr<const nighthawk::DistributedResponse> DistributedProcessImpl::sendDistributedRequest(
+    const ::nighthawk::DistributedRequest& request) const {
+  const absl::StatusOr<const nighthawk::DistributedResponse> result =
       service_client_->DistributedRequest(stub_, request);
   if (!result.ok()) {
     ENVOY_LOG(error, "Distributed request failure: {}", result.status().message());
@@ -51,7 +50,7 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
   }
   const std::string execution_id = options->execution_id().value();
   ENVOY_LOG(info, "Using execution id '{}'", execution_id);
-  ::nighthawk::client::DistributedRequest request;
+  ::nighthawk::DistributedRequest request;
   *(request.mutable_execution_request()->mutable_start_request()->mutable_options()) = *options;
   request.mutable_execution_request()
       ->mutable_start_request()
@@ -61,28 +60,27 @@ bool DistributedProcessImpl::run(OutputCollector& collector) {
   if (options_.services().has_value()) {
     *(request.mutable_services()) = options_.services().value().addresses();
   }
-  const absl::StatusOr<const nighthawk::client::DistributedResponse>
-      distributed_initiation_response = sendDistributedRequest(request);
+  const absl::StatusOr<const nighthawk::DistributedResponse> distributed_initiation_response =
+      sendDistributedRequest(request);
   if (!distributed_initiation_response.ok()) {
     return false;
   }
   // If we could initiate the distributed load test, then we can now query the sink to obtain
   // results with the execution_id we obtained through that.
   // TODO(XXX): set a sensible timeout, or do so on the other side.
-  ::nighthawk::client::DistributedRequest distributed_sink_request;
-  ::nighthawk::client::SinkRequest sink_request;
+  ::nighthawk::DistributedRequest distributed_sink_request;
+  ::nighthawk::SinkRequest sink_request;
 
   distributed_sink_request.add_services()->MergeFrom(options_.sink().value().address());
   sink_request.set_execution_id(execution_id);
   *(distributed_sink_request.mutable_sink_request()) = sink_request;
 
-  absl::StatusOr<const nighthawk::client::DistributedResponse> distributed_sink_response =
+  absl::StatusOr<const nighthawk::DistributedResponse> distributed_sink_response =
       sendDistributedRequest(distributed_sink_request);
   if (!distributed_sink_response.ok()) {
     return false;
   }
-  const nighthawk::client::DistributedResponse& distributed_response =
-      distributed_sink_response.value();
+  const nighthawk::DistributedResponse& distributed_response = distributed_sink_response.value();
   if (distributed_response.has_error()) {
     ENVOY_LOG(error, "DistributedResponse.error: {}",
               distributed_sink_response.value().error().DebugString());

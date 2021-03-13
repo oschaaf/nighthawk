@@ -53,7 +53,7 @@ bool Main::run() {
       spdlog::level::from_str(lower), "[%T.%f][%t][%L] %v", log_lock, false);
   Envoy::Event::RealTimeSystem time_system; // NO_CHECK_FORMAT(real_time)
   ProcessPtr process;
-  std::unique_ptr<nighthawk::client::NighthawkDistributor::Stub> distributor_stub;
+  std::unique_ptr<nighthawk::NighthawkDistributor::Stub> distributor_stub;
   std::unique_ptr<nighthawk::client::NighthawkService::Stub> service_stub;
   std::shared_ptr<::grpc::Channel> channel;
 
@@ -62,7 +62,7 @@ bool Main::run() {
         fmt::format("{}:{}", options_->distributor().value().address().socket_address().address(),
                     options_->distributor().value().address().socket_address().port_value()),
         grpc::InsecureChannelCredentials());
-    distributor_stub = std::make_unique<nighthawk::client::NighthawkDistributor::Stub>(channel);
+    distributor_stub = std::make_unique<nighthawk::NighthawkDistributor::Stub>(channel);
     process = std::make_unique<DistributedProcessImpl>(*options_, *distributor_stub);
   } else if (options_->nighthawkService() != "") {
     UriPtr uri;

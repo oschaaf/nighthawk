@@ -624,15 +624,15 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
   // TODO(XXX): refactor into distinct call(s).
   if (options_.sink().has_value()) {
     nighthawk::client::SinkConfiguration configuration = options_.sink().value();
-    std::unique_ptr<nighthawk::client::NighthawkSink::Stub> sink_stub;
+    std::unique_ptr<nighthawk::NighthawkSink::Stub> sink_stub;
     std::shared_ptr<::grpc::Channel> sink_channel;
     sink_channel =
         grpc::CreateChannel(fmt::format("{}:{}", configuration.address().socket_address().address(),
                                         configuration.address().socket_address().port_value()),
                             grpc::InsecureChannelCredentials());
-    sink_stub = std::make_unique<nighthawk::client::NighthawkSink::Stub>(sink_channel);
+    sink_stub = std::make_unique<nighthawk::NighthawkSink::Stub>(sink_channel);
     NighthawkSinkClientImpl sink_client;
-    ::nighthawk::client::StoreExecutionRequest request;
+    ::nighthawk::StoreExecutionRequest request;
     ::nighthawk::client::ExecutionResponse* response_to_store =
         request.mutable_execution_response();
     if (options_.executionId().has_value()) {
@@ -649,7 +649,7 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
       response_to_store->mutable_error_detail()->set_message(
           "Execution was terminated via failure predicate.");
     }
-    const auto status = sink_client.StoreExecutionResponseStream(sink_stub.get(), request);
+    const auto status = sink_client.StoreExecutionResponseStream(*sink_stub, request);
     if (!status.ok()) {
       ENVOY_LOG(error, "Failed to store results at sink: '{}'", status.status().ToString());
       return false;
@@ -665,7 +665,7 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
         ENVOY_LOG(trace, "Statistic with id {} serialized successfully", statistic->id());
         // Send it to the sink.
         std::istream& istream = *(status_or_istream.value());
-        ::nighthawk::client::StoreExecutionRequest sink_store_request;
+        ::nighthawk::StoreExecutionRequest sink_store_request;
         sink_store_request.mutable_execution_response()->set_execution_id(
             response_to_store->execution_id());
         nighthawk::client::OutputAppendix* appendix =
@@ -676,7 +676,7 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
         appendix->mutable_data()->set_value(tmp.data());
         appendix->set_is_last(true);
         const auto sink_store_status =
-            sink_client.StoreExecutionResponseStream(sink_stub.get(), sink_store_request);
+            sink_client.StoreExecutionResponseStream(*sink_stub, sink_store_request);
         if (sink_store_status.ok()) {
           ENVOY_LOG(trace, "Appendix {} successfully handled at sink.", statistic->id(),
                     status.status().ToString());

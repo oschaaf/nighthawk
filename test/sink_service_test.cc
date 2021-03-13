@@ -25,8 +25,8 @@ namespace Nighthawk {
 namespace Client {
 namespace {
 
-using nighthawk::client::SinkRequest;
-using nighthawk::client::SinkResponse;
+using ::nighthawk::SinkRequest;
+using ::nighthawk::SinkResponse;
 
 class SinkServiceTest : public TestWithParam<Envoy::Network::Address::IpVersion> {
 public:
@@ -49,7 +49,7 @@ public:
   void setupGrpcClient() {
     channel_ = grpc::CreateChannel(fmt::format("{}:{}", loopback_address_, grpc_server_port_),
                                    grpc::InsecureChannelCredentials());
-    stub_ = std::make_unique<nighthawk::client::NighthawkSink::Stub>(channel_);
+    stub_ = std::make_unique<nighthawk::NighthawkSink::Stub>(channel_);
   }
 
   MockSink* sink_{nullptr};
@@ -57,9 +57,9 @@ public:
   std::unique_ptr<grpc::Server> server_;
   std::shared_ptr<grpc::Channel> channel_;
   grpc::ClientContext context_;
-  nighthawk::client::SinkRequest request_;
-  nighthawk::client::SinkResponse response_;
-  std::unique_ptr<nighthawk::client::NighthawkSink::Stub> stub_;
+  ::nighthawk::SinkRequest request_;
+  ::nighthawk::SinkResponse response_;
+  std::unique_ptr<nighthawk::NighthawkSink::Stub> stub_;
   std::string loopback_address_;
   int grpc_server_port_{0};
 };

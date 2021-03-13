@@ -4,13 +4,12 @@
 
 namespace Nighthawk {
 
-absl::StatusOr<nighthawk::client::DistributedResponse>
-NighthawkDistributorClientImpl::DistributedRequest(
-    nighthawk::client::NighthawkDistributor::StubInterface& nighthawk_distributor_stub,
-    const nighthawk::client::DistributedRequest& distributed_request) const {
+absl::StatusOr<nighthawk::DistributedResponse> NighthawkDistributorClientImpl::DistributedRequest(
+    nighthawk::NighthawkDistributor::StubInterface& nighthawk_distributor_stub,
+    const nighthawk::DistributedRequest& distributed_request) const {
   ::grpc::ClientContext context;
-  std::shared_ptr<::grpc::ClientReaderWriterInterface<nighthawk::client::DistributedRequest,
-                                                      nighthawk::client::DistributedResponse>>
+  std::shared_ptr<::grpc::ClientReaderWriterInterface<nighthawk::DistributedRequest,
+                                                      nighthawk::DistributedResponse>>
       stream(nighthawk_distributor_stub.DistributedRequestStream(&context));
   ENVOY_LOG_MISC(trace, "Write {}", distributed_request.DebugString());
   if (!stream->Write(distributed_request)) {
@@ -21,7 +20,7 @@ NighthawkDistributorClientImpl::DistributedRequest(
   }
 
   bool got_response = false;
-  nighthawk::client::DistributedResponse response;
+  nighthawk::DistributedResponse response;
   while (stream->Read(&response)) {
     RELEASE_ASSERT(!got_response,
                    "Distributor Service has started responding with more than one message.");

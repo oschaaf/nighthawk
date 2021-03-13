@@ -4,14 +4,14 @@
 
 namespace Nighthawk {
 
-absl::StatusOr<nighthawk::client::StoreExecutionResponse>
+absl::StatusOr<nighthawk::StoreExecutionResponse>
 NighthawkSinkClientImpl::StoreExecutionResponseStream(
-    nighthawk::client::NighthawkSink::StubInterface* nighthawk_sink_stub,
-    const nighthawk::client::StoreExecutionRequest& store_execution_request) const {
+    nighthawk::NighthawkSink::StubInterface& nighthawk_sink_stub,
+    const nighthawk::StoreExecutionRequest& store_execution_request) const {
   ::grpc::ClientContext context;
-  ::nighthawk::client::StoreExecutionResponse store_execution_response;
-  std::shared_ptr<::grpc::ClientWriterInterface<::nighthawk::client::StoreExecutionRequest>> stream(
-      nighthawk_sink_stub->StoreExecutionResponseStream(&context, &store_execution_response));
+  ::nighthawk::StoreExecutionResponse store_execution_response;
+  std::shared_ptr<::grpc::ClientWriterInterface<::nighthawk::StoreExecutionRequest>> stream(
+      nighthawk_sink_stub.StoreExecutionResponseStream(&context, &store_execution_response));
   if (!stream->Write(store_execution_request)) {
     return absl::UnavailableError("Failed to write request to the Nighthawk Sink gRPC channel.");
   } else if (!stream->WritesDone()) {
@@ -24,14 +24,14 @@ NighthawkSinkClientImpl::StoreExecutionResponseStream(
   return store_execution_response;
 }
 
-absl::StatusOr<nighthawk::client::SinkResponse> NighthawkSinkClientImpl::SinkRequestStream(
-    nighthawk::client::NighthawkSink::StubInterface& nighthawk_sink_stub,
-    const nighthawk::client::SinkRequest& sink_request) const {
-  nighthawk::client::SinkResponse response;
+absl::StatusOr<nighthawk::SinkResponse> NighthawkSinkClientImpl::SinkRequestStream(
+    nighthawk::NighthawkSink::StubInterface& nighthawk_sink_stub,
+    const nighthawk::SinkRequest& sink_request) const {
+  nighthawk::SinkResponse response;
 
   ::grpc::ClientContext context;
-  std::shared_ptr<::grpc::ClientReaderWriterInterface<nighthawk::client::SinkRequest,
-                                                      nighthawk::client::SinkResponse>>
+  std::shared_ptr<
+      ::grpc::ClientReaderWriterInterface<nighthawk::SinkRequest, nighthawk::SinkResponse>>
       stream(nighthawk_sink_stub.SinkRequestStream(&context));
 
   if (!stream->Write(sink_request)) {
@@ -42,6 +42,20 @@ absl::StatusOr<nighthawk::client::SinkResponse> NighthawkSinkClientImpl::SinkReq
 
   bool got_response = false;
   while (stream->Read(&response)) {
+    /*
+      At the proto api level we support returning a stream of results. The sink service proto api
+      reflects this, and accepts what NighthawkService. ExecutionStream returns as a parameter
+      (though we wrap it in StoreExecutionRequest messages for extensibility purposes). So this
+      implies a stream, and not a single message.
+
+      Having said that, today we constrain what we return to a single message in the implementations
+      where this is relevant. That's why we assert here, to make sure that stays put until an
+      explicit choice is made otherwise.
+
+      Why do this? The intent of NighthawkService. ExecutionStream was to be able to stream
+      intermediate updates some day. So having streams in the api's keeps the door open on streaming
+      intermediary updates, without forcing a change the proto api.
+    */
     RELEASE_ASSERT(!got_response,
                    "Sink Service has started responding with more than one message.");
     got_response = true;

@@ -3,27 +3,23 @@
 #include "external/envoy/source/common/common/statusor.h"
 #include "external/envoy/source/common/protobuf/protobuf.h"
 
-#include "api/client/options.pb.h"
-#include "api/client/service.grpc.pb.h"
-
 namespace Nighthawk {
 
 /**
- * Real implementation of a helper that opens a channel with the gRPC stub, sends the input, and
- * translates the output or errors into a StatusOr.
+ * Implements a the gRPC sink client interface.
  *
  * This class is stateless and may be called from multiple threads. Furthermore, the same gRPC stub
  * is safe to use from multiple threads simultaneously.
  */
 class NighthawkSinkClientImpl : public NighthawkSinkClient {
 public:
-  absl::StatusOr<nighthawk::client::StoreExecutionResponse> StoreExecutionResponseStream(
-      nighthawk::client::NighthawkSink::StubInterface* nighthawk_sink_stub,
-      const nighthawk::client::StoreExecutionRequest& store_execution_request) const override;
+  absl::StatusOr<nighthawk::StoreExecutionResponse> StoreExecutionResponseStream(
+      nighthawk::NighthawkSink::StubInterface& nighthawk_sink_stub,
+      const nighthawk::StoreExecutionRequest& store_execution_request) const override;
 
-  absl::StatusOr<nighthawk::client::SinkResponse>
-  SinkRequestStream(nighthawk::client::NighthawkSink::StubInterface& nighthawk_sink_stub,
-                    const nighthawk::client::SinkRequest& sink_request) const override;
+  absl::StatusOr<nighthawk::SinkResponse>
+  SinkRequestStream(nighthawk::NighthawkSink::StubInterface& nighthawk_sink_stub,
+                    const nighthawk::SinkRequest& sink_request) const override;
 };
 
 } // namespace Nighthawk

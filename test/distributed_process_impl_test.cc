@@ -3,7 +3,7 @@
 #include "external/envoy/test/test_common/simulated_time_system.h"
 #include "external/envoy/test/test_common/utility.h"
 
-#include "api/client/service_mock.grpc.pb.h"
+#include "api/distributor/distributor_mock.grpc.pb.h"
 
 #include "client/distributed_process_impl.h"
 #include "client/options_impl.h"
@@ -22,8 +22,8 @@ namespace {
 
 using ::Envoy::Protobuf::util::MessageDifferencer;
 using ::grpc::testing::MockClientReaderWriter;
-using ::nighthawk::client::DistributedRequest;
-using ::nighthawk::client::DistributedResponse;
+using ::nighthawk::DistributedRequest;
+using ::nighthawk::DistributedResponse;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Return;
@@ -42,7 +42,7 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
 
   OptionsPtr options =
       TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/ --services service1:444");
-  nighthawk::client::MockNighthawkDistributorStub stub;
+  nighthawk::MockNighthawkDistributorStub stub;
   DistributedProcessImpl process(*options, stub);
   OutputCollectorImpl collector(simTime(), *options);
   DistributedRequest observed_init_request;
@@ -106,7 +106,7 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
 
 TEST_F(DistributedProcessImplTest, WriteFailureOnDistributorLoadTestInitiations) {
   OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
-  nighthawk::client::MockNighthawkDistributorStub stub;
+  nighthawk::MockNighthawkDistributorStub stub;
   DistributedProcessImpl process(*options, stub);
   OutputCollectorImpl collector(simTime(), *options);
   DistributedRequest observed_init_request;
@@ -128,7 +128,7 @@ TEST_F(DistributedProcessImplTest, WriteFailureOnDistributorLoadTestInitiations)
 
 TEST_F(DistributedProcessImplTest, WriteFailureOnSinkRequest) {
   OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
-  nighthawk::client::MockNighthawkDistributorStub stub;
+  nighthawk::MockNighthawkDistributorStub stub;
   DistributedProcessImpl process(*options, stub);
   OutputCollectorImpl collector(simTime(), *options);
   DistributedRequest observed_init_request;
@@ -169,7 +169,7 @@ TEST_F(DistributedProcessImplTest, NoSinkConfigurationResultsInFailure) {
   // Not specifying a sink configuration should fail, at least today.
   OptionsPtr options = TestUtility::createOptionsImpl("foo https://foo/");
   OutputCollectorImpl collector(simTime(), *options);
-  nighthawk::client::MockNighthawkDistributorStub stub;
+  nighthawk::MockNighthawkDistributorStub stub;
   DistributedProcessImpl process(*options, stub);
   EXPECT_FALSE(process.run(collector));
 }
@@ -179,7 +179,7 @@ TEST_F(DistributedProcessImplTest, RequestExecutionCancellationDoesNotCrash) {
   // from it, just that it doesn't crash, even when called at an inappropriate time like here where
   // when we call it the process has not even had run() called on it.
   OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
-  nighthawk::client::MockNighthawkDistributorStub stub;
+  nighthawk::MockNighthawkDistributorStub stub;
   DistributedProcessImpl process(*options, stub);
   process.requestExecutionCancellation();
 }

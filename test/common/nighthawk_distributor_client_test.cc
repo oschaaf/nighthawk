@@ -1,8 +1,8 @@
 #include "external/envoy/source/common/protobuf/protobuf.h"
 
 #include "api/client/options.pb.h"
-#include "api/client/service.grpc.pb.h"
-#include "api/client/service_mock.grpc.pb.h"
+#include "api/distributor/distributor.grpc.pb.h"
+#include "api/distributor/distributor_mock.grpc.pb.h"
 
 #include "common/nighthawk_distributor_client_impl.h"
 
@@ -16,9 +16,9 @@ namespace Nighthawk {
 namespace {
 
 using ::Envoy::Protobuf::util::MessageDifferencer;
+using ::nighthawk::DistributedRequest;
+using ::nighthawk::DistributedResponse;
 using ::nighthawk::client::CommandLineOptions;
-using ::nighthawk::client::DistributedRequest;
-using ::nighthawk::client::DistributedResponse;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::HasSubstr;
@@ -29,7 +29,7 @@ using ::testing::SetArgPointee;
 TEST(DistributedRequest, UsesSpecifiedCommandLineOptions) {
   const int kExpectedRps = 456;
   DistributedRequest request;
-  nighthawk::client::MockNighthawkDistributorStub mock_nighthawk_service_stub;
+  nighthawk::MockNighthawkDistributorStub mock_nighthawk_service_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
@@ -46,7 +46,7 @@ TEST(DistributedRequest, UsesSpecifiedCommandLineOptions) {
         return mock_reader_writer;
       });
 
-  ::nighthawk::client::DistributedRequest distributed_request;
+  ::nighthawk::DistributedRequest distributed_request;
   ::nighthawk::client::ExecutionRequest execution_request;
   ::nighthawk::client::StartRequest start_request;
   CommandLineOptions command_line_options;
@@ -67,7 +67,7 @@ TEST(DistributedRequest, UsesSpecifiedCommandLineOptions) {
 
 TEST(DistributedRequest, ReturnsNighthawkResponseSuccessfully) {
   DistributedResponse expected_response;
-  nighthawk::client::MockNighthawkDistributorStub mock_nighthawk_service_stub;
+  nighthawk::MockNighthawkDistributorStub mock_nighthawk_service_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
@@ -86,8 +86,8 @@ TEST(DistributedRequest, ReturnsNighthawkResponseSuccessfully) {
       });
 
   NighthawkDistributorClientImpl client;
-  absl::StatusOr<DistributedResponse> response_or = client.DistributedRequest(
-      mock_nighthawk_service_stub, ::nighthawk::client::DistributedRequest());
+  absl::StatusOr<DistributedResponse> response_or =
+      client.DistributedRequest(mock_nighthawk_service_stub, ::nighthawk::DistributedRequest());
   EXPECT_TRUE(response_or.ok());
   DistributedResponse actual_response = response_or.value();
   EXPECT_TRUE(MessageDifferencer::Equivalent(actual_response, expected_response));
@@ -95,7 +95,7 @@ TEST(DistributedRequest, ReturnsNighthawkResponseSuccessfully) {
 }
 
 TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceDoesNotSendResponse) {
-  nighthawk::client::MockNighthawkDistributorStub mock_nighthawk_service_stub;
+  nighthawk::MockNighthawkDistributorStub mock_nighthawk_service_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
@@ -109,8 +109,8 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceDoesNotSendResponse) {
       });
 
   NighthawkDistributorClientImpl client;
-  absl::StatusOr<DistributedResponse> response_or = client.DistributedRequest(
-      mock_nighthawk_service_stub, ::nighthawk::client::DistributedRequest());
+  absl::StatusOr<DistributedResponse> response_or =
+      client.DistributedRequest(mock_nighthawk_service_stub, ::nighthawk::DistributedRequest());
   ASSERT_FALSE(response_or.ok());
   EXPECT_EQ(response_or.status().code(), absl::StatusCode::kInternal);
   EXPECT_THAT(response_or.status().message(),
@@ -118,7 +118,7 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceDoesNotSendResponse) {
 }
 
 TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceWriteFails) {
-  nighthawk::client::MockNighthawkDistributorStub mock_nighthawk_service_stub;
+  nighthawk::MockNighthawkDistributorStub mock_nighthawk_service_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
@@ -130,15 +130,15 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceWriteFails) {
       });
 
   NighthawkDistributorClientImpl client;
-  absl::StatusOr<DistributedResponse> response_or = client.DistributedRequest(
-      mock_nighthawk_service_stub, ::nighthawk::client::DistributedRequest());
+  absl::StatusOr<DistributedResponse> response_or =
+      client.DistributedRequest(mock_nighthawk_service_stub, ::nighthawk::DistributedRequest());
   ASSERT_FALSE(response_or.ok());
   EXPECT_EQ(response_or.status().code(), absl::StatusCode::kUnavailable);
   EXPECT_THAT(response_or.status().message(), HasSubstr("Failed to write"));
 }
 
 TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceWritesDoneFails) {
-  nighthawk::client::MockNighthawkDistributorStub mock_nighthawk_service_stub;
+  nighthawk::MockNighthawkDistributorStub mock_nighthawk_service_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
@@ -151,15 +151,15 @@ TEST(DistributedRequest, ReturnsErrorIfNighthawkServiceWritesDoneFails) {
       });
 
   NighthawkDistributorClientImpl client;
-  absl::StatusOr<DistributedResponse> response_or = client.DistributedRequest(
-      mock_nighthawk_service_stub, ::nighthawk::client::DistributedRequest());
+  absl::StatusOr<DistributedResponse> response_or =
+      client.DistributedRequest(mock_nighthawk_service_stub, ::nighthawk::DistributedRequest());
   ASSERT_FALSE(response_or.ok());
   EXPECT_EQ(response_or.status().code(), absl::StatusCode::kInternal);
   EXPECT_THAT(response_or.status().message(), HasSubstr("WritesDone() failed"));
 }
 
 TEST(DistributedRequest, PropagatesErrorIfNighthawkServiceGrpcStreamClosesAbnormally) {
-  nighthawk::client::MockNighthawkDistributorStub mock_nighthawk_service_stub;
+  nighthawk::MockNighthawkDistributorStub mock_nighthawk_service_stub;
   // Configure the mock Nighthawk Service stub to return an inner mock channel when the code under
   // test requests a channel. Set call expectations on the inner mock channel.
   EXPECT_CALL(mock_nighthawk_service_stub, DistributedRequestStreamRaw)
@@ -177,8 +177,8 @@ TEST(DistributedRequest, PropagatesErrorIfNighthawkServiceGrpcStreamClosesAbnorm
       });
 
   NighthawkDistributorClientImpl client;
-  absl::StatusOr<DistributedResponse> response_or = client.DistributedRequest(
-      mock_nighthawk_service_stub, ::nighthawk::client::DistributedRequest());
+  absl::StatusOr<DistributedResponse> response_or =
+      client.DistributedRequest(mock_nighthawk_service_stub, ::nighthawk::DistributedRequest());
   ASSERT_FALSE(response_or.ok());
   EXPECT_EQ(response_or.status().code(), absl::StatusCode::kPermissionDenied);
   EXPECT_THAT(response_or.status().message(), HasSubstr("Finish failure status message"));

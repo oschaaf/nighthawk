@@ -4,7 +4,9 @@
 #pragma clang diagnostic warning "-Wunused-parameter"
 #endif
 #include "api/client/service.grpc.pb.h"
+#include "api/distributor/distributor.grpc.pb.h"
 #include "api/request_source/service.grpc.pb.h"
+#include "api/sink/sink.grpc.pb.h"
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -94,25 +96,25 @@ private:
   RequestSourcePtr createStaticEmptyRequestSource(const uint32_t amount);
 };
 
-class SinkServiceImpl final : public nighthawk::client::NighthawkSink::Service,
+class SinkServiceImpl final : public nighthawk::NighthawkSink::Service,
                               public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
 
 public:
   SinkServiceImpl(std::unique_ptr<Sink>&& sink);
-  ::grpc::Status StoreExecutionResponseStream(
-      ::grpc::ServerContext* context,
-      ::grpc::ServerReader<::nighthawk::client::StoreExecutionRequest>* reader,
-      ::nighthawk::client::StoreExecutionResponse* response) override;
+  ::grpc::Status
+  StoreExecutionResponseStream(::grpc::ServerContext* context,
+                               ::grpc::ServerReader<::nighthawk::StoreExecutionRequest>* reader,
+                               ::nighthawk::StoreExecutionResponse* response) override;
 
   ::grpc::Status
   SinkRequestStream(::grpc::ServerContext* context,
-                    ::grpc::ServerReaderWriter<::nighthawk::client::SinkResponse,
-                                               ::nighthawk::client::SinkRequest>* stream) override;
+                    ::grpc::ServerReaderWriter<::nighthawk::SinkResponse, ::nighthawk::SinkRequest>*
+                        stream) override;
 
 private:
   const std::map<const std::string, const StatisticPtr>
   readAppendices(const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
-  absl::StatusOr<::nighthawk::client::SinkResponse> aggregateSinkResponses(
+  absl::StatusOr<::nighthawk::SinkResponse> aggregateSinkResponses(
       absl::string_view requested_execution_id,
       const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
   const absl::Status mergeIntoAggregatedOutput(const ::nighthawk::client::Output& input_to_merge,
@@ -122,22 +124,22 @@ private:
 };
 
 class NighthawkDistributorServiceImpl final
-    : public nighthawk::client::NighthawkDistributor::Service,
+    : public nighthawk::NighthawkDistributor::Service,
       public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
 
 public:
   ::grpc::Status DistributedRequestStream(
       ::grpc::ServerContext* context,
-      ::grpc::ServerReaderWriter<::nighthawk::client::DistributedResponse,
-                                 ::nighthawk::client::DistributedRequest>* stream) override;
+      ::grpc::ServerReaderWriter<::nighthawk::DistributedResponse, ::nighthawk::DistributedRequest>*
+          stream) override;
 
 private:
-  ::grpc::Status validateRequest(const ::nighthawk::client::DistributedRequest& request) const;
-  nighthawk::client::DistributedResponse
-  handleRequest(const ::nighthawk::client::DistributedRequest& request) const;
-  absl::StatusOr<nighthawk::client::SinkResponse>
+  ::grpc::Status validateRequest(const ::nighthawk::DistributedRequest& request) const;
+  nighthawk::DistributedResponse
+  handleRequest(const ::nighthawk::DistributedRequest& request) const;
+  absl::StatusOr<::nighthawk::SinkResponse>
   handleSinkRequest(const envoy::config::core::v3::Address& service,
-                    const ::nighthawk::client::SinkRequest& request) const;
+                    const ::nighthawk::SinkRequest& request) const;
   absl::StatusOr<nighthawk::client::ExecutionResponse>
   handleExecutionRequest(const envoy::config::core::v3::Address& service,
                          const ::nighthawk::client::ExecutionRequest& request) const;

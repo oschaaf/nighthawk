@@ -200,9 +200,9 @@ SinkServiceImpl::SinkServiceImpl(std::unique_ptr<Sink>&& sink) : sink_(std::move
 
 ::grpc::Status SinkServiceImpl::StoreExecutionResponseStream(
     ::grpc::ServerContext*,
-    ::grpc::ServerReader<::nighthawk::client::StoreExecutionRequest>* request_reader,
-    ::nighthawk::client::StoreExecutionResponse*) {
-  nighthawk::client::StoreExecutionRequest request;
+    ::grpc::ServerReader<::nighthawk::StoreExecutionRequest>* request_reader,
+    ::nighthawk::StoreExecutionResponse*) {
+  nighthawk::StoreExecutionRequest request;
   while (request_reader->Read(&request)) {
     ENVOY_LOG(info, "StoreExecutionResponseStream request {}", request.DebugString());
     const ::nighthawk::client::ExecutionResponse& response_to_store = request.execution_response();
@@ -266,7 +266,7 @@ const std::map<const std::string, const StatisticPtr> SinkServiceImpl::readAppen
   return std::map<const std::string, const StatisticPtr>();
 }
 
-absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSinkResponses(
+absl::StatusOr<::nighthawk::SinkResponse> SinkServiceImpl::aggregateSinkResponses(
     absl::string_view requested_execution_id,
     const std::vector<::nighthawk::client::ExecutionResponse>& responses) const {
   if (responses.size() == 0) {
@@ -275,7 +275,7 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
         "sink->LoadExecutionResult yielded an empty vector, and broke its promise.");
   }
 
-  ::nighthawk::client::SinkResponse response;
+  ::nighthawk::SinkResponse response;
   ::nighthawk::client::ExecutionResponse* aggregated_response =
       response.mutable_execution_response();
   ::nighthawk::client::Output aggregated_output;
@@ -315,9 +315,8 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
 
 ::grpc::Status SinkServiceImpl::SinkRequestStream(
     ::grpc::ServerContext*,
-    ::grpc::ServerReaderWriter<::nighthawk::client::SinkResponse, ::nighthawk::client::SinkRequest>*
-        stream) {
-  nighthawk::client::SinkRequest request;
+    ::grpc::ServerReaderWriter<::nighthawk::SinkResponse, ::nighthawk::SinkRequest>* stream) {
+  ::nighthawk::SinkRequest request;
   absl::Status status = absl::OkStatus();
   while (stream->Read(&request)) {
     ENVOY_LOG(trace, "Inbound SinkRequest {}", request.DebugString());
@@ -333,7 +332,7 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
           status_or_execution_responses.value();
       const std::map<const std::string, const StatisticPtr> stat_by_appendix_id =
           readAppendices(responses);
-      absl::StatusOr<::nighthawk::client::SinkResponse> response =
+      absl::StatusOr<::nighthawk::SinkResponse> response =
           aggregateSinkResponses(request.execution_id(), responses);
       status.Update(response.status());
       if (status.ok() && !stream->Write(response.value())) {
@@ -353,7 +352,7 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
 }
 
 ::grpc::Status NighthawkDistributorServiceImpl::validateRequest(
-    const ::nighthawk::client::DistributedRequest& request) const {
+    const ::nighthawk::DistributedRequest& request) const {
   // xxx: why the std::strings() below?
   if (request.has_sink_request()) {
     if (request.services_size() != 1) {
@@ -386,16 +385,16 @@ absl::StatusOr<::nighthawk::client::SinkResponse> SinkServiceImpl::aggregateSink
   }
   return ::grpc::Status::OK;
 }
-absl::StatusOr<nighthawk::client::SinkResponse> NighthawkDistributorServiceImpl::handleSinkRequest(
-    const envoy::config::core::v3::Address& service,
-    const ::nighthawk::client::SinkRequest& request) const {
+absl::StatusOr<::nighthawk::SinkResponse>
+NighthawkDistributorServiceImpl::handleSinkRequest(const envoy::config::core::v3::Address& service,
+                                                   const ::nighthawk::SinkRequest& request) const {
   NighthawkSinkClientImpl client;
-  std::unique_ptr<nighthawk::client::NighthawkSink::Stub> stub;
+  std::unique_ptr<nighthawk::NighthawkSink::Stub> stub;
   std::shared_ptr<::grpc::Channel> channel;
   channel = grpc::CreateChannel(fmt::format("{}:{}", service.socket_address().address(),
                                             service.socket_address().port_value()),
                                 grpc::InsecureChannelCredentials());
-  stub = std::make_unique<nighthawk::client::NighthawkSink::Stub>(channel);
+  stub = std::make_unique<nighthawk::NighthawkSink::Stub>(channel);
   return client.SinkRequestStream(*stub, request);
 }
 
@@ -414,14 +413,14 @@ NighthawkDistributorServiceImpl::handleExecutionRequest(
 }
 
 // Translates one or more backend response into a single reply message
-nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleRequest(
-    const ::nighthawk::client::DistributedRequest& request) const {
-  nighthawk::client::DistributedResponse response;
+nighthawk::DistributedResponse NighthawkDistributorServiceImpl::handleRequest(
+    const ::nighthawk::DistributedRequest& request) const {
+  nighthawk::DistributedResponse response;
   if (request.has_sink_request()) {
     ENVOY_LOG(trace, "Handling sink request");
     RELEASE_ASSERT(request.services_size() == 1, "services_size() != 1");
     const envoy::config::core::v3::Address& service = request.services(0);
-    absl::StatusOr<nighthawk::client::SinkResponse> sink_response =
+    absl::StatusOr<::nighthawk::SinkResponse> sink_response =
         handleSinkRequest(service, request.sink_request());
     if (!sink_response.ok()) {
       // Translate from absl's StatusOr to grpc's Status.
@@ -460,15 +459,15 @@ nighthawk::client::DistributedResponse NighthawkDistributorServiceImpl::handleRe
 
 ::grpc::Status NighthawkDistributorServiceImpl::DistributedRequestStream(
     ::grpc::ServerContext*,
-    ::grpc::ServerReaderWriter<::nighthawk::client::DistributedResponse,
-                               ::nighthawk::client::DistributedRequest>* stream) {
-  nighthawk::client::DistributedRequest request;
+    ::grpc::ServerReaderWriter<::nighthawk::DistributedResponse, ::nighthawk::DistributedRequest>*
+        stream) {
+  nighthawk::DistributedRequest request;
   ::grpc::Status status = grpc::Status::OK;
   while (status.ok() && stream->Read(&request)) {
     ENVOY_LOG(trace, "Inbound DistributedRequest {}", request.DebugString());
     status = validateRequest(request);
     if (status.ok()) {
-      nighthawk::client::DistributedResponse response = handleRequest(request);
+      nighthawk::DistributedResponse response = handleRequest(request);
       if (!stream->Write(response)) {
         ENVOY_LOG(error, "Failed to write DistributedResponse.");
         status = grpc::Status(grpc::StatusCode::INTERNAL,
