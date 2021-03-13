@@ -5,11 +5,13 @@
 
 #include "nighthawk/common/exception.h"
 
-#include "common/sink_impl.h"
 #include "common/utility.h"
 #include "common/version_info.h"
 
 #include "client/service_impl.h"
+
+#include "sink/service_impl.h"
+#include "sink/sink_impl.h"
 
 #include "absl/strings/strip.h"
 #include "tclap/CmdLine.h"

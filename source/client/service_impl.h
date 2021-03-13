@@ -23,7 +23,7 @@
 
 #include "nighthawk/client/process.h"
 #include "nighthawk/common/request_source.h"
-#include "nighthawk/common/sink.h"
+#include "nighthawk/sink/sink.h"
 
 namespace Nighthawk {
 namespace Client {
@@ -94,33 +94,6 @@ public:
 
 private:
   RequestSourcePtr createStaticEmptyRequestSource(const uint32_t amount);
-};
-
-class SinkServiceImpl final : public nighthawk::NighthawkSink::Service,
-                              public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
-
-public:
-  SinkServiceImpl(std::unique_ptr<Sink>&& sink);
-  ::grpc::Status
-  StoreExecutionResponseStream(::grpc::ServerContext* context,
-                               ::grpc::ServerReader<::nighthawk::StoreExecutionRequest>* reader,
-                               ::nighthawk::StoreExecutionResponse* response) override;
-
-  ::grpc::Status
-  SinkRequestStream(::grpc::ServerContext* context,
-                    ::grpc::ServerReaderWriter<::nighthawk::SinkResponse, ::nighthawk::SinkRequest>*
-                        stream) override;
-
-private:
-  const std::map<const std::string, const StatisticPtr>
-  readAppendices(const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
-  absl::StatusOr<::nighthawk::SinkResponse> aggregateSinkResponses(
-      absl::string_view requested_execution_id,
-      const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
-  const absl::Status mergeIntoAggregatedOutput(const ::nighthawk::client::Output& input_to_merge,
-                                               ::nighthawk::client::Output& merge_target) const;
-  // TODO(oschaaf): ref?
-  std::unique_ptr<Sink> sink_;
 };
 
 class NighthawkDistributorServiceImpl final

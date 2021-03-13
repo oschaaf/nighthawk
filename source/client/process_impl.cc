@@ -45,9 +45,9 @@
 #include "api/client/output.pb.h"
 
 #include "common/frequency.h"
-#include "common/nighthawk_sink_client_impl.h"
 #include "common/uri_impl.h"
 #include "common/utility.h"
+#include "sink/nighthawk_sink_client_impl.h"
 
 #include "client/benchmark_client_impl.h"
 #include "client/client.h"

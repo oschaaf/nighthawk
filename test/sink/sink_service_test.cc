@@ -8,11 +8,9 @@
 #include "external/envoy/test/test_common/network_utility.h"
 #include "external/envoy/test/test_common/utility.h"
 
-//#include "external/envoy/source/common/protobuf/protobuf.h"
+#include "api/sink/sink.pb.h"
 
-#include "api/client/service.pb.h"
-
-#include "client/service_impl.h"
+#include "sink/service_impl.h"
 
 #include "test/mocks/sink/mock_sink.h"
 
@@ -22,7 +20,6 @@ using namespace std::chrono_literals;
 using namespace testing;
 
 namespace Nighthawk {
-namespace Client {
 namespace {
 
 using ::nighthawk::SinkRequest;
@@ -183,5 +180,4 @@ TEST_P(SinkServiceTest, LoadTwoResultsWithExecutionResponseWhereOneHasErrorDetai
 }
 
 } // namespace
-} // namespace Client
 } // namespace Nighthawk
