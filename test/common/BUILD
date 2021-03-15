@@ -40,16 +40,6 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
-    name = "nighthawk_distributor_client_test",
-    srcs = ["nighthawk_distributor_client_test.cc"],
-    repository = "@envoy",
-    deps = [
-        "//source/distributor:nighthawk_distributor_client_impl",
-        "@com_github_grpc_grpc//:grpc++_test",
-    ],
-)
-
-envoy_cc_test(
     name = "signal_handler_test",
     srcs = ["signal_handler_test.cc"],
     repository = "@envoy",
