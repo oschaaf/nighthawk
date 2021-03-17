@@ -31,7 +31,7 @@ message SinkRequest {
 
 message SinkResponse {
   // Response associated to the requested execution id.
-  nighthawk.client.ExecutionResponse execution_response = 1;
+  client.ExecutionResponse execution_response = 1;
 }
 
 service NighthawkSink {

@@ -4,10 +4,6 @@
 
 #include "envoy/config/core/v3/base.pb.h"
 
-#include "client/client.h"
-#include "client/options_impl.h"
-#include "client/output_collector_impl.h"
-
 #include "sink/nighthawk_sink_client_impl.h"
 #include "sink/sink_impl.h"
 
@@ -75,6 +71,7 @@ SinkServiceImpl::mergeIntoAggregatedOutput(const ::nighthawk::client::Output& in
   return absl::OkStatus();
 }
 
+/*
 const std::map<const std::string, const StatisticPtr> SinkServiceImpl::readAppendices(
     const std::vector<::nighthawk::client::ExecutionResponse>& responses) const {
   for (const auto& response : responses) {
@@ -84,6 +81,7 @@ const std::map<const std::string, const StatisticPtr> SinkServiceImpl::readAppen
   }
   return std::map<const std::string, const StatisticPtr>();
 }
+*/
 
 absl::StatusOr<::nighthawk::SinkResponse> SinkServiceImpl::aggregateSinkResponses(
     absl::string_view requested_execution_id,
@@ -145,12 +143,13 @@ absl::StatusOr<::nighthawk::SinkResponse> SinkServiceImpl::aggregateSinkResponse
       status_or_execution_responses = sink_->LoadExecutionResult(request.execution_id());
       sleep(1);
     } while (!status_or_execution_responses.ok());
+
     status.Update(status_or_execution_responses.status());
     if (status.ok()) {
       const std::vector<::nighthawk::client::ExecutionResponse>& responses =
           status_or_execution_responses.value();
-      const std::map<const std::string, const StatisticPtr> stat_by_appendix_id =
-          readAppendices(responses);
+      // const std::map<const std::string, const StatisticPtr> stat_by_appendix_id =
+      //    readAppendices(responses);
       absl::StatusOr<::nighthawk::SinkResponse> response =
           aggregateSinkResponses(request.execution_id(), responses);
       status.Update(response.status());
@@ -158,8 +157,7 @@ absl::StatusOr<::nighthawk::SinkResponse> SinkServiceImpl::aggregateSinkResponse
         status.Update(
             absl::Status(absl::StatusCode::kInternal, "Failure writing response to stream."));
       }
-    }
-    if (!status.ok()) {
+    } else {
       ENVOY_LOG(error, "Failure while handling SinkRequest: {} -> {}", request.DebugString(),
                 status.ToString());
       break;

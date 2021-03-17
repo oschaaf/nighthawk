@@ -34,7 +34,7 @@ envoy_cc_test(
     srcs = ["sink_service_test.cc"],
     repository = "@envoy",
     deps = [
-        "//source/client:nighthawk_service_lib",
+        "//source/sink:grpc_service_lib",
         "//test/mocks/sink:mock_sink",
         "//test/test_common:environment_lib",
         "@envoy//test/test_common:network_utility_lib",

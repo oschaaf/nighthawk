@@ -20,9 +20,6 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//include/nighthawk/distributor:nighthawk_distributor_client",
-        "@envoy//source/common/common:assert_lib_with_external_headers",
-        "@envoy//source/common/common:statusor_lib_with_external_headers",
-        "@envoy//source/common/protobuf:protobuf_with_external_headers",
     ],
 )
 
@@ -37,18 +34,12 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "//api/client:grpc_service_lib",
         "//api/distributor:distributor_grpc_lib",
-        "//api/sink:sink_grpc_lib",
-        "//include/nighthawk/client:client_includes",
         "//source/common:nighthawk_service_client_impl",
-        "//source/distributor:nighthawk_distributor_client_impl",
         "//source/sink:nighthawk_sink_client_impl",
         "@com_github_grpc_grpc//:grpc++",
+        "@envoy//source/common/common:assert_lib_with_external_headers",
         "@envoy//source/common/common:minimal_logger_lib_with_external_headers",
-        "@envoy//source/common/common:thread_lib_with_external_headers",
-        "@envoy//source/common/event:real_time_system_lib_with_external_headers",
-        "@envoy//source/exe:process_wide_lib_with_external_headers",
-        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy//source/common/common:statusor_lib_with_external_headers",
     ],
 )

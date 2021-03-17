@@ -14,11 +14,7 @@
 #include <memory>
 
 #include "external/envoy/source/common/common/logger.h"
-#include "external/envoy/source/common/common/thread.h"
-#include "external/envoy/source/common/event/real_time_system.h"
-#include "external/envoy/source/exe/process_wide.h"
 
-#include "nighthawk/client/process.h"
 #include "nighthawk/sink/sink.h"
 
 namespace Nighthawk {
@@ -39,8 +35,8 @@ public:
                         stream) override;
 
 private:
-  const std::map<const std::string, const StatisticPtr>
-  readAppendices(const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
+  // const std::map<const std::string, const StatisticPtr>
+  // readAppendices(const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
   absl::StatusOr<::nighthawk::SinkResponse> aggregateSinkResponses(
       absl::string_view requested_execution_id,
       const std::vector<::nighthawk::client::ExecutionResponse>& responses) const;
