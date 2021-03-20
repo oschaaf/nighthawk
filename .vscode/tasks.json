@@ -269,7 +269,7 @@
           "//test:frequency_test",
           "//test:flush_worker_test",
           "//test:factories_test",
-          "//test:distributed_process_impl_test",
+          "//test/distributor:distributed_process_impl_test",
           "//test:client_worker_test",
           "//test:client_test",
           "//test:benchmark_http_client_test",

@@ -28,12 +28,13 @@
 #include "common/utility.h"
 
 #include "client/client_worker_impl.h"
-#include "client/distributed_process_impl.h"
 #include "client/factories_impl.h"
 #include "client/options_impl.h"
 #include "client/output_collector_impl.h"
 #include "client/process_impl.h"
 #include "client/remote_process_impl.h"
+
+#include "distributor/distributed_process_impl.h"
 
 using namespace std::chrono_literals;
 

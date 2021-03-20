@@ -1,4 +1,4 @@
-#include "client/distributed_process_impl.h"
+#include "distributor/distributed_process_impl.h"
 
 #include <grpc++/grpc++.h>
 
@@ -16,10 +16,10 @@
 #include "client/options_impl.h"
 
 namespace Nighthawk {
-namespace Client {
 
 DistributedProcessImpl::DistributedProcessImpl(
-    const Options& options, nighthawk::NighthawkDistributor::StubInterface& distributor_stub,
+    const Client::Options& options,
+    nighthawk::NighthawkDistributor::StubInterface& distributor_stub,
     nighthawk::NighthawkSink::StubInterface& sink_stub)
     : options_(options), distributor_client_(std::make_unique<NighthawkDistributorClientImpl>()),
       distributor_stub_(distributor_stub),
@@ -49,8 +49,8 @@ DistributedProcessImpl::sendSinkRequest(const ::nighthawk::SinkRequest& request)
   return result;
 }
 
-bool DistributedProcessImpl::run(OutputCollector& collector) {
-  Nighthawk::Client::CommandLineOptionsPtr options = options_.toCommandLineOptions();
+bool DistributedProcessImpl::run(Client::OutputCollector& collector) {
+  Client::CommandLineOptionsPtr options = options_.toCommandLineOptions();
   if (!options_.sink().has_value()) {
     // TODO(XXX): without a sink, the request above could yield a full execution response,
     // Alternatively, we error out completely and reject early instead today.
@@ -110,5 +110,4 @@ bool DistributedProcessImpl::requestExecutionCancellation() {
   return false;
 }
 
-} // namespace Client
 } // namespace Nighthawk

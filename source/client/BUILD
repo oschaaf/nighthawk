@@ -9,15 +9,32 @@ licenses(["notice"])  # Apache 2
 envoy_package()
 
 envoy_cc_library(
+    name = "options_impl_lib",
+    srcs = [
+        "options_impl.cc",
+    ],
+    hdrs = [
+        "options_impl.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":output_formatter_impl_lib",
+        "//include/nighthawk/client:options_lib",
+        "@envoy//source/common/protobuf:message_validator_lib_with_external_headers",
+        "@envoy//source/common/protobuf:utility_lib_with_external_headers",
+        "@envoy//source/server:options_lib_with_external_headers",
+    ],
+)
+
+envoy_cc_library(
     name = "nighthawk_client_lib",
     srcs = [
         "benchmark_client_impl.cc",
         "client.cc",
         "client_worker_impl.cc",
-        "distributed_process_impl.cc",
         "factories_impl.cc",
         "flush_worker_impl.cc",
-        "options_impl.cc",
         "process_impl.cc",
         "remote_process_impl.cc",
         "sni_utility.cc",
@@ -27,10 +44,8 @@ envoy_cc_library(
         "benchmark_client_impl.h",
         "client.h",
         "client_worker_impl.h",
-        "distributed_process_impl.h",
         "factories_impl.h",
         "flush_worker_impl.h",
-        "options_impl.h",
         "process_impl.h",
         "remote_process_impl.h",
         "sni_utility.h",
@@ -43,6 +58,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        ":options_impl_lib",
         ":output_collector_impl_lib",
         ":output_formatter_impl_lib",
         "//api/client:base_cc_proto",
@@ -51,6 +67,7 @@ envoy_cc_library(
         "//source/common:request_source_impl_lib",
         "//source/common:nighthawk_common_lib",
         "//source/common:nighthawk_service_client_impl",
+        "//source/distributor:distributed_process_impl_lib",
         "//source/sink:nighthawk_sink_client_impl",
         "//source/distributor:nighthawk_distributor_client_impl",
         "//source/request_source:request_options_list_plugin_impl",
@@ -91,7 +108,6 @@ envoy_cc_library(
         "@envoy//source/extensions/request_id/uuid:config_with_external_headers",
         "@envoy//source/extensions/transport_sockets:well_known_names_with_external_headers",
         "@envoy//source/extensions/transport_sockets/tls:context_lib_with_external_headers",
-        "@envoy//source/server:options_lib_with_external_headers",
         "@envoy//source/server:server_lib_with_external_headers",
         "@envoy//source/server/config_validation:admin_lib_with_external_headers",
         "@envoy//include/envoy/http:protocol_interface_with_external_headers",

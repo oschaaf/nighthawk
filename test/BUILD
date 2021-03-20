@@ -159,17 +159,6 @@ envoy_cc_test(
 )
 
 envoy_cc_test(
-    name = "distributed_process_impl_test",
-    srcs = ["distributed_process_impl_test.cc"],
-    repository = "@envoy",
-    deps = [
-        "//test/client:utility_lib",
-        "@com_github_grpc_grpc//:grpc++_test",
-        "@envoy//test/test_common:simulated_time_system_lib",
-    ],
-)
-
-envoy_cc_test(
     name = "rate_limiter_test",
     srcs = ["rate_limiter_test.cc"],
     repository = "@envoy",

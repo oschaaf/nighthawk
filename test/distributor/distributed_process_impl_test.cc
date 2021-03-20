@@ -6,9 +6,10 @@
 #include "api/distributor/distributor_mock.grpc.pb.h"
 #include "api/sink/sink_mock.grpc.pb.h"
 
-#include "client/distributed_process_impl.h"
 #include "client/options_impl.h"
 #include "client/output_collector_impl.h"
+
+#include "distributor/distributed_process_impl.h"
 
 #include "grpcpp/test/mock_stream.h"
 
@@ -18,7 +19,6 @@
 #include "gtest/gtest.h"
 
 namespace Nighthawk {
-namespace Client {
 namespace {
 
 using ::Envoy::Protobuf::util::MessageDifferencer;
@@ -27,6 +27,7 @@ using ::nighthawk::DistributedRequest;
 using ::nighthawk::DistributedResponse;
 using ::nighthawk::SinkRequest;
 using ::nighthawk::SinkResponse;
+using ::Nighthawk::Client::TestUtility;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Return;
@@ -34,7 +35,12 @@ using ::testing::SaveArg;
 using ::testing::SetArgPointee;
 
 class DistributedProcessImplTest : public testing::Test,
-                                   public Envoy::Event::TestUsingSimulatedTime {};
+                                   public Envoy::Event::TestUsingSimulatedTime {
+protected:
+  nighthawk::MockNighthawkDistributorStub distributor_stub;
+  nighthawk::MockNighthawkSinkStub sink_stub;
+  Client::OptionsPtr options;
+};
 
 TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
   // In the regular flow, we expect two calls to the mock distributor stub we pass
@@ -42,13 +48,10 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
   // - One to initiate execution.
   // - One to query the sink afterwards.
   // When that finishes, we test expectations for execution-id's and sink-result handling.
-
-  OptionsPtr options =
+  options =
       TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/ --services service1:444");
-  nighthawk::MockNighthawkDistributorStub distributor_stub;
-  nighthawk::MockNighthawkSinkStub sink_stub;
   DistributedProcessImpl process(*options, distributor_stub, sink_stub);
-  OutputCollectorImpl collector(simTime(), *options);
+  Client::OutputCollectorImpl collector(simTime(), *options);
   DistributedRequest observed_init_request;
   SinkRequest observed_sink_request;
   nighthawk::client::Output sink_output;
@@ -97,22 +100,20 @@ TEST_F(DistributedProcessImplTest, InitDistributedExecutionAndQuerySink) {
 
   process.shutdown();
 }
-/*
+
 TEST_F(DistributedProcessImplTest, WriteFailureOnDistributorLoadTestInitiations) {
-  OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
-  nighthawk::MockNighthawkDistributorStub stub;
-  DistributedProcessImpl process(*options, stub);
-  OutputCollectorImpl collector(simTime(), *options);
+  options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
+  DistributedProcessImpl process(*options, distributor_stub, sink_stub);
+  Client::OutputCollectorImpl collector(simTime(), *options);
   DistributedRequest observed_init_request;
 
-  EXPECT_CALL(stub, DistributedRequestStreamRaw)
+  EXPECT_CALL(distributor_stub, DistributedRequestStreamRaw)
       .WillOnce([&observed_init_request](grpc::ClientContext*) {
         // Simulate a write failure on the load test initiation request.
         auto* mock_reader_writer =
             new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         EXPECT_CALL(*mock_reader_writer, Write(_, _))
-            .WillOnce(
-                DoAll(SaveArg<0>(&observed_init_request), Return(false)));
+            .WillOnce(DoAll(SaveArg<0>(&observed_init_request), Return(false)));
         return mock_reader_writer;
       });
 
@@ -121,37 +122,33 @@ TEST_F(DistributedProcessImplTest, WriteFailureOnDistributorLoadTestInitiations)
 }
 
 TEST_F(DistributedProcessImplTest, WriteFailureOnSinkRequest) {
-  OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
-  nighthawk::MockNighthawkDistributorStub stub;
-  DistributedProcessImpl process(*options, stub);
-  OutputCollectorImpl collector(simTime(), *options);
+  options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
+  DistributedProcessImpl process(*options, distributor_stub, sink_stub);
+  Client::OutputCollectorImpl collector(simTime(), *options);
   DistributedRequest observed_init_request;
-  DistributedRequest observed_sink_request;
+  SinkRequest observed_sink_request;
 
-  EXPECT_CALL(stub, DistributedRequestStreamRaw)
-      .Times(2)
+  EXPECT_CALL(distributor_stub, DistributedRequestStreamRaw)
       .WillOnce([&observed_init_request](grpc::ClientContext*) {
         auto* mock_reader_writer =
             new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
         DistributedResponse dictated_response;
         EXPECT_CALL(*mock_reader_writer, Read(_))
-            .WillOnce(
-                DoAll(SetArgPointee<0>(dictated_response), Return(true)))
+            .WillOnce(DoAll(SetArgPointee<0>(dictated_response), Return(true)))
             .WillOnce(Return(false));
         EXPECT_CALL(*mock_reader_writer, Write(_, _))
-            .WillOnce(
-                DoAll(SaveArg<0>(&observed_init_request), Return(true)));
+            .WillOnce(DoAll(SaveArg<0>(&observed_init_request), Return(true)));
         EXPECT_CALL(*mock_reader_writer, WritesDone()).WillOnce(Return(true));
         EXPECT_CALL(*mock_reader_writer, Finish()).WillOnce(Return(grpc::Status::OK));
         return mock_reader_writer;
-      })
+      });
+
+  EXPECT_CALL(sink_stub, SinkRequestStreamRaw)
       .WillOnce([&observed_sink_request](grpc::ClientContext*) {
         // Simulate a write failure on the sink request.
-        auto* mock_reader_writer =
-            new MockClientReaderWriter<DistributedRequest, DistributedResponse>();
+        auto* mock_reader_writer = new MockClientReaderWriter<SinkRequest, SinkResponse>();
         EXPECT_CALL(*mock_reader_writer, Write(_, _))
-            .WillOnce(
-                DoAll(SaveArg<0>(&observed_sink_request), Return(false)));
+            .WillOnce(DoAll(SaveArg<0>(&observed_sink_request), Return(false)));
         return mock_reader_writer;
       });
 
@@ -161,10 +158,9 @@ TEST_F(DistributedProcessImplTest, WriteFailureOnSinkRequest) {
 
 TEST_F(DistributedProcessImplTest, NoSinkConfigurationResultsInFailure) {
   // Not specifying a sink configuration should fail, at least today.
-  OptionsPtr options = TestUtility::createOptionsImpl("foo https://foo/");
-  OutputCollectorImpl collector(simTime(), *options);
-  nighthawk::MockNighthawkDistributorStub stub;
-  DistributedProcessImpl process(*options, stub);
+  options = TestUtility::createOptionsImpl("foo https://foo/");
+  Client::OutputCollectorImpl collector(simTime(), *options);
+  DistributedProcessImpl process(*options, distributor_stub, sink_stub);
   EXPECT_FALSE(process.run(collector));
 }
 
@@ -172,12 +168,10 @@ TEST_F(DistributedProcessImplTest, RequestExecutionCancellationDoesNotCrash) {
   // This call isn't supported yet, and issues a log warning up usage. We don't expect great things
   // from it, just that it doesn't crash, even when called at an inappropriate time like here where
   // when we call it the process has not even had run() called on it.
-  OptionsPtr options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
-  nighthawk::MockNighthawkDistributorStub stub;
-  DistributedProcessImpl process(*options, stub);
+  options = TestUtility::createOptionsImpl("foo --sink bar:443 https://foo/");
+  DistributedProcessImpl process(*options, distributor_stub, sink_stub);
   process.requestExecutionCancellation();
 }
-*/
+
 } // namespace
-} // namespace Client
 } // namespace Nighthawk

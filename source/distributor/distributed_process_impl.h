@@ -6,19 +6,16 @@
 
 #include "external/envoy/source/common/common/logger.h"
 
-#include "api/client/service.grpc.pb.h"
-
 #include "distributor/nighthawk_distributor_client_impl.h"
 
 #include "sink/nighthawk_sink_client_impl.h"
 
 namespace Nighthawk {
-namespace Client {
 
 /**
  * Will delegate execution to a remote nighthawk_service using gRPC.
  */
-class DistributedProcessImpl : public Process,
+class DistributedProcessImpl : public Client::Process,
                                public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
 public:
   /**
@@ -27,7 +24,7 @@ public:
    * @param stub Stub that will be used to communicate with the remote
    * gRPC server.
    */
-  DistributedProcessImpl(const Options& options,
+  DistributedProcessImpl(const Client::Options& options,
                          nighthawk::NighthawkDistributor::StubInterface& distributor_stub,
                          nighthawk::NighthawkSink::StubInterface& sink_stub);
   /**
@@ -35,7 +32,7 @@ public:
    * @return true iff the remote execution should be considered successful. Unsuccessful execution
    * will log available error details.
    */
-  bool run(OutputCollector& collector) override;
+  bool run(Client::OutputCollector& collector) override;
   /**
    * Shuts down the service, a no-op in this implementation.
    */
@@ -48,12 +45,11 @@ private:
   sendDistributedRequest(const ::nighthawk::DistributedRequest& request) const;
   absl::StatusOr<const nighthawk::SinkResponse>
   sendSinkRequest(const ::nighthawk::SinkRequest& request) const;
-  const Options& options_;
+  const Client::Options& options_;
   const std::unique_ptr<NighthawkDistributorClient> distributor_client_;
   nighthawk::NighthawkDistributor::StubInterface& distributor_stub_;
   const std::unique_ptr<NighthawkSinkClient> sink_client_;
   nighthawk::NighthawkSink::StubInterface& sink_stub_;
 };
 
-} // namespace Client
 } // namespace Nighthawk
