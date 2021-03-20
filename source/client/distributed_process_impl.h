@@ -10,6 +10,8 @@
 
 #include "distributor/nighthawk_distributor_client_impl.h"
 
+#include "sink/nighthawk_sink_client_impl.h"
+
 namespace Nighthawk {
 namespace Client {
 
@@ -26,7 +28,8 @@ public:
    * gRPC server.
    */
   DistributedProcessImpl(const Options& options,
-                         nighthawk::NighthawkDistributor::StubInterface& stub);
+                         nighthawk::NighthawkDistributor::StubInterface& distributor_stub,
+                         nighthawk::NighthawkSink::StubInterface& sink_stub);
   /**
    * @param collector Collects the output from the remote nighthawk service.
    * @return true iff the remote execution should be considered successful. Unsuccessful execution
@@ -43,9 +46,13 @@ public:
 private:
   absl::StatusOr<const nighthawk::DistributedResponse>
   sendDistributedRequest(const ::nighthawk::DistributedRequest& request) const;
+  absl::StatusOr<const nighthawk::SinkResponse>
+  sendSinkRequest(const ::nighthawk::SinkRequest& request) const;
   const Options& options_;
-  const std::unique_ptr<NighthawkDistributorClient> service_client_;
-  nighthawk::NighthawkDistributor::StubInterface& stub_;
+  const std::unique_ptr<NighthawkDistributorClient> distributor_client_;
+  nighthawk::NighthawkDistributor::StubInterface& distributor_stub_;
+  const std::unique_ptr<NighthawkSinkClient> sink_client_;
+  nighthawk::NighthawkSink::StubInterface& sink_stub_;
 };
 
 } // namespace Client

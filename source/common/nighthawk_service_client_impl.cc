@@ -12,9 +12,9 @@ NighthawkServiceClientImpl::PerformNighthawkBenchmark(
   nighthawk::client::ExecutionResponse response;
   *request.mutable_start_request()->mutable_options() = command_line_options;
 
-  ::grpc::ClientContext context;
-  std::shared_ptr<::grpc::ClientReaderWriterInterface<nighthawk::client::ExecutionRequest,
-                                                      nighthawk::client::ExecutionResponse>>
+  grpc::ClientContext context;
+  std::shared_ptr<grpc::ClientReaderWriterInterface<nighthawk::client::ExecutionRequest,
+                                                    nighthawk::client::ExecutionResponse>>
       stream(nighthawk_service_stub->ExecutionStream(&context));
 
   ENVOY_LOG_MISC(trace, "Write {}", request.DebugString());
@@ -35,7 +35,7 @@ NighthawkServiceClientImpl::PerformNighthawkBenchmark(
   if (!got_response) {
     return absl::InternalError("Nighthawk Service did not send a gRPC response.");
   }
-  ::grpc::Status status = stream->Finish();
+  grpc::Status status = stream->Finish();
   ENVOY_LOG_MISC(trace, "Finish {}", status.ok());
 
   if (!status.ok()) {

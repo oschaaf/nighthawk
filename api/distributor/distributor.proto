@@ -2,34 +2,28 @@ syntax = "proto3";
 
 package nighthawk;
 
-import "google/protobuf/duration.proto";
 import "google/rpc/status.proto";
 
 import "envoy/config/core/v3/address.proto";
 
 import "api/client/service.proto";
-import "api/sink/sink.proto";
+
 import "validate/validate.proto";
 
-// Perform an execution request through an intermediate service that will in
-// turn delegate to one or more other services for actual handling.
+// Perform an execution request through an intermediate service that will in turn delegate to one or
+// more other services Nighthawk load generator services.
 message DistributedRequest {
-  oneof distributed_request_type {
-    nighthawk.client.ExecutionRequest execution_request = 1;
-    nighthawk.SinkRequest sink_request = 2;
-  }
-  // Specify one or more services that will handle the request_message
-  // associated with this.
-  repeated envoy.config.core.v3.Address services = 3;
+  client.ExecutionRequest execution_request = 1;
+  // Specify one or more services that will handle the inner message associated to this.
+  repeated envoy.config.core.v3.Address services = 3 [(validate.rules).repeated .min_items = 1];
 }
 
 message DistributedResponseFragment {
   oneof distributed_response_type {
     google.rpc.Status error = 1;
     nighthawk.client.ExecutionResponse execution_response = 2;
-    nighthawk.SinkResponse sink_response = 3;
     // The source of the response.
-    envoy.config.core.v3.Address service = 4;
+    envoy.config.core.v3.Address source_service = 3;
   }
 }
 
@@ -48,9 +42,10 @@ message DistributedResponse {
   // envoy.config.core.v3.Address service = 4;
 }
 
-// Service which proxies messages to one or more other services for handling.
+// Service which distributes messages to one or more other services for handling, and streams back
+// response messages.
 service NighthawkDistributor {
-  // Propagate StartRequest wrapped in DistributedRequest to one or more other services.
+  // Propagate the message wrapped in DistributedRequest to one or more other services for handling.
   rpc DistributedRequestStream(stream DistributedRequest) returns (stream DistributedResponse) {
   }
 }

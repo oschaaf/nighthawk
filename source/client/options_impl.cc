@@ -315,9 +315,6 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
       "Default: \"\"",
       false, "", "string", cmd);
 
-  TCLAP::SwitchArg allow_envoy_deprecated_v2_api("", "allow-envoy-deprecated-v2-api",
-                                                 "DEPRECATED, not supported anymore.", cmd);
-
   TCLAP::ValueArg<std::string> sink(
       "", "sink", "Set an optional sink address for storing results. Default: \"\"", false, "",
       "string", cmd);
@@ -460,7 +457,6 @@ OptionsImpl::OptionsImpl(int argc, const char* const* argv) {
   }
   TCLAP_SET_IF_SPECIFIED(stats_flush_interval, stats_flush_interval_);
   TCLAP_SET_IF_SPECIFIED(latency_response_header_name, latency_response_header_name_);
-  TCLAP_SET_IF_SPECIFIED(allow_envoy_deprecated_v2_api, allow_envoy_deprecated_v2_api_);
   if (sink.isSet()) {
     const std::string& host_port = sink.getValue();
     std::string host;
@@ -649,7 +645,7 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options) {
       request_headers_.push_back(header_string);
     }
     if (request_options.request_method() !=
-        ::envoy::config::core::v3::RequestMethod::METHOD_UNSPECIFIED) {
+        envoy::config::core::v3::RequestMethod::METHOD_UNSPECIFIED) {
       request_method_ = request_options.request_method();
     }
     request_body_size_ =
@@ -713,8 +709,6 @@ OptionsImpl::OptionsImpl(const nighthawk::client::CommandLineOptions& options) {
   std::copy(options.labels().begin(), options.labels().end(), std::back_inserter(labels_));
   latency_response_header_name_ = PROTOBUF_GET_WRAPPED_OR_DEFAULT(
       options, latency_response_header_name, latency_response_header_name_);
-  allow_envoy_deprecated_v2_api_ = PROTOBUF_GET_WRAPPED_OR_DEFAULT(
-      options, allow_envoy_deprecated_v2_api, allow_envoy_deprecated_v2_api_);
   if (options.has_scheduled_start()) {
     const auto elapsed_since_epoch = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::nanoseconds(options.scheduled_start().nanos()) +
@@ -910,8 +904,6 @@ CommandLineOptionsPtr OptionsImpl::toCommandLineOptionsInternal() const {
   command_line_options->mutable_stats_flush_interval()->set_value(stats_flush_interval_);
   command_line_options->mutable_latency_response_header_name()->set_value(
       latency_response_header_name_);
-  command_line_options->mutable_allow_envoy_deprecated_v2_api()->set_value(
-      allow_envoy_deprecated_v2_api_);
   if (scheduled_start_.has_value()) {
     *(command_line_options->mutable_scheduled_start()) =
         Envoy::ProtobufUtil::TimeUtil::NanosecondsToTimestamp(

@@ -93,7 +93,6 @@ public:
   std::string responseHeaderWithLatencyInput() const override {
     return latency_response_header_name_;
   };
-  bool allowEnvoyDeprecatedV2Api() const override { return allow_envoy_deprecated_v2_api_; }
   absl::optional<Envoy::SystemTime> scheduled_start() const override { return scheduled_start_; }
   absl::optional<nighthawk::client::SinkConfiguration> sink() const override { return sink_; };
   absl::optional<nighthawk::client::DistributorConfiguration> distributor() const override {
@@ -159,7 +158,6 @@ private:
   std::vector<envoy::config::metrics::v3::StatsSink> stats_sinks_;
   uint32_t stats_flush_interval_{5};
   std::string latency_response_header_name_;
-  bool allow_envoy_deprecated_v2_api_{false};
   absl::optional<Envoy::SystemTime> scheduled_start_;
   absl::optional<nighthawk::client::SinkConfiguration> sink_;
   absl::optional<nighthawk::client::DistributorConfiguration> distributor_;

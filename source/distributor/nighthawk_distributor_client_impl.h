@@ -2,9 +2,6 @@
 
 #include "nighthawk/common/nighthawk_distributor_client.h"
 
-#include "external/envoy/source/common/common/statusor.h"
-#include "external/envoy/source/common/protobuf/protobuf.h"
-
 namespace Nighthawk {
 
 class NighthawkDistributorClientImpl : public NighthawkDistributorClient {

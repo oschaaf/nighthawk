@@ -55,15 +55,23 @@ bool Main::run() {
   ProcessPtr process;
   std::unique_ptr<nighthawk::NighthawkDistributor::Stub> distributor_stub;
   std::unique_ptr<nighthawk::client::NighthawkService::Stub> service_stub;
-  std::shared_ptr<::grpc::Channel> channel;
+  std::unique_ptr<nighthawk::NighthawkSink::Stub> sink_stub;
+  std::shared_ptr<grpc::Channel> service_channel;
+  std::shared_ptr<grpc::Channel> distributor_channel;
+  std::shared_ptr<grpc::Channel> sink_channel;
 
   if (options_->distributor().has_value()) {
-    channel = grpc::CreateChannel(
+    distributor_channel = grpc::CreateChannel(
         fmt::format("{}:{}", options_->distributor().value().address().socket_address().address(),
                     options_->distributor().value().address().socket_address().port_value()),
         grpc::InsecureChannelCredentials());
-    distributor_stub = std::make_unique<nighthawk::NighthawkDistributor::Stub>(channel);
-    process = std::make_unique<DistributedProcessImpl>(*options_, *distributor_stub);
+    sink_channel = grpc::CreateChannel(
+        fmt::format("{}:{}", options_->sink().value().address().socket_address().address(),
+                    options_->sink().value().address().socket_address().port_value()),
+        grpc::InsecureChannelCredentials());
+    distributor_stub = std::make_unique<nighthawk::NighthawkDistributor::Stub>(distributor_channel);
+    sink_stub = std::make_unique<nighthawk::NighthawkSink::Stub>(sink_channel);
+    process = std::make_unique<DistributedProcessImpl>(*options_, *distributor_stub, *sink_stub);
   } else if (options_->nighthawkService() != "") {
     UriPtr uri;
 
@@ -74,9 +82,9 @@ bool Main::run() {
       return false;
     }
 
-    channel = grpc::CreateChannel(fmt::format("{}:{}", uri->hostWithoutPort(), uri->port()),
-                                  grpc::InsecureChannelCredentials());
-    service_stub = std::make_unique<nighthawk::client::NighthawkService::Stub>(channel);
+    service_channel = grpc::CreateChannel(fmt::format("{}:{}", uri->hostWithoutPort(), uri->port()),
+                                          grpc::InsecureChannelCredentials());
+    service_stub = std::make_unique<nighthawk::client::NighthawkService::Stub>(service_channel);
     process = std::make_unique<RemoteProcessImpl>(*options_, *service_stub);
   } else {
     process = std::make_unique<ProcessImpl>(*options_, time_system);

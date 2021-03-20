@@ -244,11 +244,11 @@ message CommandLineOptions {
   // Specify a distributor service that will in turn delegate handlingone or more nighthawk service
   // gRPC instances.
   DistributorConfiguration distributor = 42;
-  // Set to allow usage of the v2 api. (Not recommended, support will stop in Q1 2021).
-  google.protobuf.BoolValue allow_envoy_deprecated_v2_api = 38 [deprecated = true];
   // Provide an execution starting date and time. Optional, any value specified must be in the
   // future.
   google.protobuf.Timestamp scheduled_start = 105;
   //
   ExecutionConfiguration services = 43;
+
+  reserved 38; // deprecated
 }

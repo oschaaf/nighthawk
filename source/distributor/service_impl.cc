@@ -15,12 +15,7 @@ namespace Nighthawk {
 ::grpc::Status NighthawkDistributorServiceImpl::validateRequest(
     const ::nighthawk::DistributedRequest& request) const {
   // xxx: why the std::strings() below?
-  if (request.has_sink_request()) {
-    if (request.services_size() != 1) {
-      return grpc::Status(grpc::StatusCode::INTERNAL,
-                          "DistributedRequest.SinkRequest should specify exactly one service.");
-    }
-  } else if (request.has_execution_request()) {
+  if (request.has_execution_request()) {
     if (request.services_size() == 0) {
       return grpc::Status(grpc::StatusCode::INTERNAL,
                           "DistributedRequest.ExecutionRequest should specify services.");
@@ -47,19 +42,6 @@ namespace Nighthawk {
   return ::grpc::Status::OK;
 }
 
-absl::StatusOr<::nighthawk::SinkResponse>
-NighthawkDistributorServiceImpl::handleSinkRequest(const envoy::config::core::v3::Address& service,
-                                                   const ::nighthawk::SinkRequest& request) const {
-  NighthawkSinkClientImpl client;
-  std::unique_ptr<nighthawk::NighthawkSink::Stub> stub;
-  std::shared_ptr<::grpc::Channel> channel;
-  channel = grpc::CreateChannel(fmt::format("{}:{}", service.socket_address().address(),
-                                            service.socket_address().port_value()),
-                                grpc::InsecureChannelCredentials());
-  stub = std::make_unique<nighthawk::NighthawkSink::Stub>(channel);
-  return client.SinkRequestStream(*stub, request);
-}
-
 absl::StatusOr<nighthawk::client::ExecutionResponse>
 NighthawkDistributorServiceImpl::handleExecutionRequest(
     const envoy::config::core::v3::Address& service,
@@ -78,21 +60,7 @@ NighthawkDistributorServiceImpl::handleExecutionRequest(
 nighthawk::DistributedResponse NighthawkDistributorServiceImpl::handleRequest(
     const ::nighthawk::DistributedRequest& request) const {
   nighthawk::DistributedResponse response;
-  if (request.has_sink_request()) {
-    ENVOY_LOG(trace, "Handling sink request");
-    RELEASE_ASSERT(request.services_size() == 1, "services_size() != 1");
-    const envoy::config::core::v3::Address& service = request.services(0);
-    absl::StatusOr<::nighthawk::SinkResponse> sink_response =
-        handleSinkRequest(service, request.sink_request());
-    if (!sink_response.ok()) {
-      // Translate from absl's StatusOr to grpc's Status.
-      response.mutable_error()->set_code(static_cast<int>(sink_response.status().code()));
-      response.mutable_error()->set_message(
-          fmt::format("Distributed Sink Request failed: {}", sink_response.status().ToString()));
-    } else {
-      *(response.add_fragment()->mutable_sink_response()) = sink_response.value();
-    }
-  } else if (request.has_execution_request()) {
+  if (request.has_execution_request()) {
     ENVOY_LOG(trace, "Handling execution request");
     RELEASE_ASSERT(request.services_size() != 0, "services_size() == 0");
     RELEASE_ASSERT(request.execution_request().has_start_request(), "no start_request");

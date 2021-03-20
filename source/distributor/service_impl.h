@@ -24,21 +24,17 @@ class NighthawkDistributorServiceImpl final
       public Envoy::Logger::Loggable<Envoy::Logger::Id::main> {
 
 public:
-  ::grpc::Status DistributedRequestStream(
-      ::grpc::ServerContext* context,
-      ::grpc::ServerReaderWriter<::nighthawk::DistributedResponse, ::nighthawk::DistributedRequest>*
+  grpc::Status DistributedRequestStream(
+      grpc::ServerContext* context,
+      grpc::ServerReaderWriter<nighthawk::DistributedResponse, nighthawk::DistributedRequest>*
           stream) override;
 
 private:
-  ::grpc::Status validateRequest(const ::nighthawk::DistributedRequest& request) const;
-  nighthawk::DistributedResponse
-  handleRequest(const ::nighthawk::DistributedRequest& request) const;
-  absl::StatusOr<::nighthawk::SinkResponse>
-  handleSinkRequest(const envoy::config::core::v3::Address& service,
-                    const ::nighthawk::SinkRequest& request) const;
+  grpc::Status validateRequest(const nighthawk::DistributedRequest& request) const;
+  nighthawk::DistributedResponse handleRequest(const nighthawk::DistributedRequest& request) const;
   absl::StatusOr<nighthawk::client::ExecutionResponse>
   handleExecutionRequest(const envoy::config::core::v3::Address& service,
-                         const ::nighthawk::client::ExecutionRequest& request) const;
+                         const nighthawk::client::ExecutionRequest& request) const;
 };
 
 } // namespace Nighthawk
