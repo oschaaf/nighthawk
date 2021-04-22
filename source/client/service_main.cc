@@ -5,6 +5,7 @@
 
 #include "nighthawk/common/exception.h"
 
+#include "common/nighthawk_service_client_impl.h"
 #include "common/utility.h"
 #include "common/version_info.h"
 
@@ -52,7 +53,8 @@ ServiceMain::ServiceMain(int argc, const char** argv) {
   } else if (service_arg.getValue() == "sink") {
     service_ = std::make_unique<SinkServiceImpl>(std::make_unique<FileSinkImpl>());
   } else if (service_arg.getValue() == "distributor") {
-    service_ = std::make_unique<NighthawkDistributorServiceImpl>();
+    service_ = std::make_unique<NighthawkDistributorServiceImpl>(
+        std::make_unique<NighthawkServiceClientImpl>());
   }
   RELEASE_ASSERT(service_ != nullptr, "Service mapping failed");
   listener_bound_address_ = appendDefaultPortIfNeeded(listen_arg.getValue());
