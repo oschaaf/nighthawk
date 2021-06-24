@@ -1,4 +1,4 @@
-#include "client/client.h"
+#include "source/client/client.h"
 
 #include <grpc++/grpc++.h>
 
@@ -22,19 +22,17 @@
 #include "api/client/output.pb.h"
 #include "api/client/service.grpc.pb.h"
 
-#include "common/frequency.h"
-#include "common/signal_handler.h"
-#include "common/uri_impl.h"
-#include "common/utility.h"
-
-#include "client/client_worker_impl.h"
-#include "client/factories_impl.h"
-#include "client/options_impl.h"
-#include "client/output_collector_impl.h"
-#include "client/process_impl.h"
-#include "client/remote_process_impl.h"
-
-#include "distributor/distributed_process_impl.h"
+#include "source/client/client_worker_impl.h"
+#include "source/client/factories_impl.h"
+#include "source/client/options_impl.h"
+#include "source/client/output_collector_impl.h"
+#include "source/client/process_impl.h"
+#include "source/client/remote_process_impl.h"
+#include "source/common/frequency.h"
+#include "source/common/signal_handler.h"
+#include "source/common/uri_impl.h"
+#include "source/common/utility.h"
+#include "source/distributor/distributed_process_impl.h"
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -104,7 +102,7 @@ bool Main::run() {
   auto formatter = output_formatter_factory.create(options_->outputFormat());
   absl::StatusOr<std::string> formatted_proto = formatter->formatProto(output_collector.toProto());
   if (!formatted_proto.ok()) {
-    ENVOY_LOG(error, "An error occured while formatting proto");
+    ENVOY_LOG(error, "An error occurred while formatting proto");
     result = false;
   } else {
     std::cout << *formatted_proto;

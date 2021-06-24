@@ -1,4 +1,4 @@
-#include "distributor/distributed_process_impl.h"
+#include "source/distributor/distributed_process_impl.h"
 
 #include <grpc++/grpc++.h>
 
@@ -11,9 +11,8 @@
 #include "api/client/options.pb.h"
 #include "api/client/output.pb.h"
 
-#include "common/uri_impl.h"
-
-#include "client/options_impl.h"
+#include "source/client/options_impl.h"
+#include "source/common/uri_impl.h"
 
 namespace Nighthawk {
 

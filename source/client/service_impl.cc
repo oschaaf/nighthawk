@@ -1,18 +1,16 @@
-#include "client/service_impl.h"
+#include "source/client/service_impl.h"
 
 #include <grpc++/grpc++.h>
 
 #include "envoy/config/core/v3/base.pb.h"
 
-#include "common/nighthawk_service_client_impl.h"
-#include "common/request_source_impl.h"
-
-#include "client/client.h"
-#include "client/options_impl.h"
-#include "client/output_collector_impl.h"
-
-#include "sink/nighthawk_sink_client_impl.h"
-#include "sink/sink_impl.h"
+#include "source/client/client.h"
+#include "source/client/options_impl.h"
+#include "source/client/output_collector_impl.h"
+#include "source/common/nighthawk_service_client_impl.h"
+#include "source/common/request_source_impl.h"
+#include "source/sink/nighthawk_sink_client_impl.h"
+#include "source/sink/sink_impl.h"
 
 namespace Nighthawk {
 namespace Client {

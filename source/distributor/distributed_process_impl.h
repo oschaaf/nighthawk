@@ -6,9 +6,8 @@
 
 #include "external/envoy/source/common/common/logger.h"
 
-#include "distributor/nighthawk_distributor_client_impl.h"
-
-#include "sink/nighthawk_sink_client_impl.h"
+#include "source/distributor/nighthawk_distributor_client_impl.h"
+#include "source/sink/nighthawk_sink_client_impl.h"
 
 namespace Nighthawk {
 

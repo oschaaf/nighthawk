@@ -1,4 +1,4 @@
-#include "client/process_impl.h"
+#include "source/client/process_impl.h"
 
 #include <grpc++/grpc++.h>
 #include <sys/file.h>
@@ -9,6 +9,7 @@
 #include <memory>
 #include <random>
 
+#include "envoy/network/address.h"
 #include "envoy/server/filter_config.h"
 #include "envoy/stats/sink.h"
 #include "envoy/stats/store.h"
@@ -28,6 +29,7 @@
 #include "external/envoy/source/common/singleton/manager_impl.h"
 #include "external/envoy/source/common/thread_local/thread_local_impl.h"
 #include "external/envoy/source/server/server.h"
+#include "external/envoy_api/envoy/config/core/v3/resolver.pb.h"
 
 #include "absl/strings/str_replace.h"
 #include "absl/types/optional.h"
@@ -37,24 +39,23 @@
 #ifdef ZIPKIN_ENABLED
 #include "external/envoy/source/extensions/tracers/zipkin/zipkin_tracer_impl.h"
 #endif
-#include "external/envoy/source/extensions/transport_sockets/well_known_names.h"
 #include "external/envoy/source/server/options_impl.h"
 #include "external/envoy/source/server/options_impl_platform.h"
 
 #include "api/client/options.pb.h"
 #include "api/client/output.pb.h"
 
-#include "common/frequency.h"
-#include "common/uri_impl.h"
-#include "common/utility.h"
-#include "sink/nighthawk_sink_client_impl.h"
+#include "source/common/frequency.h"
+#include "source/common/uri_impl.h"
+#include "source/common/utility.h"
+#include "source/sink/nighthawk_sink_client_impl.h"
 
-#include "client/benchmark_client_impl.h"
-#include "client/client.h"
-#include "client/client_worker_impl.h"
-#include "client/factories_impl.h"
-#include "client/options_impl.h"
-#include "client/sni_utility.h"
+#include "source/client/benchmark_client_impl.h"
+#include "source/client/client.h"
+#include "source/client/client_worker_impl.h"
+#include "source/client/factories_impl.h"
+#include "source/client/options_impl.h"
+#include "source/client/sni_utility.h"
 
 using namespace std::chrono_literals;
 
@@ -70,6 +71,8 @@ public:
   Envoy::Http::ConnectionPool::InstancePtr allocateConnPool(
       Envoy::Event::Dispatcher& dispatcher, Envoy::Upstream::HostConstSharedPtr host,
       Envoy::Upstream::ResourcePriority priority, std::vector<Envoy::Http::Protocol>& protocols,
+      const absl::optional<envoy::config::core::v3::AlternateProtocolsCacheOptions>&
+          alternate_protocol_options,
       const Envoy::Network::ConnectionSocket::OptionsSharedPtr& options,
       const Envoy::Network::TransportSocketOptionsSharedPtr& transport_socket_options,
       Envoy::TimeSource& time_source, Envoy::Upstream::ClusterConnectivityState& state) override {
@@ -100,8 +103,8 @@ public:
       return Envoy::Http::ConnectionPool::InstancePtr{h1_pool};
     }
     return Envoy::Upstream::ProdClusterManagerFactory::allocateConnPool(
-        dispatcher, host, priority, protocols, options, transport_socket_options, time_source,
-        state);
+        dispatcher, host, priority, protocols, alternate_protocol_options, options,
+        transport_socket_options, time_source, state);
   }
 
   void setConnectionReuseStrategy(
@@ -138,8 +141,9 @@ ProcessImpl::ProcessImpl(const Options& options, Envoy::Event::TimeSystem& time_
       singleton_manager_(std::make_unique<Envoy::Singleton::ManagerImpl>(api_->threadFactory())),
       access_log_manager_(std::chrono::milliseconds(1000), *api_, *dispatcher_, access_log_lock_,
                           store_root_),
-      init_watcher_("Nighthawk", []() {}), validation_context_(false, false, false),
-      router_context_(store_root_.symbolTable()) {
+      init_watcher_("Nighthawk", []() {}),
+      admin_(Envoy::Network::Address::InstanceConstSharedPtr()),
+      validation_context_(false, false, false), router_context_(store_root_.symbolTable()) {
   // Any dispatchers created after the following call will use hr timers.
   setupForHRTimers();
   std::string lower = absl::AsciiStrToLower(
@@ -509,16 +513,18 @@ bool ProcessImpl::runInternal(OutputCollector& collector, const std::vector<UriP
         std::make_unique<Envoy::Extensions::TransportSockets::Tls::ContextManagerImpl>(
             time_system_);
 
+    ::envoy::config::core::v3::DnsResolverOptions dns_options;
     const Envoy::OptionsImpl::HotRestartVersionCb hot_restart_version_cb = [](bool) {
       return "hot restart is disabled";
     };
     const Envoy::OptionsImpl envoy_options(
         /* args = */ {"process_impl"}, hot_restart_version_cb, spdlog::level::info);
+    envoy::config::core::v3::DnsResolverOptions dns_resolver_options;
     cluster_manager_factory_ = std::make_unique<ClusterManagerFactory>(
         admin_, Envoy::Runtime::LoaderSingleton::get(), store_root_, tls_,
-        dispatcher_->createDnsResolver({}, false), *ssl_context_manager_, *dispatcher_,
-        *local_info_, secret_manager_, validation_context_, *api_, http_context_, grpc_context_,
-        router_context_, access_log_manager_, *singleton_manager_, envoy_options);
+        dispatcher_->createDnsResolver({}, dns_resolver_options), *ssl_context_manager_,
+        *dispatcher_, *local_info_, secret_manager_, validation_context_, *api_, http_context_,
+        grpc_context_, router_context_, access_log_manager_, *singleton_manager_, envoy_options);
     cluster_manager_factory_->setConnectionReuseStrategy(
         options_.h1ConnectionReuseStrategy() == nighthawk::client::H1ConnectionReuseStrategy::LRU
             ? Http1PoolImpl::ConnectionReuseStrategy::LRU

@@ -6,10 +6,9 @@
 #include "api/distributor/distributor_mock.grpc.pb.h"
 #include "api/sink/sink_mock.grpc.pb.h"
 
-#include "client/options_impl.h"
-#include "client/output_collector_impl.h"
-
-#include "distributor/distributed_process_impl.h"
+#include "source/client/options_impl.h"
+#include "source/client/output_collector_impl.h"
+#include "source/distributor/distributed_process_impl.h"
 
 #include "grpcpp/test/mock_stream.h"
 
